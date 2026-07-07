@@ -1,0 +1,16 @@
+{
+  "name": "TimeSync - Circadian Sleep Optimizer",
+  "short_name": "TimeSync",
+  "description": "TimeSync helps you plan a low-stress day, wind down screen-free, and wake up on the right sleep cycle.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
+  "lang": "en",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

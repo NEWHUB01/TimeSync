@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f19">
+<meta name="description" content="TimeSync helps you plan a low-stress day, wind down screen-free, and wake up on the right sleep cycle.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TimeSync">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<title>TimeSync - Circadian Sleep Optimizer</title>
+<style>
+  :root {
+    --bg: #0b0f19;
+    --bg-elevated: #10182a;
+    --card-bg: #1e293b;
+    --card-bg-soft: #172236;
+    --field-bg: #131c2e;
+    --accent-blue: #3b82f6;
+    --accent-blue-dim: #2563eb;
+    --accent-lavender: #a78bfa;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-faint: #64748b;
+    --danger: #f87171;
+    --warning: #fbbf24;
+    --success: #34d399;
+    --border-soft: rgba(255, 255, 255, 0.07);
+    --radius-lg: 22px;
+    --radius-md: 16px;
+    --radius-sm: 11px;
+    --shadow-soft: 0 12px 32px rgba(2, 6, 15, 0.45);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  body {
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(59, 130, 246, 0.10), transparent 55%),
+      radial-gradient(circle at 85% 15%, rgba(167, 139, 250, 0.08), transparent 45%),
+      var(--bg);
+  }
+
+  button, input, textarea {
+    font-family: inherit;
+  }
+
+  ::selection { background: rgba(59, 130, 246, 0.35); }
+
+  a, button, input, textarea, [tabindex] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+  }
+
+  .app {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: calc(24px + var(--safe-top)) 18px calc(112px + var(--safe-bottom));
+    min-height: 100vh;
+  }
+
+  .app-header {
+    text-align: center;
+    padding: 8px 0 22px;
+  }
+
+  .app-header .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-lavender));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .app-header .brand-icon {
+    font-size: 26px;
+    filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.45));
+  }
+
+  .app-header p {
+    margin: 6px 0 0;
+    color: var(--text-muted);
+    font-size: 13.5px;
+  }
+
+  .lang-toggle {
+    margin: 14px auto 0;
+    display: inline-flex;
+    gap: 2px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-soft);
+    border-radius: 999px;
+    padding: 3px;
+  }
+
+  .lang-btn {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--text-faint);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 5px 13px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .lang-btn.active {
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-lavender));
+    color: #f8fafc;
+  }
+
+  .tab-panel {
+    animation: none;
+  }
+
+  .tab-panel.panel-enter {
+    animation: fadeSlideIn 0.38s ease both;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .card h2 {
+    margin: 0 0 4px;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .card .card-sub {
+    margin: 0 0 16px;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  label.field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-lavender);
+    margin: 0 0 8px;
+    letter-spacing: 0.01em;
+  }
+
+  textarea, input[type="time"] {
+    width: 100%;
+    background: var(--field-bg);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    padding: 13px 14px;
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.5;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  textarea {
+    min-height: 92px;
+    resize: vertical;
+  }
+
+  textarea::placeholder { color: var(--text-faint); }
+
+  textarea:focus, input[type="time"]:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  }
+
+  .field-group { margin-bottom: 16px; }
+
+  .btn {
+    appearance: none;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 15px 18px;
+    font-size: 15.5px;
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 50px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-lavender));
+    color: #f8fafc;
+    box-shadow: 0 8px 22px rgba(59, 130, 246, 0.28);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-secondary {
+    background: var(--card-bg-soft);
+    color: var(--text);
+    border: 1px solid var(--border-soft);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--accent-blue);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+  }
+
+  .link-quiet {
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-size: 12.5px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    padding: 6px 2px;
+    display: inline-block;
+  }
+
+  .link-quiet:active { opacity: 0.7; }
+
+  .spinner {
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    border: 2.5px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes shake {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-8px); }
+    40%, 60% { transform: translateX(8px); }
+  }
+
+  .shake { animation: shake 0.45s ease; }
+
+  .notice-card {
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    margin-top: 14px;
+    animation: fadeSlideIn 0.3s ease both;
+  }
+
+  .notice-warning {
+    background: rgba(251, 191, 36, 0.09);
+    border: 1px solid rgba(251, 191, 36, 0.32);
+    color: var(--warning);
+  }
+
+  .notice-error {
+    background: rgba(248, 113, 113, 0.09);
+    border: 1px solid rgba(248, 113, 113, 0.32);
+    color: var(--danger);
+  }
+
+  .result-card {
+    margin-top: 16px;
+    background: var(--card-bg-soft);
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    animation: fadeSlideIn 0.45s ease both;
+  }
+
+  .result-card h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: var(--accent-lavender);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .routine-line {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    margin: 0 0 8px;
+  }
+
+  .routine-heading {
+    font-weight: 700;
+    color: var(--accent-blue);
+    margin-top: 14px;
+  }
+
+  .routine-bullet {
+    padding-left: 18px;
+    position: relative;
+  }
+
+  .routine-bullet::before {
+    content: "•";
+    position: absolute;
+    left: 2px;
+    color: var(--accent-lavender);
+  }
+
+  .clock-display {
+    text-align: center;
+    padding: 10px 0 4px;
+  }
+
+  .clock-time {
+    font-size: 52px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, #f8fafc, var(--accent-lavender));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .clock-date {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 13.5px;
+  }
+
+  .alarm-status {
+    margin-top: 12px;
+    font-size: 13.5px;
+    color: var(--text-muted);
+    text-align: center;
+    min-height: 18px;
+  }
+
+  .row-gap { display: flex; flex-direction: column; gap: 12px; }
+
+  .bedtime-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .bedtime-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--field-bg);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    animation: fadeSlideIn 0.3s ease both;
+  }
+
+  .bedtime-time {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .bedtime-meta {
+    font-size: 12px;
+    color: var(--accent-lavender);
+    text-align: right;
+    line-height: 1.4;
+  }
+
+  .tabbar-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 500;
+    display: flex;
+    justify-content: center;
+    background: rgba(15, 22, 38, 0.86);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border-soft);
+    padding-bottom: var(--safe-bottom);
+  }
+
+  .tabbar {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+  }
+
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 11px 8px 9px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    position: relative;
+  }
+
+  .tab-btn .tab-icon { font-size: 21px; transition: transform 0.2s ease; }
+
+  .tab-btn.active { color: var(--accent-blue); }
+
+  .tab-btn.active .tab-icon { transform: translateY(-1px) scale(1.08); }
+
+  .tab-btn.active::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    width: 26px;
+    height: 3px;
+    border-radius: 3px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-lavender));
+  }
+
+  [hidden] { display: none !important; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(2, 6, 15, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: calc(20px + var(--safe-top)) calc(20px + env(safe-area-inset-right, 0px)) calc(20px + var(--safe-bottom)) calc(20px + env(safe-area-inset-left, 0px));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.32s ease;
+  }
+
+  .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+  .modal-panel {
+    width: 100%;
+    max-width: 420px;
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--card-bg);
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    border-radius: var(--radius-lg);
+    padding: 30px 26px;
+    text-align: center;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55);
+    transform: scale(0.9) translateY(14px);
+    transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  }
+
+  .modal-overlay.active .modal-panel { transform: scale(1) translateY(0); }
+
+  .modal-alarm-icon { font-size: 40px; margin-bottom: 6px; }
+
+  .modal-panel h2 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    color: var(--danger);
+    letter-spacing: -0.01em;
+  }
+
+  .modal-panel .modal-sub {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin: 0 0 18px;
+  }
+
+  .countdown-display {
+    font-size: 38px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--warning);
+    margin-bottom: 18px;
+    letter-spacing: 0.02em;
+  }
+
+  .challenge-box {
+    background: var(--field-bg);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    padding: 16px;
+  }
+
+  .challenge-question {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    word-break: break-word;
+  }
+
+  .challenge-input {
+    width: 100%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 16px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .challenge-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  }
+
+  .challenge-error {
+    color: var(--danger);
+    font-size: 13px;
+    margin: -4px 0 12px;
+  }
+
+  .emergency-banner {
+    margin-top: 16px;
+    background: rgba(248, 113, 113, 0.12);
+    border: 1px solid rgba(248, 113, 113, 0.4);
+    color: #fecaca;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    text-align: left;
+  }
+
+  @media (min-width: 640px) {
+    .clock-time { font-size: 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="app-header">
+    <div class="brand"><span class="brand-icon">🌙</span>TimeSync</div>
+    <p data-i18n="headerSubtitle">Circadian rhythm scheduling &amp; sleep-cycle alarms</p>
+    <div class="lang-toggle" role="group" aria-label="Language / ภาษา">
+      <button type="button" class="lang-btn" id="langBtnEn" data-lang="en" aria-pressed="false">EN</button>
+      <button type="button" class="lang-btn" id="langBtnTh" data-lang="th" aria-pressed="false">TH</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="routinePanel" class="tab-panel panel-enter">
+
+      <div class="card">
+        <h2 data-i18n="schedulerHeading">AI Chronotype Scheduler</h2>
+        <p class="card-sub" data-i18n="schedulerSub">List today's tasks and tonight's mood - TimeSync will push high-stress work away from bedtime and build you a screen-free wind-down.</p>
+
+        <div class="field-group">
+          <label class="field-label" for="dailyTasksInput" data-i18n="dailyTasksLabel">Daily Tasks Input</label>
+          <textarea id="dailyTasksInput" data-i18n-placeholder="dailyTasksPlaceholder" placeholder="e.g.&#10;9:00 AM - Team standup&#10;11:00 AM - Draft quarterly report&#10;2:00 PM - Client call&#10;9:00 PM - Review budget numbers (stressful)&#10;10:30 PM - Sleep"></textarea>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="moodReflectionInput" data-i18n="moodLabel">Nightly Mood Reflection</label>
+          <textarea id="moodReflectionInput" data-i18n-placeholder="moodPlaceholder" placeholder="How do you feel tonight? (e.g., stressed about work, physically sore)"></textarea>
+        </div>
+
+        <button class="btn btn-primary" id="generateBtn">
+          <span class="spinner" id="generateSpinner" hidden></span>
+          <span id="generateBtnLabel">Generate My Routine</span>
+        </button>
+
+        <div id="apiKeyWarning" class="notice-card notice-warning" hidden data-i18n-html="apiKeyWarning">
+          Add your Gemini API key to the <code>GEMINI_API_KEY</code> constant in the source code to enable AI routine generation. Requests are skipped until a real key is in place.
+        </div>
+
+        <div id="routineError" class="notice-card notice-error" hidden></div>
+
+        <div id="routineResult" class="result-card" hidden>
+          <h3 data-i18n="resultHeading">Your Personalized Plan</h3>
+          <div id="routineResultContent"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <section id="sleepPanel" class="tab-panel" hidden>
+
+      <div class="card clock-display">
+        <div class="clock-time" id="liveClock">00:00:00</div>
+        <div class="clock-date" id="liveDate">-</div>
+      </div>
+
+      <div class="card">
+        <h2 data-i18n="sleepHeading">Sleep Alarm</h2>
+        <p class="card-sub" data-i18n="sleepSub">Set your wake-up time. TimeSync checks the clock every second and will sound an anti-snooze alarm you must solve to dismiss.</p>
+
+        <div class="field-group">
+          <label class="field-label" for="wakeTimeInput" data-i18n="wakeTimeLabel">Wake-up time</label>
+          <input type="time" id="wakeTimeInput" value="07:00">
+        </div>
+
+        <div class="row-gap">
+          <button class="btn btn-primary" id="setAlarmBtn" data-i18n="setAlarmBtn">Set Alarm</button>
+          <button class="btn btn-outline" id="calcBedtimesBtn" data-i18n="calcBedtimesBtn">Calculate Ideal Bedtimes</button>
+        </div>
+
+        <p class="alarm-status" id="alarmStatusEl">No alarm armed yet.</p>
+
+        <div style="text-align:center; margin-top: 6px;">
+          <button class="link-quiet" id="testAlarmLink" type="button" data-i18n="triggerTestAlarm">Trigger test alarm now</button>
+        </div>
+
+        <div class="bedtime-list" id="bedtimeList" hidden></div>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<nav class="tabbar-wrap">
+  <div class="tabbar">
+    <button class="tab-btn active" data-tab="routine" id="tabBtnRoutine">
+      <span class="tab-icon">📝</span>
+      <span data-i18n="tabRoutine">Routine</span>
+    </button>
+    <button class="tab-btn" data-tab="sleep" id="tabBtnSleep">
+      <span class="tab-icon">⏰</span>
+      <span data-i18n="tabSleep">Sleep Alarm</span>
+    </button>
+  </div>
+</nav>
+
+<div class="modal-overlay" id="alarmModal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-panel">
+    <div class="modal-alarm-icon">⏰</div>
+    <h2 data-i18n="wakeUp">Wake Up!</h2>
+    <p class="modal-sub" data-i18n="modalSub">Solve the challenge below to stop the alarm.</p>
+    <div class="countdown-display" id="alarmCountdown">05:00</div>
+    <div class="challenge-box">
+      <div class="challenge-question" id="challengeQuestion">-</div>
+      <input type="text" class="challenge-input" id="challengeAnswerInput" data-i18n-placeholder="answerPlaceholder" placeholder="Type your answer" autocomplete="off">
+      <div class="challenge-error" id="challengeErrorEl" hidden>Incorrect. Try again.</div>
+      <button class="btn btn-primary" id="challengeSubmitBtn" data-i18n="submit">Submit</button>
+    </div>
+    <div class="emergency-banner" id="emergencyBanner" hidden data-i18n="emergencyBanner">
+      Emergency alert: the countdown ran out. Please wake up now.
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const GEMINI_API_KEY = "AQ.Ab8RN6IRCpRV-hVGx4v83JT5_lnp8JYkvxY2AZ6zWVesYp50Xg";
+
+  const $ = (id) => document.getElementById(id);
+  const pad = (n) => String(n).padStart(2, "0");
+
+  /* ---------- i18n: translations, language state, helpers ---------- */
+  const TRANSLATIONS = {
+    en: {
+      headerSubtitle: "Circadian rhythm scheduling & sleep-cycle alarms",
+      schedulerHeading: "AI Chronotype Scheduler",
+      schedulerSub: "List today's tasks and tonight's mood - TimeSync will push high-stress work away from bedtime and build you a screen-free wind-down.",
+      dailyTasksLabel: "Daily Tasks Input",
+      dailyTasksPlaceholder: "e.g.\n9:00 AM - Team standup\n11:00 AM - Draft quarterly report\n2:00 PM - Client call\n9:00 PM - Review budget numbers (stressful)\n10:30 PM - Sleep",
+      moodLabel: "Nightly Mood Reflection",
+      moodPlaceholder: "How do you feel tonight? (e.g., stressed about work, physically sore)",
+      generateBtn: "Generate My Routine",
+      generating: "Generating...",
+      apiKeyWarning: 'Add your Gemini API key to the <code>GEMINI_API_KEY</code> constant in the source code to enable AI routine generation. Requests are skipped until a real key is in place.',
+      resultHeading: "Your Personalized Plan",
+      errorPrefix: "Could not generate your routine: ",
+      tabRoutine: "Routine",
+      tabSleep: "Sleep Alarm",
+      sleepHeading: "Sleep Alarm",
+      sleepSub: "Set your wake-up time. TimeSync checks the clock every second and will sound an anti-snooze alarm you must solve to dismiss.",
+      wakeTimeLabel: "Wake-up time",
+      setAlarmBtn: "Set Alarm",
+      calcBedtimesBtn: "Calculate Ideal Bedtimes",
+      noAlarmArmed: "No alarm armed yet.",
+      triggerTestAlarm: "Trigger test alarm now",
+      chooseWakeTimeFirst: "Please choose a wake-up time first.",
+      alarmArmedFor: "Alarm armed for {time}. Keep this tab open.",
+      testAlarmFiring: "Test alarm firing in a few seconds...",
+      testAlarmSolved: "Test alarm solved. Your real alarm is still armed.",
+      alarmResolved: "Alarm resolved. Set a new alarm anytime.",
+      bedtimeMeta: "{cycles} cycles - {hours}h sleep",
+      wakeUp: "Wake Up!",
+      modalSub: "Solve the challenge below to stop the alarm.",
+      answerPlaceholder: "Type your answer",
+      incorrectTryAgain: "Incorrect. Try again.",
+      submit: "Submit",
+      emergencyBanner: "Emergency alert: the countdown ran out. Please wake up now.",
+      retypePhrase: 'Type this phrase exactly: "{phrase}"',
+      wrongMath: "Not quite - check your math and try again.",
+      wrongPhrase: "That doesn't match exactly - try again.",
+      sectionTitle1: "STRESS-SAFE SCHEDULE",
+      sectionTitle2: "SCREEN-FREE WIND-DOWN ROUTINE"
+    },
+    th: {
+      headerSubtitle: "จัดตารางตามจังหวะชีวภาพ และปลุกตามรอบการนอนหลับ",
+      schedulerHeading: "ตัวจัดตารางตามไครโนไทป์ด้วย AI",
+      schedulerSub: "ระบุงานของวันนี้และอารมณ์ของคืนนี้ - TimeSync จะย้ายงานที่เครียดสูงให้ห่างจากเวลานอน และสร้างช่วงผ่อนคลายแบบไม่ใช้หน้าจอให้คุณ",
+      dailyTasksLabel: "รายการงานประจำวัน",
+      dailyTasksPlaceholder: "เช่น\n9:00 น. - ประชุมทีมประจำวัน\n11:00 น. - ร่างรายงานประจำไตรมาส\n14:00 น. - โทรคุยกับลูกค้า\n21:00 น. - ตรวจสอบตัวเลขงบประมาณ (เครียด)\n22:30 น. - เข้านอน",
+      moodLabel: "บันทึกอารมณ์ก่อนนอน",
+      moodPlaceholder: "คืนนี้คุณรู้สึกอย่างไร (เช่น เครียดเรื่องงาน หรือปวดเมื่อยตามร่างกาย)",
+      generateBtn: "สร้างกิจวัตรของฉัน",
+      generating: "กำลังสร้าง...",
+      apiKeyWarning: 'เพิ่มคีย์ Gemini API ของคุณในค่าคงที่ <code>GEMINI_API_KEY</code> ในซอร์สโค้ด เพื่อเปิดใช้งานการสร้างกิจวัตรด้วย AI ระบบจะข้ามคำขอไปจนกว่าจะใส่คีย์จริงเรียบร้อยแล้ว',
+      resultHeading: "แผนส่วนตัวของคุณ",
+      errorPrefix: "ไม่สามารถสร้างกิจวัตรของคุณได้: ",
+      tabRoutine: "กิจวัตร",
+      tabSleep: "นาฬิกาปลุก",
+      sleepHeading: "นาฬิกาปลุก",
+      sleepSub: "ตั้งเวลาที่คุณต้องการตื่น TimeSync จะตรวจสอบเวลาทุกวินาที และจะส่งเสียงปลุกแบบต้องแก้โจทย์ก่อนจึงจะปิดได้",
+      wakeTimeLabel: "เวลาตื่นนอน",
+      setAlarmBtn: "ตั้งปลุก",
+      calcBedtimesBtn: "คำนวณเวลาเข้านอนที่เหมาะสม",
+      noAlarmArmed: "ยังไม่ได้ตั้งปลุก",
+      triggerTestAlarm: "ทดสอบเสียงปลุกตอนนี้",
+      chooseWakeTimeFirst: "กรุณาเลือกเวลาตื่นนอนก่อน",
+      alarmArmedFor: "ตั้งปลุกเวลา {time} แล้ว กรุณาเปิดแท็บนี้ไว้",
+      testAlarmFiring: "เสียงปลุกทดสอบจะดังในอีกไม่กี่วินาที...",
+      testAlarmSolved: "แก้โจทย์ปลุกทดสอบสำเร็จแล้ว ปลุกจริงของคุณยังคงตั้งไว้อยู่",
+      alarmResolved: "ปิดเสียงปลุกเรียบร้อยแล้ว ตั้งปลุกใหม่ได้ทุกเมื่อ",
+      bedtimeMeta: "{cycles} รอบ - นอน {hours} ชม.",
+      wakeUp: "ตื่นได้แล้ว!",
+      modalSub: "แก้โจทย์ด้านล่างเพื่อหยุดเสียงปลุก",
+      answerPlaceholder: "พิมพ์คำตอบของคุณ",
+      incorrectTryAgain: "ไม่ถูกต้อง ลองใหม่อีกครั้ง",
+      submit: "ส่งคำตอบ",
+      emergencyBanner: "แจ้งเตือนฉุกเฉิน: เวลานับถอยหลังหมดแล้ว กรุณาตื่นได้แล้วนะ",
+      retypePhrase: 'พิมพ์ประโยคนี้ให้ตรงทุกตัวอักษร: "{phrase}"',
+      wrongMath: "ยังไม่ถูก ลองตรวจสอบการคำนวณอีกครั้ง",
+      wrongPhrase: "พิมพ์ไม่ตรงกับต้นฉบับ ลองใหม่อีกครั้ง",
+      sectionTitle1: "ตารางที่ปลอดภัยจากความเครียด",
+      sectionTitle2: "กิจวัตรผ่อนคลายแบบไม่ใช้หน้าจอ"
+    }
+  };
+
+  const MOTIVATIONAL_PHRASES = {
+    en: [
+      "I rise with purpose and energy",
+      "Today I choose discipline over comfort",
+      "My mornings build my future",
+      "I am awake, alert, and ready"
+    ],
+    th: [
+      "วันนี้ฉันเลือกที่จะตื่นด้วยพลังบวก",
+      "ฉันพร้อมเริ่มต้นวันใหม่อย่างสดชื่น",
+      "ทุกเช้าคือโอกาสใหม่ของฉัน",
+      "ฉันตื่นตัวและพร้อมลุยวันนี้"
+    ]
+  };
+
+  let currentLang = null;
+  try {
+    currentLang = localStorage.getItem("timesync-lang");
+  } catch (err) {
+    currentLang = null;
+  }
+  if (currentLang !== "en" && currentLang !== "th") {
+    currentLang = (navigator.language || "").toLowerCase().indexOf("th") === 0 ? "th" : "en";
+  }
+
+  function t(key, vars) {
+    const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+    let str = dict[key];
+    if (str === undefined) str = TRANSLATIONS.en[key] || "";
+    if (vars) {
+      Object.keys(vars).forEach((k) => {
+        str = str.split("{" + k + "}").join(String(vars[k]));
+      });
+    }
+    return str;
+  }
+
+  const langBtnEn = $("langBtnEn");
+  const langBtnTh = $("langBtnTh");
+
+  // State captured so dynamic (non-markup) strings can be re-rendered in the
+  // new language immediately when the user switches, instead of only the
+  // static data-i18n markup updating.
+  let isGeneratingNow = false;
+  let lastRoutineErrorMessage = null;
+  let lastBedtimeResults = null;
+  let alarmStatusState = { key: "noAlarmArmed", vars: null };
+  let lastChallengeErrorType = null;
+
+  function applyTranslations() {
+    document.documentElement.lang = currentLang;
+
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+      el.textContent = t(el.getAttribute("data-i18n"));
+    });
+    document.querySelectorAll("[data-i18n-html]").forEach((el) => {
+      el.innerHTML = t(el.getAttribute("data-i18n-html"));
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+      el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));
+    });
+
+    if (langBtnEn && langBtnTh) {
+      langBtnEn.classList.toggle("active", currentLang === "en");
+      langBtnTh.classList.toggle("active", currentLang === "th");
+      langBtnEn.setAttribute("aria-pressed", String(currentLang === "en"));
+      langBtnTh.setAttribute("aria-pressed", String(currentLang === "th"));
+    }
+
+    if (generateBtnLabel) {
+      generateBtnLabel.textContent = isGeneratingNow ? t("generating") : t("generateBtn");
+    }
+
+    if (alarmStatusEl) {
+      alarmStatusEl.textContent = t(alarmStatusState.key, alarmStatusState.vars || undefined);
+    }
+
+    if (routineError && !routineError.hidden && lastRoutineErrorMessage !== null) {
+      routineError.textContent = t("errorPrefix") + lastRoutineErrorMessage;
+    }
+
+    if (bedtimeList && !bedtimeList.hidden && lastBedtimeResults) {
+      renderBedtimeRows(lastBedtimeResults);
+    }
+
+    if (challengeErrorEl) {
+      challengeErrorEl.textContent = lastChallengeErrorType
+        ? (lastChallengeErrorType === "phrase" ? t("wrongPhrase") : t("wrongMath"))
+        : t("incorrectTryAgain");
+    }
+
+    if (currentChallenge && alarmModal && alarmModal.classList.contains("active")) {
+      refreshChallengeText();
+    }
+  }
+
+  function setLanguage(lang) {
+    if (lang !== "en" && lang !== "th") return;
+    if (lang === currentLang) return;
+    currentLang = lang;
+    try { localStorage.setItem("timesync-lang", lang); } catch (err) {}
+    applyTranslations();
+  }
+
+  function setAlarmStatus(key, vars) {
+    alarmStatusState = { key: key, vars: vars || null };
+    if (alarmStatusEl) alarmStatusEl.textContent = t(key, vars);
+  }
+
+  function showChallengeError(type) {
+    lastChallengeErrorType = type;
+    challengeErrorEl.hidden = false;
+    challengeErrorEl.textContent = type === "phrase" ? t("wrongPhrase") : t("wrongMath");
+  }
+
+  function refreshChallengeText() {
+    if (!currentChallenge) return;
+    if (currentChallenge.type === "math") {
+      challengeQuestionEl.textContent = currentChallenge.question;
+    } else {
+      const phrases = MOTIVATIONAL_PHRASES[currentLang] || MOTIVATIONAL_PHRASES.en;
+      const idx = currentChallenge.phraseIndex % phrases.length;
+      const phrase = phrases[idx];
+      currentChallenge.answer = phrase;
+      currentChallenge.question = t("retypePhrase", { phrase: phrase });
+      challengeQuestionEl.textContent = currentChallenge.question;
+    }
+  }
+
+  if (langBtnEn) langBtnEn.addEventListener("click", () => setLanguage("en"));
+  if (langBtnTh) langBtnTh.addEventListener("click", () => setLanguage("th"));
+
+  /* ---------- Tab switching ---------- */
+  const tabButtons = document.querySelectorAll(".tab-btn");
+  const panels = { routine: $("routinePanel"), sleep: $("sleepPanel") };
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (btn.classList.contains("active")) return;
+      tabButtons.forEach((b) => b.classList.toggle("active", b === btn));
+      const target = btn.dataset.tab;
+      Object.entries(panels).forEach(([key, panel]) => {
+        if (key === target) {
+          panel.hidden = false;
+          panel.classList.remove("panel-enter");
+          void panel.offsetWidth;
+          panel.classList.add("panel-enter");
+        } else {
+          panel.hidden = true;
+        }
+      });
+    });
+  });
+
+  /* ---------- Routine generator ---------- */
+  const dailyTasksInput = $("dailyTasksInput");
+  const moodReflectionInput = $("moodReflectionInput");
+  const generateBtn = $("generateBtn");
+  const generateSpinner = $("generateSpinner");
+  const generateBtnLabel = $("generateBtnLabel");
+  const apiKeyWarning = $("apiKeyWarning");
+  const routineError = $("routineError");
+  const routineResult = $("routineResult");
+  const routineResultContent = $("routineResultContent");
+
+  function buildPromptText(tasks, mood) {
+    let prompt = "You are a circadian rhythm and sleep optimization coach. A user has shared their daily task list and a nightly mood reflection.\n\n" +
+      "Daily Tasks:\n" + (tasks || "(no tasks provided)") + "\n\n" +
+      "Nightly Mood Reflection:\n" + (mood || "(no reflection provided)") + "\n\n" +
+      "Please respond with two clearly headed sections:\n" +
+      "1. STRESS-SAFE SCHEDULE - Look through the daily tasks above and identify any that are high-stress, cognitively demanding, or emotionally charged (deadlines, confrontations, financial reviews, difficult conversations, etc). If any such task is scheduled close to bedtime, call it out explicitly and reschedule it earlier in the day so it is blocked out well before sleep, keeping the hours right before bed calm and low-stimulation. Show the revised order of tasks.\n" +
+      "2. SCREEN-FREE WIND-DOWN ROUTINE - Using the nightly mood reflection, write a personalized, fully screen-free wind-down routine that lasts exactly 20 minutes, broken into timed steps (for example 0-5 min, 5-12 min, 12-20 min). Tailor it specifically to the mood described: someone stressed about work should get calming breathing, journaling, or mental-decompression techniques, while someone physically sore should get gentle stretching, self-massage, or warmth-based relief. Never suggest phones, screens, or bright lights.\n\n" +
+      "Format the answer with short headings and concise bullet points so it can be scanned quickly at night. Do not use Markdown formatting such as asterisks, underscores, backticks, or pound signs for emphasis or headings - write plain text lines only, keeping the section titles exactly as \"1. STRESS-SAFE SCHEDULE\" and \"2. SCREEN-FREE WIND-DOWN ROUTINE\".";
+
+    if (currentLang === "th") {
+      const s1 = t("sectionTitle1");
+      const s2 = t("sectionTitle2");
+      prompt += "\n\nWrite your entire response in Thai (ภาษาไทย). Use these exact section titles instead of the English ones given above: \"1. " + s1 + "\" and \"2. " + s2 + "\".";
+    }
+
+    return prompt;
+  }
+
+  function setGenerating(isLoading) {
+    isGeneratingNow = isLoading;
+    generateBtn.disabled = isLoading;
+    generateSpinner.hidden = !isLoading;
+    generateBtnLabel.textContent = isLoading ? t("generating") : t("generateBtn");
+  }
+
+  function stripMarkdownEmphasis(line) {
+    return line
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      .replace(/^\*(.*?)\*$/g, "$1")
+      .replace(/`/g, "");
+  }
+
+  function renderRoutineResult(text) {
+    routineResultContent.innerHTML = "";
+    const lines = text.split("\n");
+    const sectionTitles = [t("sectionTitle1").trim().toLowerCase(), t("sectionTitle2").trim().toLowerCase()];
+    lines.forEach((rawLine) => {
+      const trimmed = rawLine.trim();
+      if (!trimmed) return;
+      const line = stripMarkdownEmphasis(trimmed);
+      const div = document.createElement("div");
+      div.classList.add("routine-line");
+
+      // Check for the app's own numbered section titles (e.g. "1. STRESS-SAFE
+      // SCHEDULE" or its Thai equivalent) before the generic numbered-bullet
+      // pattern, otherwise these headers would be misclassified as plain
+      // numbered bullets instead of section headings. The ALL-CAPS regex only
+      // ever matches Latin script (Thai has no letter case), so headings are
+      // also matched by comparing the text after a leading "N. " prefix
+      // against the exact current-language section title strings.
+      const numberedPrefixMatch = /^\d+\.\s+(.*)$/.exec(line);
+      const isKnownSectionHeading = !!(numberedPrefixMatch &&
+        sectionTitles.indexOf(numberedPrefixMatch[1].trim().toLowerCase()) !== -1);
+      const isAllCapsHeading = /^\d+\.\s+[A-Z][A-Z\s-]{3,}$/.test(line);
+
+      if (isKnownSectionHeading || isAllCapsHeading) {
+        div.classList.add("routine-heading");
+        div.textContent = line;
+      } else if (/:$/.test(line) || /^#+\s/.test(line)) {
+        div.classList.add("routine-heading");
+        div.textContent = line.replace(/^#+\s*/, "");
+      } else {
+        const bulletMatch = /^([*-]|\d+\.)\s+(.*)$/.exec(line);
+        if (bulletMatch) {
+          div.classList.add("routine-bullet");
+          div.textContent = bulletMatch[2];
+        } else {
+          div.textContent = line;
+        }
+      }
+      routineResultContent.appendChild(div);
+    });
+    routineResult.hidden = false;
+    routineResult.classList.remove("result-card");
+    void routineResult.offsetWidth;
+    routineResult.classList.add("result-card");
+  }
+
+  async function handleGenerateRoutine() {
+    apiKeyWarning.hidden = true;
+    routineError.hidden = true;
+    lastRoutineErrorMessage = null;
+    routineResult.hidden = true;
+
+    const tasks = dailyTasksInput.value.trim();
+    const mood = moodReflectionInput.value.trim();
+    const promptText = buildPromptText(tasks, mood);
+    const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
+
+    setGenerating(true);
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-goog-api-key": GEMINI_API_KEY },
+        body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+      });
+      if (!response.ok) {
+        throw new Error("Gemini API request failed with status " + response.status);
+      }
+      const data = await response.json();
+      const text = data.candidates[0].content.parts[0].text;
+      renderRoutineResult(text);
+    } catch (err) {
+      routineError.hidden = false;
+      lastRoutineErrorMessage = err.message;
+      routineError.textContent = t("errorPrefix") + err.message;
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  generateBtn.addEventListener("click", handleGenerateRoutine);
+
+  /* ---------- Live clock ---------- */
+  const liveClockEl = $("liveClock");
+  const liveDateEl = $("liveDate");
+
+  function updateClock() {
+    const now = new Date();
+    liveClockEl.textContent = pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+    liveDateEl.textContent = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  /* ---------- Bedtime calculator ---------- */
+  const calcBedtimesBtn = $("calcBedtimesBtn");
+  const wakeTimeInput = $("wakeTimeInput");
+  const bedtimeList = $("bedtimeList");
+
+  function formatTime12(date) {
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const suffix = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
+    return hours + ":" + pad(minutes) + " " + suffix;
+  }
+
+  function calculateBedtimes(wakeTimeStr) {
+    const [hh, mm] = wakeTimeStr.split(":").map(Number);
+    const wake = new Date();
+    wake.setHours(hh, mm, 0, 0);
+    const fallAsleepBufferMinutes = 15;
+    return [6, 5, 4, 3].map((cycleCount) => {
+      const sleepMinutes = cycleCount * 90;
+      const bedtime = new Date(wake.getTime() - (sleepMinutes + fallAsleepBufferMinutes) * 60000);
+      return { cycles: cycleCount, hours: sleepMinutes / 60, bedtime };
+    });
+  }
+
+  function renderBedtimeRows(results) {
+    bedtimeList.innerHTML = "";
+    results.forEach((entry) => {
+      const row = document.createElement("div");
+      row.classList.add("bedtime-row");
+      const time = document.createElement("div");
+      time.classList.add("bedtime-time");
+      time.textContent = formatTime12(entry.bedtime);
+      const meta = document.createElement("div");
+      meta.classList.add("bedtime-meta");
+      meta.textContent = t("bedtimeMeta", { cycles: entry.cycles, hours: entry.hours });
+      row.appendChild(time);
+      row.appendChild(meta);
+      bedtimeList.appendChild(row);
+    });
+  }
+
+  calcBedtimesBtn.addEventListener("click", () => {
+    if (!wakeTimeInput.value) return;
+    lastBedtimeResults = calculateBedtimes(wakeTimeInput.value);
+    renderBedtimeRows(lastBedtimeResults);
+    bedtimeList.hidden = false;
+  });
+
+  /* ---------- Alarm arming ---------- */
+  const setAlarmBtn = $("setAlarmBtn");
+  const alarmStatusEl = $("alarmStatusEl");
+  const testAlarmLink = $("testAlarmLink");
+
+  let alarmCheckInterval = null;
+  let targetHours = null;
+  let targetMinutes = null;
+  let hasFiredThisMinute = false;
+  let isTestFire = false;
+  let testAlarmTimeoutId = null;
+
+  function checkAlarmTime() {
+    const now = new Date();
+    if (now.getHours() === targetHours && now.getMinutes() === targetMinutes) {
+      if (!hasFiredThisMinute) {
+        hasFiredThisMinute = true;
+        // Don't stack a real alarm on top of a modal that's already showing
+        // (e.g. an unresolved test alarm) — leave the current one to be solved.
+        if (alarmModal.classList.contains("active")) return;
+        isTestFire = false;
+        fireAlarmModal();
+      }
+    } else {
+      hasFiredThisMinute = false;
+    }
+  }
+
+  setAlarmBtn.addEventListener("click", () => {
+    if (!wakeTimeInput.value) {
+      setAlarmStatus("chooseWakeTimeFirst");
+      return;
+    }
+    const [hh, mm] = wakeTimeInput.value.split(":").map(Number);
+    targetHours = hh;
+    targetMinutes = mm;
+    hasFiredThisMinute = false;
+    if (alarmCheckInterval) clearInterval(alarmCheckInterval);
+    alarmCheckInterval = setInterval(checkAlarmTime, 1000);
+    const label = new Date();
+    label.setHours(hh, mm, 0, 0);
+    setAlarmStatus("alarmArmedFor", { time: formatTime12(label) });
+  });
+
+  testAlarmLink.addEventListener("click", () => {
+    // Guard against stacking a new test alarm on top of one that's already showing.
+    if (alarmModal.classList.contains("active")) return;
+    if (testAlarmTimeoutId) {
+      clearTimeout(testAlarmTimeoutId);
+    }
+    setAlarmStatus("testAlarmFiring");
+    testAlarmTimeoutId = setTimeout(() => {
+      testAlarmTimeoutId = null;
+      isTestFire = true;
+      fireAlarmModal();
+    }, 2500);
+  });
+
+  /* ---------- Alarm sound (Web Audio API) ---------- */
+  let audioCtx = null;
+  let beepIntervalId = null;
+
+  function startAlarmSound() {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume().catch(() => {});
+      }
+      const playBeep = () => {
+        if (!audioCtx) return;
+        audioCtx.resume().catch(() => {});
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = 880;
+        gain.gain.value = 0.22;
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.4);
+      };
+      playBeep();
+      beepIntervalId = setInterval(playBeep, 700);
+    } catch (err) {
+      console.warn("Web Audio API unavailable:", err);
+    }
+  }
+
+  function stopAlarmSound() {
+    if (beepIntervalId) {
+      clearInterval(beepIntervalId);
+      beepIntervalId = null;
+    }
+    if (audioCtx) {
+      audioCtx.close();
+      audioCtx = null;
+    }
+  }
+
+  /* ---------- Alarm modal + anti-snooze challenge ---------- */
+  const alarmModal = $("alarmModal");
+  const alarmCountdownEl = $("alarmCountdown");
+  const challengeQuestionEl = $("challengeQuestion");
+  const challengeAnswerInput = $("challengeAnswerInput");
+  const challengeErrorEl = $("challengeErrorEl");
+  const challengeSubmitBtn = $("challengeSubmitBtn");
+  const emergencyBanner = $("emergencyBanner");
+  const appRoot = document.querySelector(".app");
+  const tabbarWrap = document.querySelector(".tabbar-wrap");
+
+  let currentChallenge = null;
+  let countdownInterval = null;
+  let remainingSeconds = 300;
+
+  function generateChallenge() {
+    if (Math.random() < 0.5) {
+      let a = Math.floor(Math.random() * 90) + 10;
+      let b = Math.floor(Math.random() * 90) + 10;
+      const op = Math.random() < 0.5 ? "+" : "-";
+      if (op === "-" && a < b) {
+        [a, b] = [b, a];
+      }
+      const answer = op === "+" ? a + b : a - b;
+      return { type: "math", question: a + " " + op + " " + b + " = ?", answer: String(answer) };
+    }
+    const phrases = MOTIVATIONAL_PHRASES[currentLang] || MOTIVATIONAL_PHRASES.en;
+    const phraseIndex = Math.floor(Math.random() * phrases.length);
+    const phrase = phrases[phraseIndex];
+    return { type: "phrase", question: t("retypePhrase", { phrase: phrase }), answer: phrase, phraseIndex: phraseIndex };
+  }
+
+  function updateCountdownDisplay() {
+    const m = Math.floor(remainingSeconds / 60);
+    const s = remainingSeconds % 60;
+    alarmCountdownEl.textContent = pad(m) + ":" + pad(s);
+  }
+
+  function tickCountdown() {
+    remainingSeconds -= 1;
+    if (remainingSeconds <= 0) {
+      remainingSeconds = 0;
+      updateCountdownDisplay();
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+      triggerEmergencyAlert();
+      return;
+    }
+    updateCountdownDisplay();
+  }
+
+  function fireAlarmModal() {
+    currentChallenge = generateChallenge();
+    challengeQuestionEl.textContent = currentChallenge.question;
+    challengeAnswerInput.value = "";
+    lastChallengeErrorType = null;
+    challengeErrorEl.hidden = true;
+    challengeErrorEl.textContent = t("incorrectTryAgain");
+    emergencyBanner.hidden = true;
+    remainingSeconds = 300;
+    updateCountdownDisplay();
+
+    alarmModal.classList.add("active");
+    alarmModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    // Make the rest of the document inert so a keyboard user can't Tab past
+    // the challenge input/submit button onto page controls behind the overlay.
+    if (appRoot) appRoot.setAttribute("inert", "");
+    if (tabbarWrap) tabbarWrap.setAttribute("inert", "");
+
+    // Tear down any orphaned beep interval/AudioContext from a prior unresolved
+    // invocation before starting a fresh one.
+    stopAlarmSound();
+    startAlarmSound();
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdownInterval = setInterval(tickCountdown, 1000);
+    setTimeout(() => challengeAnswerInput.focus(), 50);
+  }
+
+  function resolveAlarm() {
+    const wasTestFire = isTestFire;
+    stopAlarmSound();
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+    if (testAlarmTimeoutId) {
+      clearTimeout(testAlarmTimeoutId);
+      testAlarmTimeoutId = null;
+    }
+    // Only disarm the real wake alarm's polling loop when the modal being
+    // resolved actually came from the real alarm, not from the test trigger.
+    if (!wasTestFire && alarmCheckInterval) {
+      clearInterval(alarmCheckInterval);
+      alarmCheckInterval = null;
+    }
+    isTestFire = false;
+
+    alarmModal.classList.remove("active");
+    alarmModal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    if (appRoot) appRoot.removeAttribute("inert");
+    if (tabbarWrap) tabbarWrap.removeAttribute("inert");
+
+    setAlarmStatus((wasTestFire && alarmCheckInterval) ? "testAlarmSolved" : "alarmResolved");
+  }
+
+  function triggerEmergencyAlert() {
+    emergencyBanner.hidden = false;
+  }
+
+  function handleChallengeSubmit() {
+    if (!currentChallenge) return;
+    const value = challengeAnswerInput.value.trim();
+    const correct = value === currentChallenge.answer;
+    if (correct) {
+      resolveAlarm();
+      return;
+    }
+    showChallengeError(currentChallenge.type === "math" ? "math" : "phrase");
+    const box = challengeAnswerInput.closest(".challenge-box");
+    box.classList.remove("shake");
+    void box.offsetWidth;
+    box.classList.add("shake");
+    challengeAnswerInput.value = "";
+    challengeAnswerInput.focus();
+  }
+
+  challengeSubmitBtn.addEventListener("click", handleChallengeSubmit);
+  challengeAnswerInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleChallengeSubmit();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (alarmModal.classList.contains("active") && e.key === "Escape") {
+      e.preventDefault();
+    }
+  });
+
+  /* ---------- Apply translations now that all sections are wired up ---------- */
+  applyTranslations();
+
+  /* ---------- PWA: service worker registration ---------- */
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch((err) => {
+        console.warn("Service worker registration failed:", err);
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>
