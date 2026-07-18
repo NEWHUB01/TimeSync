@@ -1,5 +1,5 @@
 /* TimeSync service worker */
-const CACHE_NAME = "timesync-v2";
+const CACHE_NAME = "timesync-v3";
 const PRECACHE_URLS = [
   "./",
   "./index.html",

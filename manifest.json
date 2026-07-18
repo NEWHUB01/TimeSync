@@ -1,13 +1,13 @@
 {
   "name": "TimeSync – Smart Sleep Calculator",
   "short_name": "TimeSync",
-  "description": "คำนวณเวลานอนที่ใช่ เพื่อพลังงานที่เต็ม 100% ด้วยหลัก BMR, NSF และรอบการนอน 90 นาที พร้อมนาฬิกาปลุกกันงีบ",
+  "description": "คำนวณเวลานอนที่ใช่ ด้วยหลักสถิติ NSF/AASM และรอบการนอน 90 นาที ปลุกในช่วง Light Sleep แจ้งเตือนผ่าน Telegram",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#060b18",
-  "theme_color": "#060b18",
+  "background_color": "#e9eff9",
+  "theme_color": "#eef2fb",
   "lang": "th",
   "categories": ["health", "lifestyle", "productivity"],
   "icons": [

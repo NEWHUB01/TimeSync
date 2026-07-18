@@ -3,1412 +3,1333 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#060b18">
-<meta name="description" content="TimeSync – Smart Sleep Calculator. คำนวณเวลานอนที่ใช่ เพื่อพลังงานที่เต็ม 100% ด้วยหลักชีววิทยา BMR, NSF และรอบการนอน 90 นาที">
+<meta name="theme-color" content="#eef2fb" id="themeColorMeta">
+<meta name="description" content="TimeSync – Smart Sleep Calculator. คำนวณเวลานอนที่ใช่ ด้วยหลักสถิติ NSF/AASM และรอบการนอน 90 นาที ปลุกในช่วง Light Sleep">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="TimeSync">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
 <title>TimeSync – Smart Sleep Calculator</title>
 <style>
   :root {
+    color-scheme: light;
+    /* Light theme (default, matches mockup) */
+    --bg: #e9eff9;
+    --bg-grad-1: rgba(99, 130, 246, 0.10);
+    --bg-grad-2: rgba(139, 170, 250, 0.10);
+    --card: #ffffff;
+    --card-2: #f4f7fd;
+    --field: #eef3fb;
+    --field-2: #e7eefaff;
+    --ink: #1d2942;
+    --muted: #7a879f;
+    --faint: #a6b1c7;
+    --line: #e8edf6;
+    --line-2: #dce4f1;
+    --primary: #3d5bf5;
+    --primary-2: #6f8bfb;
+    --primary-soft: #eaeeff;
+    --navy: #1b2647;
+    --navy-2: #29365c;
+    --green: #16a34a;
+    --green-bg: #dcfce7;
+    --amber: #d97706;
+    --amber-bg: #fef3c7;
+    --danger: #dc2626;
+    --danger-bg: #fee2e2;
+    --shadow: 0 10px 30px rgba(29, 52, 120, 0.10);
+    --shadow-sm: 0 4px 14px rgba(29, 52, 120, 0.07);
+    --r-xl: 26px; --r-lg: 20px; --r-md: 15px; --r-sm: 11px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --grad: linear-gradient(135deg, #6f8bfb, #3d5bf5);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
     --bg: #060b18;
-    --bg-2: #0a1225;
+    --bg-grad-1: rgba(56, 189, 248, 0.14);
+    --bg-grad-2: rgba(167, 139, 250, 0.12);
     --card: #0f1a33;
     --card-2: #131f3b;
     --field: #0b1428;
-    --line: rgba(120, 160, 240, 0.12);
-    --line-strong: rgba(120, 160, 240, 0.28);
-    --blue: #3b82f6;
-    --cyan: #38bdf8;
-    --lav: #a78bfa;
-    --text: #e6edf8;
+    --field-2: #0e1830;
+    --ink: #e6edf8;
     --muted: #93a4c4;
-    --faint: #62718f;
-    --danger: #f87171;
-    --warn: #fbbf24;
-    --ok: #34d399;
-    --r-lg: 22px;
-    --r-md: 16px;
-    --r-sm: 12px;
-    --shadow: 0 18px 40px rgba(2, 6, 18, 0.55);
-    --glow: 0 0 24px rgba(56, 189, 248, 0.35);
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --grad: linear-gradient(135deg, var(--cyan), var(--blue) 55%, var(--lav));
+    --faint: #5d6b88;
+    --line: rgba(120,160,240,0.13);
+    --line-2: rgba(120,160,240,0.20);
+    --primary: #4f74ff;
+    --primary-2: #7c9bff;
+    --primary-soft: rgba(79,116,255,0.16);
+    --navy: #0c162e;
+    --navy-2: #17233f;
+    --green: #34d399; --green-bg: rgba(52,211,153,0.16);
+    --amber: #fbbf24; --amber-bg: rgba(251,191,36,0.15);
+    --danger: #f87171; --danger-bg: rgba(248,113,113,0.15);
+    --shadow: 0 16px 36px rgba(2,6,18,0.5);
+    --shadow-sm: 0 6px 18px rgba(2,6,18,0.4);
+    --grad: linear-gradient(135deg, #38bdf8, #4f74ff);
   }
 
   * { box-sizing: border-box; }
-
-  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
-
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
   body {
     min-height: 100vh;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Sarabun", "Noto Sans Thai", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     background:
-      radial-gradient(1200px 520px at 15% -8%, rgba(56, 189, 248, 0.16), transparent 60%),
-      radial-gradient(1000px 460px at 92% 4%, rgba(167, 139, 250, 0.14), transparent 55%),
-      radial-gradient(900px 520px at 50% 108%, rgba(59, 130, 246, 0.12), transparent 60%),
+      radial-gradient(1000px 460px at 12% -6%, var(--bg-grad-1), transparent 60%),
+      radial-gradient(900px 420px at 96% 2%, var(--bg-grad-2), transparent 55%),
       var(--bg);
     background-attachment: fixed;
+    transition: background-color .3s ease, color .3s ease;
   }
-
   button, input, select, textarea { font-family: inherit; }
-  ::selection { background: rgba(56, 189, 248, 0.35); }
-
+  ::selection { background: rgba(61,91,245,0.22); }
   a, button, input, select, textarea, [tabindex] { -webkit-tap-highlight-color: transparent; }
-
-  button:focus-visible, input:focus-visible, select:focus-visible,
-  textarea:focus-visible, a:focus-visible {
-    outline: 2px solid var(--cyan);
-    outline-offset: 2px;
+  button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+    outline: 2px solid var(--primary); outline-offset: 2px;
   }
 
-  .app {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: calc(20px + var(--safe-top)) 16px calc(118px + var(--safe-bottom));
-    min-height: 100vh;
-  }
+  .app { max-width: 460px; margin: 0 auto; padding: 0 0 calc(96px + var(--safe-bottom)); min-height: 100vh; }
 
-  /* ---------- Header ---------- */
-  .app-header { text-align: center; padding: 6px 0 14px; }
-  .brand {
-    display: inline-flex; align-items: center; gap: 11px;
-    font-size: 28px; font-weight: 800; letter-spacing: -0.02em;
+  /* ---------- Top app bar ---------- */
+  .topbar {
+    position: sticky; top: 0; z-index: 400;
+    display: flex; align-items: center; gap: 10px;
+    padding: calc(12px + var(--safe-top)) 18px 12px;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid transparent;
   }
-  .brand .logo {
-    width: 38px; height: 38px; border-radius: 12px;
-    display: grid; place-items: center; font-size: 21px;
-    background: var(--grad);
-    box-shadow: 0 8px 22px rgba(56, 189, 248, 0.4);
+  .topbar.scrolled { border-bottom-color: var(--line); }
+  .tb-btn {
+    width: 40px; height: 40px; flex-shrink: 0; border: none; background: var(--card);
+    border-radius: 12px; box-shadow: var(--shadow-sm); color: var(--ink);
+    font-size: 18px; cursor: pointer; display: grid; place-items: center;
   }
-  .brand .brand-name {
-    background: linear-gradient(120deg, #e6edf8, var(--cyan) 60%, var(--lav));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+  .tb-title { flex: 1; text-align: center; font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
+  .tb-brand { display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+  .tb-brand .logo {
+    width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 16px;
+    background: var(--navy); box-shadow: 0 6px 14px rgba(27,38,71,0.35);
   }
-  .brand-tag { margin: 7px 0 0; color: var(--muted); font-size: 13px; font-weight: 500; }
+  .tb-brand .wm { font-size: 19px; font-weight: 800; letter-spacing: -0.02em; }
 
-  .lang-toggle {
-    margin: 13px auto 0; display: inline-flex; gap: 2px;
-    background: var(--card); border: 1px solid var(--line);
-    border-radius: 999px; padding: 3px;
-  }
-  .lang-btn {
-    appearance: none; border: none; background: transparent; color: var(--faint);
-    font-size: 11.5px; font-weight: 700; letter-spacing: 0.03em;
-    padding: 5px 14px; border-radius: 999px; cursor: pointer;
-    transition: background .2s, color .2s;
-  }
-  .lang-btn.active { background: var(--grad); color: #f8fafc; }
+  .screen { padding: 6px 18px 8px; }
 
-  /* ---------- Panels ---------- */
-  .tab-panel.panel-enter { animation: fadeSlide .4s ease both; }
+  .tab-panel { animation: none; }
+  .tab-panel.enter { animation: fadeSlide .34s ease both; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  .greet { margin: 6px 2px 14px; }
+  .greet h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+  .greet p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
 
   .card {
-    background: linear-gradient(180deg, var(--card), var(--card-2));
-    border: 1px solid var(--line);
-    border-radius: var(--r-lg);
-    padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow);
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg);
+    padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow-sm);
   }
-  .card h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
-  .card .sub { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+  .card.flat { box-shadow: none; }
+  .card h2 { margin: 0 0 3px; font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+  .card .sub { margin: 0 0 14px; color: var(--muted); font-size: 12.8px; line-height: 1.55; }
+  .section-title { font-size: 13px; font-weight: 800; color: var(--muted); letter-spacing: 0.02em; margin: 18px 4px 10px; }
 
-  .eyebrow {
-    display: inline-flex; align-items: center; gap: 7px;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--cyan); margin: 0 0 10px;
+  /* ---------- Sleep Score gauge ---------- */
+  .gauge-card { text-align: center; padding: 20px 18px 18px; }
+  .gauge-wrap { position: relative; width: 210px; height: 168px; margin: 0 auto; }
+  .gauge-wrap svg { width: 210px; height: 210px; display: block; }
+  .g-bg { fill: none; stroke: var(--line-2); stroke-width: 15; stroke-linecap: round; }
+  .g-fg { fill: none; stroke: url(#gGrad); stroke-width: 15; stroke-linecap: round;
+    transition: stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1); }
+  .gauge-center {
+    position: absolute; left: 0; right: 0; top: 44px; display: flex; flex-direction: column;
+    align-items: center; gap: 0;
   }
-  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); box-shadow: var(--glow); }
+  .g-label { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.04em; }
+  .g-score { font-size: 56px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--primary); }
+  .g-rating { font-size: 13px; font-weight: 800; color: var(--green); margin-top: 2px; }
 
-  /* ---------- Energy ring / hero ---------- */
-  .hero {
-    background:
-      radial-gradient(120% 120% at 50% -10%, rgba(56,189,248,0.14), transparent 60%),
-      linear-gradient(180deg, var(--card), var(--card-2));
-    text-align: center; padding: 24px 20px 22px;
+  /* rows / list items */
+  .listcard { padding: 4px 6px; }
+  .lrow {
+    display: flex; align-items: center; gap: 12px; padding: 13px 12px; width: 100%;
+    background: none; border: none; text-align: left; cursor: pointer; color: var(--ink);
+    border-radius: 12px;
   }
-  .ring-wrap { position: relative; width: 210px; height: 210px; margin: 4px auto 6px; }
-  .ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-  .ring-bg { fill: none; stroke: rgba(120,160,240,0.14); stroke-width: 14; }
-  .ring-fg {
-    fill: none; stroke: url(#ringGrad); stroke-width: 14; stroke-linecap: round;
-    transition: stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1);
-    filter: drop-shadow(0 0 8px rgba(56,189,248,0.55));
-  }
-  .ring-center {
-    position: absolute; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 2px;
-  }
-  .ring-score { font-size: 52px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1; }
-  .ring-score span { font-size: 22px; font-weight: 700; color: var(--muted); }
-  .ring-label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); }
-  .hero-status { margin: 8px 0 2px; font-size: 15px; font-weight: 700; }
-  .hero-hint { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; }
+  .lrow + .lrow { border-top: 1px solid var(--line); }
+  .lrow:active { background: var(--card-2); }
+  .lrow .li { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--primary-soft); color: var(--primary); font-size: 17px; flex-shrink: 0; }
+  .lrow .lt { flex: 1; }
+  .lrow .lt .lt-main { font-size: 14.5px; font-weight: 700; }
+  .lrow .lt .lt-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .lrow .lv { color: var(--muted); font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+  .lrow .chev { color: var(--faint); font-size: 15px; }
 
-  .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
-  .kpi {
-    background: var(--field); border: 1px solid var(--line);
-    border-radius: var(--r-md); padding: 14px 12px; text-align: center;
-  }
-  .kpi .kpi-ico { font-size: 20px; }
-  .kpi .kpi-cap { margin: 4px 0 3px; font-size: 11.5px; color: var(--muted); font-weight: 600; }
-  .kpi .kpi-val { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
-  .kpi.bed .kpi-val { color: var(--lav); }
-  .kpi.wake .kpi-val { color: var(--cyan); }
+  .badge { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; letter-spacing: 0.02em; }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-red { background: var(--danger-bg); color: var(--danger); }
 
-  /* ---------- Forms ---------- */
-  label.fl {
-    display: block; font-size: 12.5px; font-weight: 700; color: var(--cyan);
-    margin: 0 0 8px; letter-spacing: 0.01em;
-  }
-  .field-group { margin-bottom: 15px; }
-  input[type="time"], input[type="number"], textarea, select {
-    width: 100%; background: var(--field); border: 1px solid var(--line);
-    border-radius: var(--r-md); padding: 13px 14px; color: var(--text);
-    font-size: 15px; line-height: 1.5; transition: border-color .2s, box-shadow .2s;
-  }
-  textarea { min-height: 84px; resize: vertical; }
-  textarea::placeholder, input::placeholder { color: var(--faint); }
-  input:focus, textarea:focus, select:focus {
-    outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(56,189,248,0.22);
-  }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  /* plan mini (home) */
+  .plan-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .plan-box { background: var(--card-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px; text-align: center; }
+  .plan-box .pi { font-size: 19px; }
+  .plan-box .pc { font-size: 11.5px; color: var(--muted); margin: 3px 0 4px; font-weight: 600; }
+  .plan-box .pv { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+  .plan-box .pw { font-size: 11px; color: var(--faint); margin-top: 2px; }
+  .plan-box.bed .pv { color: var(--primary); }
+  .plan-box.wake .pv { color: var(--amber); }
 
-  .seg { display: flex; gap: 8px; }
-  .seg-btn {
-    flex: 1; appearance: none; cursor: pointer;
-    background: var(--field); border: 1px solid var(--line); color: var(--muted);
-    border-radius: var(--r-md); padding: 12px; font-size: 14px; font-weight: 700;
-    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    transition: border-color .2s, color .2s, background .2s;
-  }
-  .seg-btn.active { border-color: var(--line-strong); color: var(--text); background: linear-gradient(135deg, rgba(56,189,248,0.18), rgba(167,139,250,0.16)); }
-
+  /* buttons */
   .btn {
-    appearance: none; border: none; border-radius: var(--r-md);
-    padding: 15px 18px; font-size: 15.5px; font-weight: 700; cursor: pointer;
-    min-height: 52px; display: inline-flex; align-items: center; justify-content: center;
-    gap: 10px; width: 100%; transition: transform .15s, opacity .15s, box-shadow .15s;
+    appearance: none; border: none; border-radius: var(--r-md); padding: 15px 18px;
+    font-size: 15.5px; font-weight: 800; cursor: pointer; min-height: 52px; width: 100%;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform .14s, opacity .14s, box-shadow .14s;
   }
-  .btn:active { transform: scale(.975); }
-  .btn-primary { background: var(--grad); color: #06111f; box-shadow: 0 10px 26px rgba(56,189,248,0.32); }
-  .btn-primary:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
-  .btn-secondary { background: var(--card-2); color: var(--text); border: 1px solid var(--line); }
-  .btn-outline { background: transparent; color: var(--cyan); border: 1px solid var(--line-strong); }
+  .btn:active { transform: scale(.98); }
+  .btn-primary { background: var(--grad); color: #fff; box-shadow: 0 10px 22px rgba(61,91,245,0.32); }
+  .btn-primary:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; transform: none; }
+  .btn-ghost { background: var(--card-2); color: var(--ink); border: 1px solid var(--line-2); }
+  .btn-nav { background: transparent; color: var(--primary); border: 1px solid transparent; }
+  .btn-hint { text-align: center; color: var(--faint); font-size: 12px; margin: 8px 0 0; }
+  .btn-hint .lock { margin-right: 4px; }
   .row-gap { display: flex; flex-direction: column; gap: 11px; }
 
-  .link-quiet {
-    background: none; border: none; color: var(--faint); font-size: 12.5px;
-    text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
-    padding: 6px 2px; display: inline-block;
-  }
-  .link-quiet:active { opacity: .7; }
-
-  .spinner {
-    width: 17px; height: 17px; border-radius: 50%;
-    border: 2.5px solid rgba(6,17,31,0.3); border-top-color: #06111f;
-    animation: spin .7s linear infinite; flex-shrink: 0;
-  }
+  .spinner { width: 17px; height: 17px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; animation: spin .7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes fadeSlide { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes shake {
-    10%,90% { transform: translateX(-2px); } 20%,80% { transform: translateX(4px); }
-    30%,50%,70% { transform: translateX(-8px); } 40%,60% { transform: translateX(8px); }
+
+  /* ---------- Stepper (การนอน) ---------- */
+  .stepper { display: flex; align-items: center; gap: 6px; margin: 4px 2px 16px; }
+  .stepper .sdot { flex: 1; height: 5px; border-radius: 3px; background: var(--line-2); transition: background .3s; }
+  .stepper .sdot.on { background: var(--primary); }
+  .step-head { display: flex; align-items: center; gap: 10px; margin: 2px 2px 12px; }
+  .step-head .back { width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--line-2); background: var(--card); color: var(--ink); font-size: 17px; cursor: pointer; }
+  .step-head .sh-t { font-size: 18px; font-weight: 800; }
+  .step-head .sh-s { font-size: 12px; color: var(--muted); }
+
+  /* ---------- Wheel time picker ---------- */
+  .picker-lead { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .picker-lead .pl-i { width: 40px; height: 40px; border-radius: 12px; background: var(--primary-soft); color: var(--primary); display: grid; place-items: center; font-size: 19px; flex-shrink: 0; }
+  .picker-lead .pl-t { font-size: 14.5px; font-weight: 800; }
+  .picker-lead .pl-s { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.45; }
+  .wheels {
+    position: relative; display: flex; align-items: center; justify-content: center; gap: 4px;
+    background: var(--field); border-radius: var(--r-md); padding: 6px 12px; overflow: hidden;
   }
-  .shake { animation: shake .45s ease; }
+  .wheels::before {
+    content: ""; position: absolute; left: 12px; right: 12px; top: 50%; height: 56px;
+    transform: translateY(-50%); border-radius: 12px; background: var(--card);
+    box-shadow: var(--shadow-sm); pointer-events: none;
+  }
+  .wheel {
+    position: relative; z-index: 1; height: 168px; width: 84px; overflow-y: scroll;
+    scroll-snap-type: y mandatory; scrollbar-width: none; -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch; text-align: center;
+  }
+  .wheel::-webkit-scrollbar { display: none; }
+  .wheel-pad { height: 56px; }
+  .wheel-item {
+    height: 56px; scroll-snap-align: center; display: grid; place-items: center;
+    font-size: 34px; font-weight: 800; color: var(--faint); font-variant-numeric: tabular-nums;
+    transition: color .2s, transform .2s; cursor: pointer;
+  }
+  .wheel-item.sel { color: var(--ink); transform: scale(1.02); }
+  .wheels .colon { position: relative; z-index: 1; font-size: 32px; font-weight: 800; color: var(--ink); padding-bottom: 3px; }
+
+  /* ---------- Results ---------- */
+  .hero-night {
+    position: relative; overflow: hidden; text-align: center; color: #eaf0ff;
+    background: linear-gradient(160deg, #24365f, #141e39 70%); border: none;
+    padding: 22px 18px 20px; border-radius: var(--r-lg); box-shadow: var(--shadow);
+  }
+  .hero-night::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -10px; height: 70px;
+    background: radial-gradient(60% 100% at 30% 100%, rgba(120,150,255,0.28), transparent 70%),
+                radial-gradient(50% 100% at 80% 100%, rgba(90,120,220,0.22), transparent 70%);
+    pointer-events: none;
+  }
+  .hero-night .hn-cap { font-size: 13px; opacity: .82; font-weight: 600; }
+  .hero-night .hn-time { font-size: 52px; font-weight: 800; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; margin: 4px 0 8px; }
+  .hero-night .hn-pill { display: inline-block; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.18); padding: 6px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 700; }
+  .hero-night .hn-moon { position: absolute; top: 16px; right: 18px; font-size: 22px; opacity: .9; }
+
+  .res-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .res-box { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px; box-shadow: var(--shadow-sm); }
+  .res-box .rb-cap { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+  .res-box .rb-v { font-size: 22px; font-weight: 800; margin-top: 3px; display: flex; align-items: center; gap: 6px; }
+  .res-box .rb-w { font-size: 11px; color: var(--faint); margin-top: 1px; }
+
+  .cycle-strip { display: flex; gap: 6px; margin-top: 12px; }
+  .cyc {
+    flex: 1; text-align: center;
+  }
+  .cyc .cyc-cap { font-size: 10px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+  .cyc .cyc-block {
+    height: 46px; border-radius: 10px; display: grid; place-items: center; font-size: 18px;
+    background: linear-gradient(160deg, #3b5bf5, #2a3f9e); color: #dfe6ff;
+  }
+  .cyc.wakec .cyc-block { background: linear-gradient(160deg, #fbbf24, #f59e0b); color: #fff; }
+  .cyc-times { display: flex; gap: 6px; margin-top: 6px; }
+  .cyc-times span { flex: 1; text-align: center; font-size: 9.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+
+  .debt-bar { height: 8px; border-radius: 6px; background: var(--line-2); overflow: hidden; margin-top: 10px; }
+  .debt-bar > i { display: block; height: 100%; border-radius: 6px; background: var(--grad); transition: width .8s ease; }
+
+  .winddown { display: flex; align-items: center; gap: 14px; }
+  .winddown .wd-t { flex: 1; }
+  .winddown .wd-emoji { font-size: 38px; }
+
+  /* ---------- Wake-up window ---------- */
+  .window-big { text-align: center; font-size: 36px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; margin: 6px 0 12px; }
+  .win-track { position: relative; height: 8px; border-radius: 6px; background: var(--line-2); margin: 26px 8px 8px; }
+  .win-fill { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: var(--grad); }
+  .win-handle { position: absolute; top: 50%; width: 22px; height: 22px; border-radius: 50%; background: var(--card); border: 4px solid var(--primary); transform: translate(-50%,-50%); box-shadow: var(--shadow-sm); }
+  .win-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin: 6px 8px 0; font-variant-numeric: tabular-nums; }
+  .best-point { display: flex; align-items: center; gap: 12px; background: var(--green-bg); border-radius: var(--r-md); padding: 13px 14px; margin-top: 14px; }
+  .best-point .bp-ico { width: 40px; height: 40px; border-radius: 50%; background: var(--green); color: #fff; display: grid; place-items: center; font-size: 18px; }
+  .best-point .bp-t { font-size: 12px; color: var(--muted); }
+  .best-point .bp-v { font-size: 18px; font-weight: 800; color: var(--green); }
+
+  .toggle { position: relative; width: 46px; height: 27px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle .track { position: absolute; inset: 0; background: var(--line-2); border-radius: 999px; transition: background .25s; cursor: pointer; }
+  .toggle .track::before { content: ""; position: absolute; left: 3px; top: 3px; width: 21px; height: 21px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); transition: transform .25s; }
+  .toggle input:checked + .track { background: var(--primary); }
+  .toggle input:checked + .track::before { transform: translateX(19px); }
+
+  .eff-card { display: flex; align-items: center; gap: 16px; }
+  .eff-ring { position: relative; width: 74px; height: 74px; flex-shrink: 0; }
+  .eff-ring svg { width: 74px; height: 74px; transform: rotate(-90deg); }
+  .eff-ring .er-bg { fill: none; stroke: var(--line-2); stroke-width: 8; }
+  .eff-ring .er-fg { fill: none; stroke: var(--green); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+  .eff-ring .er-num { position: absolute; inset: 0; display: grid; place-items: center; font-size: 16px; font-weight: 800; }
+  .eff-meta { flex: 1; }
+  .eff-meta .em-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
+  .eff-meta .em-row b { font-weight: 800; }
+
+  /* ---------- History ---------- */
+  .hist-bars { display: flex; align-items: flex-end; gap: 8px; height: 130px; padding: 6px 2px 0; }
+  .hbar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .hbar .hb-fill { width: 100%; max-width: 26px; border-radius: 8px 8px 4px 4px; background: var(--grad); min-height: 6px; transition: height .6s ease; }
+  .hbar .hb-day { font-size: 10px; color: var(--muted); }
+  .hbar .hb-val { font-size: 10px; font-weight: 700; color: var(--ink); }
+  .hist-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 26px 10px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-box { background: var(--card-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px; }
+  .stat-box .sb-v { font-size: 24px; font-weight: 800; }
+  .stat-box .sb-c { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+  /* ---------- Profile ---------- */
+  .profile-card { display: flex; align-items: center; gap: 14px; background: var(--grad); color: #fff; border-radius: var(--r-lg); padding: 18px; box-shadow: 0 12px 26px rgba(61,91,245,0.3); }
+  .profile-card .avatar { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.22); display: grid; place-items: center; font-size: 26px; }
+  .profile-card .pc-name { font-size: 12.5px; opacity: .85; }
+  .profile-card .pc-h { font-size: 18px; font-weight: 800; }
+  .profile-card .pc-edit { margin-top: 6px; background: rgba(255,255,255,0.2); border: none; color: #fff; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 999px; cursor: pointer; }
 
   /* ---------- Notices ---------- */
-  .notice {
-    border-radius: var(--r-md); padding: 13px 15px; font-size: 13px; line-height: 1.55;
-    margin-top: 13px; animation: fadeSlide .3s ease both;
-  }
-  .notice code { background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
-  .notice-warn { background: rgba(251,191,36,0.09); border: 1px solid rgba(251,191,36,0.3); color: var(--warn); }
-  .notice-error { background: rgba(248,113,113,0.09); border: 1px solid rgba(248,113,113,0.3); color: var(--danger); }
-  .notice-info { background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.28); color: #bae6fd; }
+  .notice { border-radius: var(--r-md); padding: 12px 14px; font-size: 12.8px; line-height: 1.55; margin-top: 12px; animation: fadeSlide .3s ease both; }
+  .notice code { background: rgba(120,120,120,0.14); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
+  .notice-warn { background: var(--amber-bg); color: var(--amber); }
+  .notice-error { background: var(--danger-bg); color: var(--danger); }
+  .notice-info { background: var(--primary-soft); color: var(--primary); }
+  .notice-ok { background: var(--green-bg); color: var(--green); }
 
-  /* ---------- Details / processing steps ---------- */
-  .details { margin-top: 16px; }
-  .details > summary {
-    cursor: pointer; list-style: none; color: var(--cyan); font-size: 13.5px; font-weight: 700;
-    display: flex; align-items: center; gap: 8px; padding: 4px 0;
+  .field-group { margin-bottom: 13px; }
+  label.fl { display: block; font-size: 12.5px; font-weight: 800; color: var(--muted); margin: 0 0 7px; }
+  input[type="number"], input[type="text"], select {
+    width: 100%; background: var(--field); border: 1px solid var(--line-2); border-radius: var(--r-md);
+    padding: 13px 14px; color: var(--ink); font-size: 15px; transition: border-color .2s, box-shadow .2s;
   }
-  .details > summary::-webkit-details-marker { display: none; }
-  .details > summary::after { content: "▾"; margin-left: auto; transition: transform .25s; }
-  .details[open] > summary::after { transform: rotate(180deg); }
-
-  .step {
-    display: flex; gap: 13px; padding: 14px 0; border-bottom: 1px solid var(--line);
-  }
-  .step:last-child { border-bottom: none; }
-  .step-num {
-    flex-shrink: 0; width: 32px; height: 32px; border-radius: 10px;
-    display: grid; place-items: center; font-size: 15px; font-weight: 800;
-    background: linear-gradient(135deg, rgba(56,189,248,0.2), rgba(167,139,250,0.18));
-    border: 1px solid var(--line-strong); color: var(--cyan);
-  }
-  .step-body { flex: 1; }
-  .step-title { font-size: 14px; font-weight: 700; margin: 2px 0 3px; }
-  .step-text { font-size: 12.8px; color: var(--muted); line-height: 1.5; }
-  .step-text b { color: var(--text); font-weight: 700; }
-
-  /* ---------- Bedtime cycle list ---------- */
-  .bedlist { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
-  .bedrow {
-    display: flex; align-items: center; justify-content: space-between;
-    background: var(--field); border: 1px solid var(--line);
-    border-radius: var(--r-sm); padding: 12px 14px; animation: fadeSlide .3s ease both;
-  }
-  .bedrow.best { border-color: var(--line-strong); background: linear-gradient(135deg, rgba(56,189,248,0.14), rgba(167,139,250,0.12)); }
-  .bedrow .bt { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .bedrow.best .bt { color: var(--cyan); }
-  .bedrow .bm { font-size: 11.5px; color: var(--muted); text-align: right; line-height: 1.45; }
-  .badge-best {
-    font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
-    color: #06111f; background: var(--cyan); padding: 2px 7px; border-radius: 999px; margin-left: 8px;
-  }
-
-  /* ---------- Clock ---------- */
-  .clock { text-align: center; padding: 8px 0 2px; }
-  .clock-time {
-    font-size: 50px; font-weight: 800; letter-spacing: 0.03em; font-variant-numeric: tabular-nums;
-    background: linear-gradient(135deg, #f8fafc, var(--lav)); -webkit-background-clip: text; background-clip: text; color: transparent;
-  }
-  .clock-date { margin-top: 3px; color: var(--muted); font-size: 13px; }
-  .alarm-status { margin-top: 12px; font-size: 13px; color: var(--muted); text-align: center; min-height: 18px; }
-
-  /* ---------- Problem cards (About) ---------- */
-  .prob { display: flex; gap: 13px; padding: 13px 0; border-bottom: 1px solid var(--line); }
-  .prob:last-child { border-bottom: none; }
-  .prob .pi { font-size: 24px; flex-shrink: 0; }
-  .prob .pt { font-size: 14.5px; font-weight: 700; margin: 1px 0 3px; }
-  .prob .pd { font-size: 12.8px; color: var(--muted); line-height: 1.5; }
-  .why { display: flex; gap: 12px; align-items: flex-start; padding: 11px 0; }
-  .why .wi { font-size: 20px; }
-  .why .wt { font-size: 13.5px; line-height: 1.5; }
-  .why .wt b { color: var(--cyan); }
-  .benefit { display: flex; gap: 10px; align-items: center; padding: 8px 0; font-size: 13.5px; }
-  .benefit .bi { color: var(--ok); font-weight: 800; }
-
-  .footer-quote {
-    text-align: center; margin: 6px 0 0; padding: 18px 10px 6px;
-    color: var(--muted); font-size: 13px; line-height: 1.6;
-  }
-  .footer-quote b { color: var(--text); }
-
-  /* ---------- Tab bar ---------- */
-  .tabbar-wrap {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 500;
-    display: flex; justify-content: center;
-    background: rgba(9, 15, 31, 0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border-top: 1px solid var(--line); padding-bottom: var(--safe-bottom);
-  }
-  .tabbar { width: 100%; max-width: 600px; display: flex; }
-  .tab-btn {
-    flex: 1; background: none; border: none; color: var(--faint);
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    padding: 10px 6px 8px; font-size: 11px; font-weight: 700; cursor: pointer;
-    transition: color .2s; position: relative;
-  }
-  .tab-btn .ti { font-size: 20px; transition: transform .2s; }
-  .tab-btn.active { color: var(--cyan); }
-  .tab-btn.active .ti { transform: translateY(-1px) scale(1.08); }
-  .tab-btn.active::before {
-    content: ""; position: absolute; top: 1px; width: 26px; height: 3px; border-radius: 3px; background: var(--grad);
-  }
+  input::placeholder { color: var(--faint); }
+  input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(61,91,245,0.16); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .seg { display: flex; gap: 8px; }
+  .seg-btn { flex: 1; background: var(--field); border: 1px solid var(--line-2); color: var(--muted); border-radius: var(--r-md); padding: 12px; font-size: 14px; font-weight: 800; cursor: pointer; transition: .2s; }
+  .seg-btn.active { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
 
   [hidden] { display: none !important; }
 
-  /* ---------- Modal (alarm) ---------- */
-  .modal-overlay {
-    position: fixed; inset: 0; z-index: 1000;
-    background: rgba(2,6,18,0.82); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    display: flex; align-items: center; justify-content: center; overflow-y: auto;
-    padding: calc(20px + var(--safe-top)) calc(18px + env(safe-area-inset-right,0px)) calc(20px + var(--safe-bottom)) calc(18px + env(safe-area-inset-left,0px));
-    opacity: 0; pointer-events: none; transition: opacity .32s ease;
+  /* ---------- Bottom nav ---------- */
+  .nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 500; display: flex; justify-content: center;
+    background: color-mix(in srgb, var(--card) 92%, transparent);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--line); padding-bottom: var(--safe-bottom);
   }
-  .modal-overlay.active { opacity: 1; pointer-events: auto; }
-  .modal-panel {
-    width: 100%; max-width: 420px; max-height: calc(100dvh - 40px); overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    background: linear-gradient(180deg, var(--card), var(--card-2));
-    border: 1px solid var(--line-strong); border-radius: var(--r-lg);
-    padding: 30px 24px; text-align: center; box-shadow: 0 25px 60px rgba(0,0,0,0.6);
-    transform: scale(.9) translateY(14px); transition: transform .32s cubic-bezier(.2,.9,.3,1.1);
-  }
-  .modal-overlay.active .modal-panel { transform: scale(1) translateY(0); }
-  .modal-ico { font-size: 42px; margin-bottom: 6px; }
-  .modal-overlay.active .modal-ico { animation: ring 1s ease-in-out infinite; }
-  @keyframes ring { 0%,100% { transform: rotate(0); } 20% { transform: rotate(12deg); } 40% { transform: rotate(-10deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-6deg); } }
-  .modal-panel h2 { margin: 0 0 4px; font-size: 21px; color: var(--danger); }
-  .modal-sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
-  .countdown { font-size: 38px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--warn); margin-bottom: 16px; letter-spacing: 0.02em; }
-  .challenge-box { background: var(--field); border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px; }
-  .challenge-q { font-size: 17px; font-weight: 700; margin-bottom: 12px; word-break: break-word; }
-  .challenge-input {
-    width: 100%; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-sm);
-    padding: 12px 14px; color: var(--text); font-size: 16px; text-align: center; margin-bottom: 12px;
-  }
-  .challenge-input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(56,189,248,0.22); }
-  .challenge-error { color: var(--danger); font-size: 13px; margin: -4px 0 12px; }
-  .emergency {
-    margin-top: 16px; background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.4);
-    color: #fecaca; border-radius: var(--r-sm); padding: 12px 14px; font-size: 12.5px; line-height: 1.5; text-align: left;
-  }
+  .nav-inner { width: 100%; max-width: 460px; display: flex; }
+  .nav-btn { flex: 1; background: none; border: none; color: var(--faint); display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 8px; font-size: 10.5px; font-weight: 700; cursor: pointer; transition: color .2s; position: relative; }
+  .nav-btn .ni { font-size: 20px; transition: transform .2s; }
+  .nav-btn.active { color: var(--primary); }
+  .nav-btn.active .ni { transform: translateY(-1px) scale(1.08); }
 
-  @media (min-width: 640px) { .clock-time { font-size: 58px; } }
-  @media (prefers-reduced-motion: reduce) {
-    * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
-  }
+  /* ---------- Alarm modal ---------- */
+  .modal { position: fixed; inset: 0; z-index: 1000; background: rgba(10,16,32,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; pointer-events: none; transition: opacity .3s; }
+  .modal.active { opacity: 1; pointer-events: auto; }
+  .modal-panel { width: 100%; max-width: 360px; background: var(--card); border-radius: var(--r-xl); padding: 30px 24px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.35); transform: scale(.92); transition: transform .3s cubic-bezier(.2,.9,.3,1.1); }
+  .modal.active .modal-panel { transform: scale(1); }
+  .modal-ico { font-size: 44px; }
+  .modal.active .modal-ico { animation: ring 1s ease-in-out infinite; }
+  @keyframes ring { 0%,100%{transform:rotate(0)} 20%{transform:rotate(12deg)} 40%{transform:rotate(-10deg)} 60%{transform:rotate(8deg)} 80%{transform:rotate(-6deg)} }
+  .modal-panel h2 { margin: 8px 0 4px; font-size: 22px; }
+  .modal-panel .m-sub { color: var(--muted); font-size: 13px; margin: 0 0 6px; }
+  .modal-panel .m-time { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--primary); margin: 8px 0 18px; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
 </style>
 </head>
 <body>
 <div class="app">
 
-  <header class="app-header">
-    <div class="brand">
-      <span class="logo">🌙</span>
-      <span class="brand-name">TimeSync</span>
-    </div>
-    <p class="brand-tag" data-i18n="tagline">Smart Sleep Calculator · คำนวณเวลานอนที่ใช่ เพื่อพลังงาน 100%</p>
-    <div class="lang-toggle" role="group" aria-label="Language / ภาษา">
-      <button type="button" class="lang-btn" id="langTh" data-lang="th" aria-pressed="false">TH</button>
-      <button type="button" class="lang-btn" id="langEn" data-lang="en" aria-pressed="false">EN</button>
-    </div>
-  </header>
+  <div class="topbar" id="topbar">
+    <button class="tb-btn" id="tbLeft" aria-label="menu">☰</button>
+    <div class="tb-title" id="tbTitle"><span class="tb-brand"><span class="logo">🌙</span><span class="wm">TimeSync</span></span></div>
+    <button class="tb-btn" id="tbRight" aria-label="notifications">🔔</button>
+  </div>
 
   <main>
 
-    <!-- ============ DASHBOARD ============ -->
-    <section id="panel-home" class="tab-panel panel-enter">
-
-      <div class="card hero">
-        <div class="ring-wrap">
-          <svg viewBox="0 0 200 200" aria-hidden="true">
-            <defs>
-              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#38bdf8"/>
-                <stop offset="55%" stop-color="#3b82f6"/>
-                <stop offset="100%" stop-color="#a78bfa"/>
-              </linearGradient>
-            </defs>
-            <circle class="ring-bg" cx="100" cy="100" r="86"/>
-            <circle class="ring-fg" id="ringFg" cx="100" cy="100" r="86"/>
-          </svg>
-          <div class="ring-center">
-            <div class="ring-score" id="energyScore">--<span>%</span></div>
-            <div class="ring-label" data-i18n="energyLabel">Energy Score</div>
-          </div>
+    <!-- ================= HOME ================= -->
+    <section id="p-home" class="tab-panel enter">
+      <div class="screen">
+        <div class="greet">
+          <h1 id="greetTitle">สวัสดีตอนเย็น 👋</h1>
+          <p data-i18n="greetSub">พร้อมคำนวณเวลานอนของคุณแล้วหรือยัง?</p>
         </div>
-        <p class="hero-status" id="heroStatus" data-i18n="heroReady">กรอกเวลาเพื่อเริ่มคำนวณ</p>
-        <p class="hero-hint" id="heroHint" data-i18n="heroHint">แตะช่องด้านล่างแล้วกดคำนวณ ใช้เวลาแค่ 5 วินาที</p>
 
-        <div class="kpi-row">
-          <div class="kpi bed">
-            <div class="kpi-ico">🌙</div>
-            <div class="kpi-cap" data-i18n="kpiBed">เวลานอนที่แนะนำ</div>
-            <div class="kpi-val" id="kpiBedtime">--:--</div>
-          </div>
-          <div class="kpi wake">
-            <div class="kpi-ico">⏰</div>
-            <div class="kpi-cap" data-i18n="kpiWake">ปลุกที่เหมาะสม</div>
-            <div class="kpi-val" id="kpiWaketime">--:--</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="eyebrow"><span class="dot"></span><span data-i18n="dailyStep">Daily Input · ใช้เวลาแค่ 5 วินาที</span></div>
-        <h2 data-i18n="dailyHeading">บอกเวลาง่าย ๆ ให้ระบบจัดการ</h2>
-        <p class="sub" data-i18n="dailySub">แค่บอกเวลาเลิกงานวันนี้ และเวลาสายที่สุดที่ต้องตื่นพรุ่งนี้ TimeSync จะคำนวณเวลานอนที่เป๊ะที่สุดให้</p>
-
-        <div class="grid-2">
-          <div class="field-group" style="margin-bottom:0">
-            <label class="fl" for="workEndInput" data-i18n="workEndLabel">เวลาเลิกงานวันนี้</label>
-            <input type="time" id="workEndInput" value="18:00">
-          </div>
-          <div class="field-group" style="margin-bottom:0">
-            <label class="fl" for="wakeInput" data-i18n="wakeLabel">ตื่นสายสุดพรุ่งนี้</label>
-            <input type="time" id="wakeInput" value="06:30">
+        <div class="card gauge-card">
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 210 210" aria-hidden="true">
+              <defs>
+                <linearGradient id="gGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#6f8bfb"/><stop offset="100%" stop-color="#3d5bf5"/>
+                </linearGradient>
+              </defs>
+              <circle class="g-bg" cx="105" cy="105" r="80" transform="rotate(135 105 105)"/>
+              <circle class="g-fg" id="gaugeFg" cx="105" cy="105" r="80" transform="rotate(135 105 105)"/>
+            </svg>
+            <div class="gauge-center">
+              <div class="g-label" data-i18n="sleepScore">Sleep Score</div>
+              <div class="g-score" id="scoreNum">--</div>
+              <div class="g-rating" id="scoreRate">–</div>
+            </div>
           </div>
         </div>
 
-        <details class="details" id="lastNightWrap">
-          <summary data-i18n="lastNightSummary">เมื่อคืนนอนกี่ชั่วโมง? (ช่วยคำนวณหนี้การนอน)</summary>
-          <div class="field-group" style="margin-top:12px; margin-bottom:0">
-            <input type="number" id="lastNightInput" min="0" max="14" step="0.5" inputmode="decimal" data-i18n-placeholder="lastNightPlaceholder" placeholder="เช่น 5.5 (เว้นว่างได้)">
-          </div>
-        </details>
-
-        <div style="margin-top:16px" class="row-gap">
-          <button class="btn btn-primary" id="calcBtn" data-i18n="calcBtn">คำนวณเวลานอนของฉัน</button>
-        </div>
-
-        <div id="setupNotice" class="notice notice-info" hidden></div>
-        <div id="calcNotice" class="notice notice-warn" hidden></div>
-
-        <details class="details" id="breakdownWrap" hidden>
-          <summary data-i18n="breakdownSummary">ดูรายละเอียดการคำนวณ (Data Processing)</summary>
-          <div id="breakdown"></div>
-        </details>
-
-        <div class="bedlist" id="bedlist" hidden></div>
-      </div>
-
-      <div class="card">
-        <div class="eyebrow"><span class="dot"></span><span data-i18n="aiEyebrow">AI Insight</span></div>
-        <h2 data-i18n="aiHeading">คำแนะนำจาก AI เฉพาะคืนนี้</h2>
-        <p class="sub" data-i18n="aiSub">เล่าอารมณ์/ความเหนื่อยของคืนนี้ แล้ว AI จะช่วยออกแบบช่วงผ่อนคลายก่อนนอนแบบไม่ใช้หน้าจอให้</p>
-        <div class="field-group">
-          <textarea id="moodInput" data-i18n-placeholder="moodPlaceholder" placeholder="คืนนี้รู้สึกอย่างไร เช่น เครียดเรื่องงาน ปวดหลัง คิดมาก"></textarea>
-        </div>
-        <button class="btn btn-secondary" id="aiBtn">
-          <span class="spinner" id="aiSpinner" hidden></span>
-          <span id="aiBtnLabel" data-i18n="aiBtn">ขอคำแนะนำจาก AI</span>
+        <button class="card listcard lrow" id="debtRowHome" style="margin-bottom:14px">
+          <span class="li">❤️</span>
+          <span class="lt"><span class="lt-main" data-i18n="sleepDebt">หนี้การนอน</span><span class="lt-sub" id="debtSubHome" data-i18n="debtSubEmpty">ยังไม่มีข้อมูล กดคำนวณเพื่อเริ่ม</span></span>
+          <span class="badge badge-green" id="debtBadgeHome" hidden>น้อย</span>
+          <span class="chev">›</span>
         </button>
-        <div id="aiKeyWarn" class="notice notice-warn" hidden data-i18n-html="aiKeyWarn"></div>
-        <div id="aiError" class="notice notice-error" hidden></div>
-        <div id="aiResult" class="notice notice-info" hidden style="margin-top:14px"></div>
-      </div>
 
-    </section>
-
-    <!-- ============ ALARM ============ -->
-    <section id="panel-alarm" class="tab-panel" hidden>
-      <div class="card clock">
-        <div class="clock-time" id="liveClock">00:00:00</div>
-        <div class="clock-date" id="liveDate">–</div>
-      </div>
-
-      <div class="card">
-        <div class="eyebrow"><span class="dot"></span><span data-i18n="wakeStep">Smart Wake-up · Step 4</span></div>
-        <h2 data-i18n="alarmHeading">ปลุกในจังหวะที่ร่างกายพร้อม</h2>
-        <p class="sub" data-i18n="alarmSub">ตั้งเวลาตื่น TimeSync จะตรวจนาฬิกาทุกวินาที และปลุกด้วยโจทย์กันงีบที่ต้องแก้ก่อนจึงจะปิดได้</p>
-
-        <div class="field-group">
-          <label class="fl" for="alarmTimeInput" data-i18n="alarmTimeLabel">เวลาตื่น</label>
-          <input type="time" id="alarmTimeInput" value="06:30">
-        </div>
-
-        <div class="row-gap">
-          <button class="btn btn-primary" id="setAlarmBtn" data-i18n="setAlarmBtn">ตั้งปลุก</button>
-          <button class="btn btn-outline" id="useRecommendedBtn" data-i18n="useRecommendedBtn">ใช้เวลาปลุกที่คำนวณไว้</button>
-        </div>
-
-        <p class="alarm-status" id="alarmStatus" data-i18n="noAlarm">ยังไม่ได้ตั้งปลุก</p>
-        <div style="text-align:center; margin-top:2px;">
-          <button class="link-quiet" id="testAlarmLink" type="button" data-i18n="testAlarm">ทดสอบเสียงปลุกตอนนี้</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ PROFILE / SETUP ============ -->
-    <section id="panel-profile" class="tab-panel" hidden>
-      <div class="card">
-        <div class="eyebrow"><span class="dot"></span><span data-i18n="setupStep">Initial Setup · กรอกครั้งเดียวจบ</span></div>
-        <h2 data-i18n="setupHeading">สร้าง Baseline สถิติร่างกาย</h2>
-        <p class="sub" data-i18n="setupSub">ระบบประเมินค่า BMR และดึงข้อมูลจาก NSF (National Sleep Foundation) เพื่อหาจำนวนชั่วโมงการนอนที่ร่างกายคุณต้องการ</p>
-
-        <div class="field-group">
-          <label class="fl" data-i18n="sexLabel">เพศ</label>
-          <div class="seg" id="sexSeg">
-            <button type="button" class="seg-btn active" data-sex="male">♂ <span data-i18n="male">ชาย</span></button>
-            <button type="button" class="seg-btn" data-sex="female">♀ <span data-i18n="female">หญิง</span></button>
+        <div class="section-title" data-i18n="todayPlan">แผนการนอนของวันนี้</div>
+        <div class="plan-mini">
+          <div class="plan-box bed">
+            <div class="pi">🌙</div>
+            <div class="pc" data-i18n="shouldSleep">ควรเข้านอน</div>
+            <div class="pv" id="homeBed">--:--</div>
+            <div class="pw" data-i18n="today">วันนี้</div>
+          </div>
+          <div class="plan-box wake">
+            <div class="pi">☀️</div>
+            <div class="pc" data-i18n="shouldWake">ควรตื่น</div>
+            <div class="pv" id="homeWake">--:--</div>
+            <div class="pw" data-i18n="tomorrow">พรุ่งนี้</div>
           </div>
         </div>
 
-        <div class="grid-2">
+        <div style="margin-top:18px" class="row-gap">
+          <button class="btn btn-primary" id="goCalcBtn" data-i18n="calcTonight">คำนวณเวลานอนคืนนี้</button>
+        </div>
+        <p class="btn-hint" data-i18n="only5s">ใช้เวลาเพียง 5 วินาที</p>
+      </div>
+    </section>
+
+    <!-- ================= SLEEP (การนอน) ================= -->
+    <section id="p-sleep" class="tab-panel" hidden>
+      <div class="screen">
+        <div class="stepper" id="stepper">
+          <span class="sdot on"></span><span class="sdot"></span><span class="sdot"></span>
+        </div>
+
+        <!-- Step 1: input -->
+        <div id="step-input">
+          <div class="step-head">
+            <button class="back" id="stepBackHome">‹</button>
+            <div><div class="sh-t" data-i18n="dailyInputTitle">กรอกข้อมูลวันนี้</div><div class="sh-s" data-i18n="only5s2">ใช้เวลาเพียง 5 วินาที</div></div>
+          </div>
+
+          <div class="card">
+            <div class="picker-lead">
+              <span class="pl-i">💼</span>
+              <div><div class="pl-t" data-i18n="workEndTitle">เลิกงาน / เลิกกิจกรรมสุดท้าย</div><div class="pl-s" data-i18n="workEndDesc">ระบุเวลาที่คุณจะจบงานหรือกิจกรรมในวันนี้</div></div>
+            </div>
+            <div class="wheels">
+              <div class="wheel" id="weH"></div>
+              <span class="colon">:</span>
+              <div class="wheel" id="weM"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="picker-lead">
+              <span class="pl-i">⬇️</span>
+              <div><div class="pl-t" data-i18n="wakeTitle">ตื่นสายที่สุดได้ในวันพรุ่งนี้</div><div class="pl-s" data-i18n="wakeDesc">ระบุเวลาสายที่สุดที่คุณสามารถตื่นได้ในวันพรุ่งนี้</div></div>
+            </div>
+            <div class="wheels">
+              <div class="wheel" id="wkH"></div>
+              <span class="colon">:</span>
+              <div class="wheel" id="wkM"></div>
+            </div>
+          </div>
+
+          <div id="calcError" class="notice notice-error" hidden></div>
+          <div style="margin-top:4px" class="row-gap">
+            <button class="btn btn-primary" id="calcBtn" data-i18n="calcNow">คำนวณเลย</button>
+          </div>
+          <p class="btn-hint"><span class="lock">🔒</span><span data-i18n="dataSafe">ข้อมูลของคุณปลอดภัย</span></p>
+        </div>
+
+        <!-- Step 2: results -->
+        <div id="step-result" hidden>
+          <div class="step-head">
+            <button class="back" id="stepBackInput">‹</button>
+            <div><div class="sh-t" data-i18n="resultTitle">ผลลัพธ์สำหรับคืนนี้</div><div class="sh-s" id="resultDate">–</div></div>
+          </div>
+
+          <div class="hero-night">
+            <span class="hn-moon">🌙</span>
+            <div class="hn-cap" data-i18n="youShouldSleep">เวลาที่คุณควรเข้านอน</div>
+            <div class="hn-time" id="resBed">22:45</div>
+            <span class="hn-pill" id="resCountdown">–</span>
+          </div>
+
+          <div class="res-two">
+            <div class="res-box">
+              <div class="rb-cap" data-i18n="wakeSuggest">เวลาตื่นที่แนะนำ</div>
+              <div class="rb-v">☀️ <span id="resWake">06:30</span></div>
+              <div class="rb-w" data-i18n="tomorrow">พรุ่งนี้</div>
+            </div>
+            <div class="res-box">
+              <div class="rb-cap" data-i18n="totalSleep">นอนทั้งหมด</div>
+              <div class="rb-v">🛏️ <span id="resTotal">7ชม 45น</span></div>
+              <div class="rb-w" id="resEnough" data-i18n="enough">เพียงพอ</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <h2 style="display:flex;align-items:center;gap:6px"><span data-i18n="cyclesTitle">รอบการนอน (90 นาที / รอบ)</span> <span style="color:var(--faint)">ⓘ</span></h2>
+            <div class="cycle-strip" id="cycleStrip"></div>
+            <div class="cyc-times" id="cycleTimes"></div>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <h2 style="margin:0" data-i18n="yourDebt">หนี้การนอนของคุณ</h2>
+              <span class="badge badge-green" id="resDebtBadge">น้อย</span>
+            </div>
+            <p class="sub" id="resDebtText" style="margin:8px 0 0">–</p>
+            <div class="debt-bar"><i id="resDebtBar" style="width:10%"></i></div>
+          </div>
+
+          <div class="card winddown">
+            <div class="wd-t">
+              <h2 style="margin:0 0 3px" data-i18n="windDownTitle">เตรียมตัวก่อนนอน</h2>
+              <p class="sub" style="margin:0" data-i18n="windDownDesc">หยุดหน้าจอและผ่อนคลายอย่างน้อย 20 นาที ก่อนเข้านอน</p>
+            </div>
+            <div class="wd-emoji">🧘</div>
+          </div>
+
+          <div class="row-gap">
+            <button class="btn btn-primary" id="toWakeBtn" data-i18n="viewSmartWake">ดูหน้าปลุกอัจฉริยะ →</button>
+            <button class="btn btn-ghost" id="sendTgBtn" data-i18n="sendTelegram">📨 ส่งแผนไป Telegram</button>
+          </div>
+          <div id="tgResult" class="notice" hidden></div>
+        </div>
+
+        <!-- Step 3: smart wake-up -->
+        <div id="step-wake" hidden>
+          <div class="step-head">
+            <button class="back" id="stepBackResult">‹</button>
+            <div><div class="sh-t" data-i18n="smartWakeTitle">ปลุกอัจฉริยะ</div><div class="sh-s" id="wakeDate">–</div></div>
+          </div>
+
+          <div class="card">
+            <h2 data-i18n="wakeWindowTitle">หน้าต่างปลุก (30 นาที)</h2>
+            <p class="sub" data-i18n="wakeWindowDesc">เราจะปลุกคุณในช่วงเวลาที่เหมาะสมที่สุด</p>
+            <div class="window-big" id="windowRange">06:00 - 06:30</div>
+            <div class="win-track"><div class="win-fill" id="winFill"></div><div class="win-handle" id="winHandle"></div></div>
+            <div class="win-labels"><span id="winStart">06:00</span><span id="winEnd">06:30</span></div>
+            <div class="best-point">
+              <div class="bp-ico">◎</div>
+              <div style="flex:1"><div class="bp-t" data-i18n="bestWakePoint">จุดตื่นที่ดีที่สุด</div><div class="bp-v"><span id="bestPoint">06:15</span> <span style="font-size:12px;font-weight:600;color:var(--muted)">(Light Sleep)</span></div></div>
+            </div>
+          </div>
+
+          <div class="card listcard">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px 10px">
+              <h2 style="margin:0" data-i18n="smartAlarm">ปลุกอัจฉริยะ</h2>
+              <label class="toggle"><input type="checkbox" id="alarmEnable" checked><span class="track"></span></label>
+            </div>
+            <div class="lrow"><span class="li">🔊</span><span class="lt"><span class="lt-main" data-i18n="alarmSound">เสียงปลุก</span></span><span class="lv" id="soundVal" data-i18n="soundNatural">เสียงธรรมชาติ</span><span class="chev">›</span></div>
+            <button class="lrow" id="volumeRow"><span class="li">🔉</span><span class="lt"><span class="lt-main" data-i18n="alarmVolume">ระดับเสียง</span></span><span class="lv" id="volumeVal" data-i18n="volMedium">ปานกลาง</span><span class="chev">›</span></button>
+            <div class="lrow"><span class="li">📳</span><span class="lt"><span class="lt-main" data-i18n="vibrate">สั่นเบา (ถ้าจำเป็น)</span></span><label class="toggle"><input type="checkbox" id="vibrateEnable" checked><span class="track"></span></label></div>
+          </div>
+
+          <div class="notice notice-info" data-i18n-html="nativeClockTip">
+            ⏰ เพื่อความปลอดภัย 100% แนะนำให้ตั้งเวลาปลุกจริงในนาฬิกาของเครื่องที่ <b>จุดตื่นที่ดีที่สุด</b> ด้วย แอปนี้ช่วยคำนวณจังหวะที่ควรตื่น
+          </div>
+
+          <div class="card eff-card">
+            <div class="eff-ring">
+              <svg viewBox="0 0 74 74"><circle class="er-bg" cx="37" cy="37" r="31"/><circle class="er-fg" id="effFg" cx="37" cy="37" r="31"/></svg>
+              <div class="er-num" id="effNum">--%</div>
+            </div>
+            <div class="eff-meta">
+              <div class="em-row"><span data-i18n="lastAnalysis">การวิเคราะห์คืนนี้</span><span><b id="effScore">--</b> <span id="effRate" style="color:var(--green)">–</span></span></div>
+              <div class="em-row"><span data-i18n="totalSleep">นอนทั้งหมด</span><b id="effTotal">–</b></div>
+              <div class="em-row"><span data-i18n="restEfficiency">ประสิทธิภาพการพักผ่อน</span><b id="effPct">--%</b></div>
+            </div>
+          </div>
+
+          <div class="row-gap">
+            <button class="btn btn-ghost" id="testAlarmBtn" data-i18n="testAlarm">ทดสอบเสียงปลุก</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= HISTORY (ประวัติ) ================= -->
+    <section id="p-history" class="tab-panel" hidden>
+      <div class="screen">
+        <div class="greet"><h1 data-i18n="historyTitle">ประวัติการนอน</h1><p data-i18n="historySub">ติดตามและวิเคราะห์การนอนของคุณ</p></div>
+
+        <div class="stat-grid" id="histStats">
+          <div class="stat-box"><div class="sb-v" id="histAvgScore">--</div><div class="sb-c" data-i18n="avgScore">คะแนนเฉลี่ย 7 วัน</div></div>
+          <div class="stat-box"><div class="sb-v" id="histAvgSleep">--</div><div class="sb-c" data-i18n="avgSleep">นอนเฉลี่ย/คืน</div></div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h2 data-i18n="scoreTrend">แนวโน้ม Sleep Score</h2>
+          <div class="hist-bars" id="histBars"></div>
+          <div class="hist-empty" id="histEmpty" data-i18n="histEmpty">ยังไม่มีประวัติ — คำนวณเวลานอนคืนแรกของคุณเพื่อเริ่มบันทึก</div>
+        </div>
+
+        <div class="card listcard" id="histList"></div>
+      </div>
+    </section>
+
+    <!-- ================= PROFILE (โปรไฟล์) ================= -->
+    <section id="p-profile" class="tab-panel" hidden>
+      <div class="screen">
+        <div class="greet"><h1 data-i18n="profileTitle">โปรไฟล์และตั้งค่า</h1></div>
+
+        <div class="profile-card">
+          <div class="avatar">🧑</div>
+          <div style="flex:1">
+            <div class="pc-name" data-i18n="hello">สวัสดี,</div>
+            <div class="pc-h">TimeSync User</div>
+            <button class="pc-edit" id="editProfileBtn" data-i18n="editProfile">แก้ไขโปรไฟล์</button>
+          </div>
+        </div>
+
+        <div class="section-title" data-i18n="personalInfo">ข้อมูลส่วนตัว</div>
+        <div class="card listcard" id="personalList">
+          <button class="lrow" data-edit="age"><span class="li">🎂</span><span class="lt"><span class="lt-main" data-i18n="age">อายุ</span></span><span class="lv" id="pvAge">– ปี</span><span class="chev">›</span></button>
+          <button class="lrow" data-edit="sex"><span class="li">⚧</span><span class="lt"><span class="lt-main" data-i18n="sex">เพศ</span></span><span class="lv" id="pvSex">–</span><span class="chev">›</span></button>
+          <button class="lrow" data-edit="weight"><span class="li">⚖️</span><span class="lt"><span class="lt-main" data-i18n="weight">น้ำหนัก</span></span><span class="lv" id="pvWeight">– กก.</span><span class="chev">›</span></button>
+          <button class="lrow" data-edit="height"><span class="li">📏</span><span class="lt"><span class="lt-main" data-i18n="height">ส่วนสูง</span></span><span class="lv" id="pvHeight">– ซม.</span><span class="chev">›</span></button>
+          <div class="lrow"><span class="li">🛏️</span><span class="lt"><span class="lt-main" data-i18n="sleepGoal">เป้าหมายการนอน</span></span><span class="lv" id="pvGoal">7-9 ชม./คืน</span></div>
+        </div>
+
+        <div class="section-title" data-i18n="settings">การตั้งค่า</div>
+        <div class="card listcard">
+          <button class="lrow" id="tgSettingsRow"><span class="li">🔔</span><span class="lt"><span class="lt-main" data-i18n="notifications">การแจ้งเตือน (Telegram)</span></span><span class="lv" id="tgStatus" data-i18n="off">ปิด</span><span class="chev">›</span></button>
+          <div class="lrow"><span class="li">🌙</span><span class="lt"><span class="lt-main" data-i18n="darkMode">โหมดมืด</span></span><label class="toggle"><input type="checkbox" id="darkToggle"><span class="track"></span></label></div>
+          <button class="lrow" id="unitRow"><span class="li">📐</span><span class="lt"><span class="lt-main" data-i18n="units">หน่วยการวัด</span></span><span class="lv" data-i18n="metric">เมตริก (kg, cm)</span><span class="chev">›</span></button>
+          <button class="lrow" id="langRow"><span class="li">🌐</span><span class="lt"><span class="lt-main" data-i18n="language">ภาษา</span></span><span class="lv" id="langVal">ไทย</span><span class="chev">›</span></button>
+          <button class="lrow" id="aboutRow"><span class="li">ℹ️</span><span class="lt"><span class="lt-main" data-i18n="about">เกี่ยวกับ TimeSync</span></span><span class="chev">›</span></button>
+          <button class="lrow" id="privacyRow"><span class="li">🔒</span><span class="lt"><span class="lt-main" data-i18n="privacy">ความเป็นส่วนตัวและความปลอดภัย</span></span><span class="chev">›</span></button>
+        </div>
+
+        <!-- inline profile editor -->
+        <div class="card" id="profileEditor" hidden>
+          <h2 data-i18n="editBaseline">แก้ไข Baseline ร่างกาย</h2>
+          <p class="sub" data-i18n="baselineDesc">ใช้ประเมินค่า BMR และชั่วโมงนอนที่ร่างกายต้องการ (NSF/AASM)</p>
           <div class="field-group">
-            <label class="fl" for="ageInput" data-i18n="ageLabel">อายุ (ปี)</label>
-            <input type="number" id="ageInput" min="10" max="100" step="1" inputmode="numeric" placeholder="22">
+            <label class="fl" data-i18n="sex">เพศ</label>
+            <div class="seg" id="sexSeg">
+              <button type="button" class="seg-btn active" data-sex="male">♂ <span data-i18n="male">ชาย</span></button>
+              <button type="button" class="seg-btn" data-sex="female">♀ <span data-i18n="female">หญิง</span></button>
+            </div>
           </div>
-          <div class="field-group">
-            <label class="fl" for="weightInput" data-i18n="weightLabel">น้ำหนัก (กก.)</label>
-            <input type="number" id="weightInput" min="25" max="250" step="0.5" inputmode="decimal" placeholder="60">
+          <div class="grid-2">
+            <div class="field-group"><label class="fl" data-i18n="ageYears">อายุ (ปี)</label><input type="number" id="ageInput" min="10" max="100" inputmode="numeric" placeholder="22"></div>
+            <div class="field-group"><label class="fl" data-i18n="weightKg">น้ำหนัก (กก.)</label><input type="number" id="weightInput" min="25" max="250" step="0.5" inputmode="decimal" placeholder="70"></div>
           </div>
-        </div>
-        <div class="field-group">
-          <label class="fl" for="heightInput" data-i18n="heightLabel">ส่วนสูง (ซม.)</label>
-          <input type="number" id="heightInput" min="100" max="230" step="0.5" inputmode="decimal" placeholder="170">
+          <div class="field-group"><label class="fl" data-i18n="heightCm">ส่วนสูง (ซม.)</label><input type="number" id="heightInput" min="100" max="230" step="0.5" inputmode="decimal" placeholder="175"></div>
+          <button class="btn btn-primary" id="saveProfileBtn" data-i18n="save">บันทึก</button>
+          <div id="profileNotice" class="notice notice-ok" hidden></div>
         </div>
 
-        <button class="btn btn-primary" id="saveProfileBtn" data-i18n="saveProfileBtn">บันทึก Baseline</button>
-        <div id="profileNotice" class="notice notice-info" hidden></div>
+        <!-- inline telegram editor -->
+        <div class="card" id="tgEditor" hidden>
+          <h2 data-i18n="tgTitle">เชื่อมต่อ Telegram Bot</h2>
+          <p class="sub" data-i18n-html="tgDesc">รับแผนการนอนและการแจ้งเตือนเข้า Telegram โดยไม่ต้องเปิดแอปทุกวัน<br>1) ทักหา <b>@BotFather</b> สร้างบอทเพื่อรับ <b>Token</b><br>2) ทักหา <b>@userinfobot</b> เพื่อรับ <b>Chat ID</b> ของคุณ</p>
+          <div class="field-group"><label class="fl">Bot Token</label><input type="text" id="tgToken" placeholder="123456:ABC-DEF..." autocomplete="off"></div>
+          <div class="field-group"><label class="fl">Chat ID</label><input type="text" id="tgChatId" placeholder="123456789" inputmode="numeric" autocomplete="off"></div>
+          <div class="row-gap">
+            <button class="btn btn-primary" id="tgSaveBtn" data-i18n="saveConnect">บันทึกและทดสอบ</button>
+          </div>
+          <div id="tgSettingsResult" class="notice" hidden></div>
+        </div>
 
-        <div id="profileSummary" class="notice notice-info" hidden style="margin-top:14px"></div>
-      </div>
-    </section>
-
-    <!-- ============ ABOUT / WHY ============ -->
-    <section id="panel-about" class="tab-panel" hidden>
-      <div class="card">
-        <div class="eyebrow"><span class="dot"></span><span data-i18n="problemStep">ปัญหาที่คุณกำลังเจอ</span></div>
-        <div class="prob">
-          <div class="pi">🧠</div>
-          <div>
-            <div class="pt" data-i18n="prob1t">สมองตื่น (Hyperarousal)</div>
-            <div class="pd" data-i18n="prob1d">ร่างกายเหนื่อยล้า แต่สมองฟุ้งซ่านจนนอนไม่หลับ</div>
-          </div>
-        </div>
-        <div class="prob">
-          <div class="pi">⏰</div>
-          <div>
-            <div class="pt" data-i18n="prob2t">ตื่นมางัวเงีย</div>
-            <div class="pd" data-i18n="prob2d">ชินกับเสียงปลุกเดิม ๆ ตื่นมาแล้วงัวเงีย หรือกดเลื่อนปลุกจนสาย</div>
-          </div>
-        </div>
-        <div class="prob">
-          <div class="pi">🔋</div>
-          <div>
-            <div class="pt" data-i18n="prob3t">Friction</div>
-            <div class="pd" data-i18n="prob3d">ความเหนื่อยล้าสะสม ทำให้ขี้เกียจกรอกข้อมูลลงแอป</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="eyebrow"><span class="dot"></span><span data-i18n="flowStep">Process Flow · 4 ขั้นตอน</span></div>
-        <div class="step">
-          <div class="step-num">1</div>
-          <div class="step-body">
-            <div class="step-title" data-i18n="flow1t">Initial Setup</div>
-            <div class="step-text" data-i18n="flow1d">กรอกอายุ เพศ น้ำหนัก ส่วนสูง ครั้งเดียว → ประเมิน BMR + ชั่วโมงนอนตามช่วงอายุจาก NSF</div>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <div class="step-body">
-            <div class="step-title" data-i18n="flow2t">Daily Input</div>
-            <div class="step-text" data-i18n="flow2d">บอกเวลาเลิกงานและเวลาตื่น ใช้เวลาแค่ 5 วินาที ระบบส่งเข้าสมการคำนวณอัตโนมัติ</div>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <div class="step-body">
-            <div class="step-title" data-i18n="flow3t">Data Processing</div>
-            <div class="step-text" data-i18n="flow3d">ประเมินความล้า (Body Load) + จัดการหนี้การนอน (Sleep Debt) + ล็อกรอบเวลา 90 นาที (Cycle Mapping)</div>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">4</div>
-          <div class="step-body">
-            <div class="step-title" data-i18n="flow4t">Smart Wake-up</div>
-            <div class="step-text" data-i18n="flow4d">แจ้งเตือนเข้านอน + เปิดหน้าต่างปลุก 30 นาที + ปลุกในจังหวะครบรอบ 90 นาที (Light Sleep)</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="eyebrow"><span class="dot"></span><span data-i18n="whyStep">ทำไมต้อง TimeSync?</span></div>
-        <div class="why"><span class="wi">📖</span><span class="wt" data-i18n="why1">คำนวณด้วย<b>หลักชีววิทยา</b>และงานวิจัยที่เชื่อถือได้ (BMR · NSF · 90-min cycle)</span></div>
-        <div class="why"><span class="wi">👆</span><span class="wt" data-i18n="why2"><b>ใช้งานง่าย</b> กรอกน้อยที่สุด แค่วันละ 5 วินาที</span></div>
-        <div class="why"><span class="wi">🤖</span><span class="wt" data-i18n="why3"><b>AI อัจฉริยะ</b> เรียนรู้และปรับให้เข้ากับไลฟ์สไตล์ของคุณ</span></div>
-        <div class="why"><span class="wi">📱</span><span class="wt" data-i18n="why4"><b>ไม่ต้องใส่อุปกรณ์พิเศษ</b> ใช้แค่แอปบนมือถือ ติดตั้งเป็น PWA ได้</span></div>
-        <div class="why"><span class="wi">🎁</span><span class="wt" data-i18n="why5"><b>ฟรี!</b> ไม่มีค่าใช้จ่าย เริ่มดูแลการนอนได้ทันที</span></div>
-      </div>
-
-      <div class="card">
-        <div class="eyebrow"><span class="dot"></span><span data-i18n="benefitStep">ผลลัพธ์ที่คุณจะได้รับ</span></div>
-        <div class="benefit"><span class="bi">✓</span><span data-i18n="ben1">นอนหลับสนิทขึ้น ตื่นมาสดชื่น ไม่เพลีย</span></div>
-        <div class="benefit"><span class="bi">✓</span><span data-i18n="ben2">พลังงานเต็ม พร้อมลุยงาน</span></div>
-        <div class="benefit"><span class="bi">✓</span><span data-i18n="ben3">จัดการเวลาได้ดีขึ้น ไม่พลาดงานสำคัญ</span></div>
-        <div class="benefit"><span class="bi">✓</span><span data-i18n="ben4">สุขภาพดีขึ้นในระยะยาว</span></div>
-        <p class="footer-quote" data-i18n-html="footerQuote">“ <b>นอนให้พอ เพื่อรุ่งนี้ที่ดีกว่า</b> ”<br>TimeSync – Sync Your Energy, Master Your Time.</p>
+        <p class="btn-hint" style="margin-top:16px" data-i18n="tagline">TimeSync – Sync Your Energy, Master Your Time.</p>
       </div>
     </section>
 
   </main>
 </div>
 
-<nav class="tabbar-wrap">
-  <div class="tabbar">
-    <button class="tab-btn active" data-tab="home"><span class="ti">🏠</span><span data-i18n="tabHome">หน้าหลัก</span></button>
-    <button class="tab-btn" data-tab="alarm"><span class="ti">⏰</span><span data-i18n="tabAlarm">ปลุก</span></button>
-    <button class="tab-btn" data-tab="profile"><span class="ti">👤</span><span data-i18n="tabProfile">ตั้งค่า</span></button>
-    <button class="tab-btn" data-tab="about"><span class="ti">ℹ️</span><span data-i18n="tabAbout">เกี่ยวกับ</span></button>
+<nav class="nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" data-tab="home"><span class="ni">🏠</span><span data-i18n="navHome">หน้าหลัก</span></button>
+    <button class="nav-btn" data-tab="sleep"><span class="ni">🌙</span><span data-i18n="navSleep">การนอน</span></button>
+    <button class="nav-btn" data-tab="history"><span class="ni">📊</span><span data-i18n="navHistory">ประวัติ</span></button>
+    <button class="nav-btn" data-tab="profile"><span class="ni">👤</span><span data-i18n="navProfile">โปรไฟล์</span></button>
   </div>
 </nav>
 
-<!-- Alarm modal -->
-<div class="modal-overlay" id="alarmModal" role="dialog" aria-modal="true" aria-hidden="true">
+<!-- Gentle alarm modal -->
+<div class="modal" id="alarmModal" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="modal-panel">
     <div class="modal-ico">⏰</div>
-    <h2 data-i18n="wakeUp">ตื่นได้แล้ว!</h2>
-    <p class="modal-sub" data-i18n="modalSub">แก้โจทย์ด้านล่างเพื่อหยุดเสียงปลุก</p>
-    <div class="countdown" id="countdown">05:00</div>
-    <div class="challenge-box">
-      <div class="challenge-q" id="challengeQ">–</div>
-      <input type="text" class="challenge-input" id="challengeInput" data-i18n-placeholder="answerPlaceholder" placeholder="พิมพ์คำตอบ" autocomplete="off">
-      <div class="challenge-error" id="challengeError" hidden></div>
-      <button class="btn btn-primary" id="challengeSubmit" data-i18n="submit">ส่งคำตอบ</button>
-    </div>
-    <div class="emergency" id="emergency" hidden data-i18n="emergency">แจ้งเตือนฉุกเฉิน: เวลานับถอยหลังหมดแล้ว กรุณาตื่นได้แล้วนะ</div>
+    <h2 data-i18n="goodMorning">อรุณสวัสดิ์ ☀️</h2>
+    <p class="m-sub" data-i18n="lightSleepWake">ปลุกในช่วง Light Sleep — ตื่นมาสดชื่น</p>
+    <div class="m-time" id="modalTime">06:15</div>
+    <button class="btn btn-primary" id="dismissAlarmBtn" data-i18n="stopAlarm">ปิดเสียงปลุก</button>
   </div>
 </div>
 
 <script>
 (function () {
   "use strict";
-
-  /* ============================================================
-     TimeSync – Smart Sleep Calculator
-     Single-file static PWA. All logic client-side.
-     ============================================================ */
-
-  // NOTE: This key is shipped client-side and is therefore public. It can be
-  // scraped from the deployed site. Restrict it (HTTP referrer / quota) in the
-  // Google Cloud console, or proxy through a serverless function for real use.
-  var GEMINI_API_KEY = "AQ.Ab8RN6LHzcZHDCDmeGKR6VTHFqhZvju8nm36zFYoBMoNli6g3Q";
-
   var $ = function (id) { return document.getElementById(id); };
   var pad = function (n) { return String(n).padStart(2, "0"); };
   var clamp = function (v, lo, hi) { return Math.max(lo, Math.min(hi, v)); };
 
-  var CYCLE_MIN = 90;      // one sleep cycle
-  var FALL_ASLEEP = 15;    // latency to fall asleep (min)
-  var WAKE_WINDOW = 30;    // smart wake-up window (min)
+  var CYCLE = 90, ONSET_MIN = 15, ONSET_TIRED = 20, WINDOW = 30;
 
-  var LS = {
-    lang: "timesync-lang",
-    profile: "timesync-profile",
-    lastNight: "timesync-lastnight",
-    plan: "timesync-plan"
-  };
+  var LS = { profile: "ts2-profile", prefs: "ts2-prefs", history: "ts2-history", plan: "ts2-plan" };
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  var profile = load(LS.profile, null);        // {sex,age,weight,height}
+  var prefs = load(LS.prefs, { theme: "light", lang: null, alarmEnabled: true, volume: "medium", vibrate: true, tgToken: "", tgChatId: "" });
+  var history = load(LS.history, []);           // [{date, bedMin, wakeMin, cycles, hours, score, eff, debtMin}]
+  var plan = load(LS.plan, null);
 
   /* ---------------- i18n ---------------- */
   var T = {
     th: {
-      tagline: "Smart Sleep Calculator · คำนวณเวลานอนที่ใช่ เพื่อพลังงาน 100%",
-      energyLabel: "Energy Score",
-      heroReady: "กรอกเวลาเพื่อเริ่มคำนวณ",
-      heroHint: "แตะช่องด้านล่างแล้วกดคำนวณ ใช้เวลาแค่ 5 วินาที",
-      kpiBed: "เวลานอนที่แนะนำ", kpiWake: "ปลุกที่เหมาะสม",
-      dailyStep: "Daily Input · ใช้เวลาแค่ 5 วินาที",
-      dailyHeading: "บอกเวลาง่าย ๆ ให้ระบบจัดการ",
-      dailySub: "แค่บอกเวลาเลิกงานวันนี้ และเวลาสายที่สุดที่ต้องตื่นพรุ่งนี้ TimeSync จะคำนวณเวลานอนที่เป๊ะที่สุดให้",
-      workEndLabel: "เวลาเลิกงานวันนี้", wakeLabel: "ตื่นสายสุดพรุ่งนี้",
-      lastNightSummary: "เมื่อคืนนอนกี่ชั่วโมง? (ช่วยคำนวณหนี้การนอน)",
-      lastNightPlaceholder: "เช่น 5.5 (เว้นว่างได้)",
-      calcBtn: "คำนวณเวลานอนของฉัน",
-      breakdownSummary: "ดูรายละเอียดการคำนวณ (Data Processing)",
-      aiEyebrow: "AI Insight",
-      aiHeading: "คำแนะนำจาก AI เฉพาะคืนนี้",
-      aiSub: "เล่าอารมณ์/ความเหนื่อยของคืนนี้ แล้ว AI จะช่วยออกแบบช่วงผ่อนคลายก่อนนอนแบบไม่ใช้หน้าจอให้",
-      moodPlaceholder: "คืนนี้รู้สึกอย่างไร เช่น เครียดเรื่องงาน ปวดหลัง คิดมาก",
-      aiBtn: "ขอคำแนะนำจาก AI", aiGenerating: "กำลังสร้าง...",
-      aiKeyWarn: "ยังไม่ได้ตั้งค่าคีย์ Gemini API — ฟีเจอร์ AI จะถูกข้ามไปจนกว่าจะใส่คีย์จริงในซอร์สโค้ด (ตัวคำนวณเวลานอนใช้งานได้ตามปกติ)",
-      aiErrPrefix: "ขอคำแนะนำไม่สำเร็จ: ",
-      wakeStep: "Smart Wake-up · Step 4",
-      alarmHeading: "ปลุกในจังหวะที่ร่างกายพร้อม",
-      alarmSub: "ตั้งเวลาตื่น TimeSync จะตรวจนาฬิกาทุกวินาที และปลุกด้วยโจทย์กันงีบที่ต้องแก้ก่อนจึงจะปิดได้",
-      alarmTimeLabel: "เวลาตื่น", setAlarmBtn: "ตั้งปลุก",
-      useRecommendedBtn: "ใช้เวลาปลุกที่คำนวณไว้",
-      noAlarm: "ยังไม่ได้ตั้งปลุก", testAlarm: "ทดสอบเสียงปลุกตอนนี้",
-      chooseTimeFirst: "กรุณาเลือกเวลาตื่นก่อน",
-      alarmArmed: "ตั้งปลุกเวลา {time} แล้ว · เปิดแอปนี้ค้างไว้",
-      testFiring: "เสียงปลุกทดสอบจะดังในอีกไม่กี่วินาที...",
-      testSolved: "แก้โจทย์ทดสอบสำเร็จ · ปลุกจริงยังตั้งอยู่",
-      alarmResolved: "ปิดเสียงปลุกเรียบร้อย · ตั้งใหม่ได้ทุกเมื่อ",
-      noPlanYet: "ยังไม่มีเวลาปลุกที่คำนวณไว้ ไปที่หน้าหลักเพื่อคำนวณก่อน",
-      usedRecommended: "ใช้เวลาปลุก {time} จากผลการคำนวณแล้ว",
-      setupStep: "Initial Setup · กรอกครั้งเดียวจบ",
-      setupHeading: "สร้าง Baseline สถิติร่างกาย",
-      setupSub: "ระบบประเมินค่า BMR และดึงข้อมูลจาก NSF (National Sleep Foundation) เพื่อหาจำนวนชั่วโมงการนอนที่ร่างกายคุณต้องการ",
-      sexLabel: "เพศ", male: "ชาย", female: "หญิง",
-      ageLabel: "อายุ (ปี)", weightLabel: "น้ำหนัก (กก.)", heightLabel: "ส่วนสูง (ซม.)",
-      saveProfileBtn: "บันทึก Baseline",
-      profileErr: "กรุณากรอกอายุ น้ำหนัก และส่วนสูงให้ครบและถูกต้อง",
-      profileSaved: "บันทึกแล้ว! BMR ≈ {bmr} kcal/วัน · ช่วงอายุนี้ควรนอน {lo}–{hi} ชม./คืน",
-      profileSummaryLabel: "Baseline ปัจจุบัน: {sex} · {age} ปี · {w} กก. · {h} ซม. · BMR ≈ {bmr} kcal · นอน {lo}–{hi} ชม.",
-      needProfile: "แนะนำให้ตั้งค่า Baseline ร่างกายก่อน (แท็บ ตั้งค่า) เพื่อความแม่นยำ — ตอนนี้ใช้ค่ามาตรฐานช่วงอายุ 18–25 ปีให้ก่อน",
-      timeErr: "กรุณากรอกเวลาเลิกงานและเวลาตื่นให้ครบ",
-      tightWarn: "⚠️ เวลาหลังเลิกงานถึงเวลาตื่นสั้นไปหน่อย ({have} ชม.) — TimeSync จัดรอบการนอนที่ดีที่สุดเท่าที่เป็นไปได้ให้แล้ว",
-      // breakdown
-      bkBodyT: "1. ประเมินความล้า (Body Load)",
-      bkBodyD: "เลิกงาน <b>{end}</b> → คูลดาวน์ก่อนหลับ <b>+{cooldown} นาที</b> เพื่อให้สมองสงบก่อนล้มตัวลงนอน",
-      bkDebtT: "2. จัดการหนี้การนอน (Sleep Debt)",
-      bkDebtD: "เมื่อคืนนอน <b>{last} ชม.</b> · ควรนอน <b>{mid} ชม.</b> → หนี้การนอน <b>{debt} ชม.</b> ระบบขยับเวลานอนให้เร็วขึ้นเพื่อชดเชย",
-      bkDebtNone: "ไม่มีข้อมูลการนอนเมื่อคืน หรือไม่มีหนี้การนอน — ใช้เป้าหมาย <b>{mid} ชม.</b> ตามช่วงอายุ",
-      bkCycleT: "3. ล็อกรอบเวลา (Cycle Mapping)",
-      bkCycleD: "นับถอยหลังจากเวลาตื่น <b>{wake}</b> ทีละ 90 นาที → <b>{cycles} รอบ</b> = นอน <b>{hours} ชม.</b> จึงตื่นในช่วง Light Sleep",
-      bedMeta: "{cycles} รอบ · นอน {hours} ชม.",
-      bestBadge: "แนะนำ",
-      statusGreat: "วันนี้คุณพร้อม! 🔋", statusGood: "พลังงานใช้ได้ 👍",
-      statusOk: "พอไหว แต่ควรนอนให้เร็วขึ้น 😌", statusLow: "เสี่ยงพลังงานต่ำ ควรรีบเข้านอน 😴",
-      hintPlan: "เข้านอน {bed} · ตื่น {wake} · นอน {hours} ชม. ({cycles} รอบ)",
-      wakeUp: "ตื่นได้แล้ว!", modalSub: "แก้โจทย์ด้านล่างเพื่อหยุดเสียงปลุก",
-      answerPlaceholder: "พิมพ์คำตอบ", submit: "ส่งคำตอบ",
-      incorrect: "ไม่ถูกต้อง ลองใหม่อีกครั้ง",
-      wrongMath: "ยังไม่ถูก ลองตรวจการคำนวณอีกครั้ง",
-      wrongPhrase: "พิมพ์ไม่ตรงกับต้นฉบับ ลองใหม่อีกครั้ง",
-      retypePhrase: 'พิมพ์ประโยคนี้ให้ตรงทุกตัวอักษร: "{phrase}"',
-      emergency: "แจ้งเตือนฉุกเฉิน: เวลานับถอยหลังหมดแล้ว กรุณาตื่นได้แล้วนะ",
-      tabHome: "หน้าหลัก", tabAlarm: "ปลุก", tabProfile: "ตั้งค่า", tabAbout: "เกี่ยวกับ",
-      problemStep: "ปัญหาที่คุณกำลังเจอ",
-      prob1t: "สมองตื่น (Hyperarousal)", prob1d: "ร่างกายเหนื่อยล้า แต่สมองฟุ้งซ่านจนนอนไม่หลับ",
-      prob2t: "ตื่นมางัวเงีย", prob2d: "ชินกับเสียงปลุกเดิม ๆ ตื่นมาแล้วงัวเงีย หรือกดเลื่อนปลุกจนสาย",
-      prob3t: "Friction", prob3d: "ความเหนื่อยล้าสะสม ทำให้ขี้เกียจกรอกข้อมูลลงแอป",
-      flowStep: "Process Flow · 4 ขั้นตอน",
-      flow1t: "Initial Setup", flow1d: "กรอกอายุ เพศ น้ำหนัก ส่วนสูง ครั้งเดียว → ประเมิน BMR + ชั่วโมงนอนตามช่วงอายุจาก NSF",
-      flow2t: "Daily Input", flow2d: "บอกเวลาเลิกงานและเวลาตื่น ใช้เวลาแค่ 5 วินาที ระบบส่งเข้าสมการคำนวณอัตโนมัติ",
-      flow3t: "Data Processing", flow3d: "ประเมินความล้า (Body Load) + จัดการหนี้การนอน (Sleep Debt) + ล็อกรอบเวลา 90 นาที (Cycle Mapping)",
-      flow4t: "Smart Wake-up", flow4d: "แจ้งเตือนเข้านอน + เปิดหน้าต่างปลุก 30 นาที + ปลุกในจังหวะครบรอบ 90 นาที (Light Sleep)",
-      whyStep: "ทำไมต้อง TimeSync?",
-      why1: "คำนวณด้วย<b>หลักชีววิทยา</b>และงานวิจัยที่เชื่อถือได้ (BMR · NSF · 90-min cycle)",
-      why2: "<b>ใช้งานง่าย</b> กรอกน้อยที่สุด แค่วันละ 5 วินาที",
-      why3: "<b>AI อัจฉริยะ</b> เรียนรู้และปรับให้เข้ากับไลฟ์สไตล์ของคุณ",
-      why4: "<b>ไม่ต้องใส่อุปกรณ์พิเศษ</b> ใช้แค่แอปบนมือถือ ติดตั้งเป็น PWA ได้",
-      why5: "<b>ฟรี!</b> ไม่มีค่าใช้จ่าย เริ่มดูแลการนอนได้ทันที",
-      benefitStep: "ผลลัพธ์ที่คุณจะได้รับ",
-      ben1: "นอนหลับสนิทขึ้น ตื่นมาสดชื่น ไม่เพลีย", ben2: "พลังงานเต็ม พร้อมลุยงาน",
-      ben3: "จัดการเวลาได้ดีขึ้น ไม่พลาดงานสำคัญ", ben4: "สุขภาพดีขึ้นในระยะยาว",
-      footerQuote: "“ <b>นอนให้พอ เพื่อรุ่งนี้ที่ดีกว่า</b> ”<br>TimeSync – Sync Your Energy, Master Your Time.",
-      aiPromptLang: "ตอบเป็นภาษาไทยทั้งหมด"
+      navHome:"หน้าหลัก", navSleep:"การนอน", navHistory:"ประวัติ", navProfile:"โปรไฟล์",
+      greetSub:"พร้อมคำนวณเวลานอนของคุณแล้วหรือยัง?",
+      greetMorning:"สวัสดีตอนเช้า ☀️", greetAfternoon:"สวัสดีตอนบ่าย 👋", greetEvening:"สวัสดีตอนเย็น 👋", greetNight:"ราตรีสวัสดิ์ 🌙",
+      sleepScore:"Sleep Score", sleepDebt:"หนี้การนอน",
+      debtSubEmpty:"ยังไม่มีข้อมูล กดคำนวณเพื่อเริ่ม",
+      debtSub:"คุณเป็นหนี้การนอนสะสม {v}",
+      debtSubNone:"คุณนอนเพียงพอ รักษาวินัยแบบนี้ต่อไป",
+      todayPlan:"แผนการนอนของวันนี้", shouldSleep:"ควรเข้านอน", shouldWake:"ควรตื่น",
+      today:"วันนี้", tomorrow:"พรุ่งนี้",
+      calcTonight:"คำนวณเวลานอนคืนนี้", only5s:"ใช้เวลาเพียง 5 วินาที", only5s2:"ใช้เวลาเพียง 5 วินาที",
+      dailyInputTitle:"กรอกข้อมูลวันนี้",
+      workEndTitle:"เลิกงาน / เลิกกิจกรรมสุดท้าย", workEndDesc:"ระบุเวลาที่คุณจะจบงานหรือกิจกรรมในวันนี้",
+      wakeTitle:"ตื่นสายที่สุดได้ในวันพรุ่งนี้", wakeDesc:"ระบุเวลาสายที่สุดที่คุณสามารถตื่นได้ในวันพรุ่งนี้",
+      calcNow:"คำนวณเลย", dataSafe:"ข้อมูลของคุณปลอดภัย",
+      resultTitle:"ผลลัพธ์สำหรับคืนนี้", youShouldSleep:"เวลาที่คุณควรเข้านอน",
+      wakeSuggest:"เวลาตื่นที่แนะนำ", totalSleep:"นอนทั้งหมด", enough:"เพียงพอ", notEnough:"ยังไม่พอ",
+      cyclesTitle:"รอบการนอน (90 นาที / รอบ)", yourDebt:"หนี้การนอนของคุณ",
+      windDownTitle:"เตรียมตัวก่อนนอน", windDownDesc:"หยุดหน้าจอและผ่อนคลายอย่างน้อย 20 นาที ก่อนเข้านอน",
+      viewSmartWake:"ดูหน้าปลุกอัจฉริยะ →", sendTelegram:"📨 ส่งแผนไป Telegram",
+      smartWakeTitle:"ปลุกอัจฉริยะ", wakeWindowTitle:"หน้าต่างปลุก (30 นาที)", wakeWindowDesc:"เราจะปลุกคุณในช่วงเวลาที่เหมาะสมที่สุด",
+      bestWakePoint:"จุดตื่นที่ดีที่สุด", smartAlarm:"ปลุกอัจฉริยะ",
+      alarmSound:"เสียงปลุก", soundNatural:"เสียงธรรมชาติ", alarmVolume:"ระดับเสียง", volMedium:"ปานกลาง", volLow:"เบา", volHigh:"ดัง",
+      vibrate:"สั่นเบา (ถ้าจำเป็น)",
+      nativeClockTip:"⏰ เพื่อความปลอดภัย 100% แนะนำให้ตั้งเวลาปลุกจริงในนาฬิกาของเครื่องที่ <b>จุดตื่นที่ดีที่สุด</b> ด้วย แอปนี้ช่วยคำนวณจังหวะที่ควรตื่น",
+      lastAnalysis:"การวิเคราะห์คืนนี้", restEfficiency:"ประสิทธิภาพการพักผ่อน", testAlarm:"ทดสอบเสียงปลุก",
+      historyTitle:"ประวัติการนอน", historySub:"ติดตามและวิเคราะห์การนอนของคุณ",
+      avgScore:"คะแนนเฉลี่ย 7 วัน", avgSleep:"นอนเฉลี่ย/คืน", scoreTrend:"แนวโน้ม Sleep Score",
+      histEmpty:"ยังไม่มีประวัติ — คำนวณเวลานอนคืนแรกของคุณเพื่อเริ่มบันทึก",
+      profileTitle:"โปรไฟล์และตั้งค่า", hello:"สวัสดี,", editProfile:"แก้ไขโปรไฟล์",
+      personalInfo:"ข้อมูลส่วนตัว", age:"อายุ", sex:"เพศ", weight:"น้ำหนัก", height:"ส่วนสูง", sleepGoal:"เป้าหมายการนอน",
+      settings:"การตั้งค่า", notifications:"การแจ้งเตือน (Telegram)", off:"ปิด", on:"เปิด",
+      darkMode:"โหมดมืด", units:"หน่วยการวัด", metric:"เมตริก (kg, cm)", language:"ภาษา", about:"เกี่ยวกับ TimeSync", privacy:"ความเป็นส่วนตัวและความปลอดภัย",
+      editBaseline:"แก้ไข Baseline ร่างกาย", baselineDesc:"ใช้ประเมินค่า BMR และชั่วโมงนอนที่ร่างกายต้องการ (NSF/AASM)",
+      male:"ชาย", female:"หญิง", ageYears:"อายุ (ปี)", weightKg:"น้ำหนัก (กก.)", heightCm:"ส่วนสูง (ซม.)", save:"บันทึก",
+      tgTitle:"เชื่อมต่อ Telegram Bot",
+      tgDesc:"รับแผนการนอนและการแจ้งเตือนเข้า Telegram โดยไม่ต้องเปิดแอปทุกวัน<br>1) ทักหา <b>@BotFather</b> สร้างบอทเพื่อรับ <b>Token</b><br>2) ทักหา <b>@userinfobot</b> เพื่อรับ <b>Chat ID</b> ของคุณ",
+      saveConnect:"บันทึกและทดสอบ", tagline:"TimeSync – Sync Your Energy, Master Your Time.",
+      goodMorning:"อรุณสวัสดิ์ ☀️", lightSleepWake:"ปลุกในช่วง Light Sleep — ตื่นมาสดชื่น", stopAlarm:"ปิดเสียงปลุก",
+      ratingExcellent:"ยอดเยี่ยม ✨", ratingGood:"ดีมาก 👍", ratingFair:"พอใช้ 😌", ratingPoor:"ควรปรับปรุง 😴",
+      badgeLow:"น้อย", badgeMed:"ปานกลาง", badgeHigh:"มาก",
+      hoursMin:"{h} ชม. {m} นาที", hoursMinShort:"{h}ชม {m}น", yearsUnit:"{v} ปี", kgUnit:"{v} กก.", cmUnit:"{v} ซม.", goalUnit:"{lo}-{hi} ชม./คืน",
+      errNeedTimes:"กรุณาเลือกเวลาให้ครบทั้งสองช่อง",
+      countdownIn:"อีก {h} ชม. {m} นาที", countdownSoon:"ถึงเวลาเข้านอนแล้ว",
+      debtAdvice:"แนะนำ: รักษาวินัยการนอนต่อไป", debtAdviceHigh:"แนะนำ: เข้านอนให้เร็วขึ้นเพื่อชดเชย",
+      tgNotConfigured:"ยังไม่ได้เชื่อมต่อ Telegram — ไปที่ โปรไฟล์ › การแจ้งเตือน เพื่อตั้งค่า",
+      tgSending:"กำลังส่ง...", tgSent:"✓ ส่งแผนการนอนไป Telegram แล้ว", tgFail:"ส่งไม่สำเร็จ: ",
+      tgSaved:"✓ เชื่อมต่อสำเร็จ! ส่งข้อความทดสอบไปแล้ว", tgTestMsg:"✅ TimeSync เชื่อมต่อสำเร็จ! คุณจะได้รับแผนการนอนที่นี่",
+      tgNeedBoth:"กรุณากรอกทั้ง Token และ Chat ID",
+      tgPlanMsg:"🌙 แผนการนอน TimeSync\nควรเข้านอน: {bed} น.\nควรตื่น: {wake} น.\nนอนทั้งหมด: {total}\nรอบการนอน: {cycles} รอบ\nSleep Score: {score}/100",
+      profileSaved:"บันทึกแล้ว! BMR ≈ {bmr} kcal/วัน · ควรนอน {lo}-{hi} ชม./คืน",
+      profileErr:"กรุณากรอกอายุ น้ำหนัก และส่วนสูงให้ถูกต้อง",
+      aboutMsg:"TimeSync – Smart Sleep Calculator\nคำนวณเวลานอนด้วยหลักสถิติ NSF/AASM และรอบการนอน 90 นาที ทำงานแบบออฟไลน์ ข้อมูลทั้งหมดเก็บในเครื่องคุณเท่านั้น",
+      privacyMsg:"ความเป็นส่วนตัว: ข้อมูลทั้งหมด (โปรไฟล์ ประวัติการนอน) ถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น (localStorage) ไม่มีการส่งขึ้นเซิร์ฟเวอร์ ยกเว้นเมื่อคุณกดส่งไป Telegram ด้วยตนเอง",
+      volPrompt:"เลือกระดับเสียง: 1=เบา, 2=ปานกลาง, 3=ดัง", langNameTh:"ไทย", langNameEn:"อังกฤษ"
     },
     en: {
-      tagline: "Smart Sleep Calculator · dial in the sleep that gives you 100% energy",
-      energyLabel: "Energy Score",
-      heroReady: "Enter your times to calculate",
-      heroHint: "Fill the fields below and tap calculate — takes 5 seconds",
-      kpiBed: "Recommended bedtime", kpiWake: "Optimal wake-up",
-      dailyStep: "Daily Input · takes only 5 seconds",
-      dailyHeading: "Just tell it two times",
-      dailySub: "Give today's work end time and the latest you can wake tomorrow. TimeSync locks the most precise bedtime for you.",
-      workEndLabel: "Work ends today", wakeLabel: "Latest wake tomorrow",
-      lastNightSummary: "How many hours did you sleep last night? (for sleep debt)",
-      lastNightPlaceholder: "e.g. 5.5 (optional)",
-      calcBtn: "Calculate my sleep",
-      breakdownSummary: "See the calculation (Data Processing)",
-      aiEyebrow: "AI Insight",
-      aiHeading: "Tonight's personalized AI tip",
-      aiSub: "Describe tonight's mood or fatigue and AI will design a screen-free wind-down for you.",
-      moodPlaceholder: "How do you feel tonight? e.g. work stress, back pain, racing thoughts",
-      aiBtn: "Get AI advice", aiGenerating: "Generating...",
-      aiKeyWarn: "No Gemini API key configured — the AI feature is skipped until a real key is added to the source (the sleep calculator still works fully).",
-      aiErrPrefix: "Couldn't get advice: ",
-      wakeStep: "Smart Wake-up · Step 4",
-      alarmHeading: "Wake when your body is ready",
-      alarmSub: "Set a wake time. TimeSync checks the clock every second and sounds an anti-snooze alarm you must solve to dismiss.",
-      alarmTimeLabel: "Wake-up time", setAlarmBtn: "Set Alarm",
-      useRecommendedBtn: "Use calculated wake time",
-      noAlarm: "No alarm armed yet.", testAlarm: "Trigger test alarm now",
-      chooseTimeFirst: "Please choose a wake-up time first.",
-      alarmArmed: "Alarm armed for {time} · keep this app open.",
-      testFiring: "Test alarm firing in a few seconds...",
-      testSolved: "Test solved · your real alarm is still armed.",
-      alarmResolved: "Alarm resolved · set a new one anytime.",
-      noPlanYet: "No calculated wake time yet. Go to Home and calculate first.",
-      usedRecommended: "Using calculated wake time {time}.",
-      setupStep: "Initial Setup · fill once",
-      setupHeading: "Build your body baseline",
-      setupSub: "We estimate your BMR and pull NSF (National Sleep Foundation) data to find the sleep hours your body needs.",
-      sexLabel: "Sex", male: "Male", female: "Female",
-      ageLabel: "Age (years)", weightLabel: "Weight (kg)", heightLabel: "Height (cm)",
-      saveProfileBtn: "Save baseline",
-      profileErr: "Please enter a valid age, weight and height.",
-      profileSaved: "Saved! BMR ≈ {bmr} kcal/day · your age needs {lo}–{hi} h/night",
-      profileSummaryLabel: "Current baseline: {sex} · {age} yrs · {w} kg · {h} cm · BMR ≈ {bmr} kcal · sleep {lo}–{hi} h",
-      needProfile: "Tip: set your body baseline first (Setup tab) for accuracy — using the standard 18–25 range for now.",
-      timeErr: "Please enter both the work end time and wake time.",
-      tightWarn: "⚠️ The window from work end to wake is a bit short ({have} h) — TimeSync fit the best possible cycles.",
-      bkBodyT: "1. Body Load",
-      bkBodyD: "Work ends <b>{end}</b> → pre-sleep cooldown <b>+{cooldown} min</b> so your mind settles before lying down.",
-      bkDebtT: "2. Sleep Debt",
-      bkDebtD: "Slept <b>{last} h</b> last night · should sleep <b>{mid} h</b> → debt <b>{debt} h</b>, bedtime moved earlier to repay.",
-      bkDebtNone: "No last-night data or no debt — using the <b>{mid} h</b> target for your age.",
-      bkCycleT: "3. Cycle Mapping",
-      bkCycleD: "Counting back from wake <b>{wake}</b> in 90-min steps → <b>{cycles} cycles</b> = <b>{hours} h</b> sleep, waking in Light Sleep.",
-      bedMeta: "{cycles} cycles · {hours} h",
-      bestBadge: "best",
-      statusGreat: "You're ready today! 🔋", statusGood: "Solid energy 👍",
-      statusOk: "Okay — try to sleep earlier 😌", statusLow: "Low-energy risk, sleep soon 😴",
-      hintPlan: "Sleep {bed} · wake {wake} · {hours} h ({cycles} cycles)",
-      wakeUp: "Wake Up!", modalSub: "Solve the challenge below to stop the alarm.",
-      answerPlaceholder: "Type your answer", submit: "Submit",
-      incorrect: "Incorrect. Try again.",
-      wrongMath: "Not quite — check your math and try again.",
-      wrongPhrase: "That doesn't match exactly — try again.",
-      retypePhrase: 'Type this phrase exactly: "{phrase}"',
-      emergency: "Emergency alert: the countdown ran out. Please wake up now.",
-      tabHome: "Home", tabAlarm: "Alarm", tabProfile: "Setup", tabAbout: "About",
-      problemStep: "Problems you're facing",
-      prob1t: "Hyperarousal", prob1d: "Body exhausted, but the mind races and won't switch off.",
-      prob2t: "Groggy mornings", prob2d: "Numb to the same old alarm — you wake groggy or snooze until you're late.",
-      prob3t: "Friction", prob3d: "Accumulated fatigue makes filling in an app feel like a chore.",
-      flowStep: "Process Flow · 4 steps",
-      flow1t: "Initial Setup", flow1d: "Enter age, sex, weight, height once → estimate BMR + NSF sleep hours for your age.",
-      flow2t: "Daily Input", flow2d: "Tell it your work-end and wake time in 5 seconds; it feeds the core equation automatically.",
-      flow3t: "Data Processing", flow3d: "Body Load + Sleep Debt + 90-minute Cycle Mapping.",
-      flow4t: "Smart Wake-up", flow4d: "Bedtime alert + a 30-min wake window + waking on a full 90-min cycle (Light Sleep).",
-      whyStep: "Why TimeSync?",
-      why1: "Built on <b>biology</b> and trusted research (BMR · NSF · 90-min cycle).",
-      why2: "<b>Effortless</b> — minimal input, just 5 seconds a day.",
-      why3: "<b>Smart AI</b> that learns and adapts to your lifestyle.",
-      why4: "<b>No wearable needed</b> — just your phone, installable as a PWA.",
-      why5: "<b>Free!</b> Start caring for your sleep right away.",
-      benefitStep: "What you'll get",
-      ben1: "Deeper sleep, fresher mornings, less fatigue", ben2: "Full energy, ready to go",
-      ben3: "Better time management, never miss what matters", ben4: "Better long-term health",
-      footerQuote: "“ <b>Sleep enough for a better tomorrow</b> ”<br>TimeSync – Sync Your Energy, Master Your Time.",
-      aiPromptLang: "Write your entire response in English."
+      navHome:"Home", navSleep:"Sleep", navHistory:"History", navProfile:"Profile",
+      greetSub:"Ready to calculate your sleep?",
+      greetMorning:"Good morning ☀️", greetAfternoon:"Good afternoon 👋", greetEvening:"Good evening 👋", greetNight:"Good night 🌙",
+      sleepScore:"Sleep Score", sleepDebt:"Sleep Debt",
+      debtSubEmpty:"No data yet — tap calculate to start",
+      debtSub:"Accumulated sleep debt: {v}",
+      debtSubNone:"You're well rested — keep it up",
+      todayPlan:"Tonight's sleep plan", shouldSleep:"Bedtime", shouldWake:"Wake up",
+      today:"today", tomorrow:"tomorrow",
+      calcTonight:"Calculate tonight's sleep", only5s:"Takes only 5 seconds", only5s2:"Takes only 5 seconds",
+      dailyInputTitle:"Today's input",
+      workEndTitle:"Work / last activity ends", workEndDesc:"When you'll finish work or activities today",
+      wakeTitle:"Latest wake tomorrow", wakeDesc:"The latest time you can wake up tomorrow",
+      calcNow:"Calculate", dataSafe:"Your data is safe",
+      resultTitle:"Tonight's result", youShouldSleep:"You should sleep at",
+      wakeSuggest:"Suggested wake", totalSleep:"Total sleep", enough:"enough", notEnough:"not enough",
+      cyclesTitle:"Sleep cycles (90 min each)", yourDebt:"Your sleep debt",
+      windDownTitle:"Wind down", windDownDesc:"Stop screens and relax at least 20 min before bed",
+      viewSmartWake:"View smart wake-up →", sendTelegram:"📨 Send plan to Telegram",
+      smartWakeTitle:"Smart wake-up", wakeWindowTitle:"Wake window (30 min)", wakeWindowDesc:"We'll wake you at the best moment",
+      bestWakePoint:"Best wake point", smartAlarm:"Smart alarm",
+      alarmSound:"Alarm sound", soundNatural:"Natural", alarmVolume:"Volume", volMedium:"Medium", volLow:"Low", volHigh:"High",
+      vibrate:"Gentle vibration (if needed)",
+      nativeClockTip:"⏰ For 100% reliability, also set a real alarm in your phone's clock at the <b>best wake point</b>. This app computes the ideal moment to wake.",
+      lastAnalysis:"Tonight's analysis", restEfficiency:"Rest efficiency", testAlarm:"Test alarm sound",
+      historyTitle:"Sleep history", historySub:"Track and analyze your sleep",
+      avgScore:"7-day avg score", avgSleep:"Avg sleep/night", scoreTrend:"Sleep Score trend",
+      histEmpty:"No history yet — calculate your first night to start logging",
+      profileTitle:"Profile & settings", hello:"Hello,", editProfile:"Edit profile",
+      personalInfo:"Personal info", age:"Age", sex:"Sex", weight:"Weight", height:"Height", sleepGoal:"Sleep goal",
+      settings:"Settings", notifications:"Notifications (Telegram)", off:"Off", on:"On",
+      darkMode:"Dark mode", units:"Units", metric:"Metric (kg, cm)", language:"Language", about:"About TimeSync", privacy:"Privacy & security",
+      editBaseline:"Edit body baseline", baselineDesc:"Used to estimate BMR and the sleep hours your body needs (NSF/AASM)",
+      male:"Male", female:"Female", ageYears:"Age (years)", weightKg:"Weight (kg)", heightCm:"Height (cm)", save:"Save",
+      tgTitle:"Connect Telegram Bot",
+      tgDesc:"Get your sleep plan and reminders in Telegram without opening the app daily.<br>1) Message <b>@BotFather</b> to create a bot and get a <b>Token</b><br>2) Message <b>@userinfobot</b> to get your <b>Chat ID</b>",
+      saveConnect:"Save & test", tagline:"TimeSync – Sync Your Energy, Master Your Time.",
+      goodMorning:"Good morning ☀️", lightSleepWake:"Waking in light sleep — feel fresh", stopAlarm:"Stop alarm",
+      ratingExcellent:"Excellent ✨", ratingGood:"Great 👍", ratingFair:"Fair 😌", ratingPoor:"Needs work 😴",
+      badgeLow:"low", badgeMed:"medium", badgeHigh:"high",
+      hoursMin:"{h}h {m}m", hoursMinShort:"{h}h {m}m", yearsUnit:"{v} yrs", kgUnit:"{v} kg", cmUnit:"{v} cm", goalUnit:"{lo}-{hi} h/night",
+      errNeedTimes:"Please set both times.",
+      countdownIn:"in {h}h {m}m", countdownSoon:"It's bedtime now",
+      debtAdvice:"Tip: keep up your sleep discipline", debtAdviceHigh:"Tip: sleep earlier to repay the debt",
+      tgNotConfigured:"Telegram not connected — go to Profile › Notifications to set up",
+      tgSending:"Sending...", tgSent:"✓ Sleep plan sent to Telegram", tgFail:"Failed to send: ",
+      tgSaved:"✓ Connected! A test message was sent", tgTestMsg:"✅ TimeSync connected! Your sleep plan will arrive here.",
+      tgNeedBoth:"Please enter both Token and Chat ID",
+      tgPlanMsg:"🌙 TimeSync sleep plan\nBedtime: {bed}\nWake: {wake}\nTotal sleep: {total}\nCycles: {cycles}\nSleep Score: {score}/100",
+      profileSaved:"Saved! BMR ≈ {bmr} kcal/day · sleep {lo}-{hi} h/night",
+      profileErr:"Please enter a valid age, weight and height.",
+      aboutMsg:"TimeSync – Smart Sleep Calculator\nCalculates sleep with NSF/AASM statistics and 90-minute cycles. Works offline; all data stays on your device only.",
+      privacyMsg:"Privacy: all data (profile, sleep history) is stored on your device only (localStorage). Nothing is sent to a server, except when you manually send to Telegram.",
+      volPrompt:"Choose volume: 1=Low, 2=Medium, 3=High", langNameTh:"Thai", langNameEn:"English"
     }
   };
 
-  var PHRASES = {
-    th: ["วันนี้ฉันเลือกที่จะตื่นด้วยพลังบวก", "ฉันพร้อมเริ่มต้นวันใหม่อย่างสดชื่น", "ทุกเช้าคือโอกาสใหม่ของฉัน", "ฉันตื่นตัวและพร้อมลุยวันนี้"],
-    en: ["I rise with purpose and energy", "Today I choose discipline over comfort", "My mornings build my future", "I am awake, alert, and ready"]
-  };
-
-  var lang = null;
-  try { lang = localStorage.getItem(LS.lang); } catch (e) {}
-  if (lang !== "th" && lang !== "en") {
-    lang = (navigator.language || "").toLowerCase().indexOf("th") === 0 ? "th" : "en";
-  }
-
-  function t(key, vars) {
-    var dict = T[lang] || T.th;
-    var s = dict[key];
-    if (s === undefined) s = (T.th[key] !== undefined ? T.th[key] : "");
-    if (vars) Object.keys(vars).forEach(function (k) { s = s.split("{" + k + "}").join(String(vars[k])); });
+  var lang = prefs.lang;
+  if (lang !== "th" && lang !== "en") lang = (navigator.language || "").toLowerCase().indexOf("th") === 0 ? "th" : "en";
+  function t(k, vars) {
+    var d = T[lang] || T.th, s = d[k]; if (s === undefined) s = T.th[k] !== undefined ? T.th[k] : "";
+    if (vars) Object.keys(vars).forEach(function (x) { s = s.split("{" + x + "}").join(String(vars[x])); });
     return s;
   }
 
-  /* ---------------- State ---------------- */
-  var profile = loadJSON(LS.profile);      // {sex, age, weight, height}
-  var lastPlan = loadJSON(LS.plan);        // computed plan
-  var currentChallenge = null;
-
-  function loadJSON(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }
-  function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-
   /* ---------------- Sleep science ---------------- */
   function nsfRange(age) {
-    if (age <= 13) return [9, 11];
-    if (age <= 17) return [8, 10];
-    if (age <= 25) return [7, 9];
-    if (age <= 64) return [7, 9];
-    return [7, 8];
+    if (age <= 13) return [9, 11]; if (age <= 17) return [8, 10];
+    if (age <= 25) return [7, 9]; if (age <= 64) return [7, 9]; return [7, 8];
   }
-  function mifflinBMR(sex, w, h, age) {
-    var base = 10 * w + 6.25 * h - 5 * age;
-    return Math.round(sex === "female" ? base - 161 : base + 5);
-  }
-  // Cooldown grows the later work ends (proxy for accumulated body load): 15–20 min
-  function cooldownFromWorkEnd(endMinutes) {
-    if (endMinutes == null) return 15;
-    var hour = Math.floor(endMinutes / 60);
-    // treat after-midnight (0–5) as very late
-    if (hour <= 5) hour += 24;
-    if (hour >= 22) return 20;
-    if (hour >= 19) return 18;
-    if (hour >= 17) return 16;
-    return 15;
-  }
+  function bmr(sex, w, h, age) { var b = 10 * w + 6.25 * h - 5 * age; return Math.round(sex === "female" ? b - 161 : b + 5); }
 
-  function parseTime(str) {
-    if (!str) return null;
-    var p = str.split(":");
-    var h = parseInt(p[0], 10), m = parseInt(p[1], 10);
-    if (isNaN(h) || isNaN(m)) return null;
-    return h * 60 + m; // minutes since midnight
-  }
-  function fmt(minTotal) {
-    minTotal = ((minTotal % 1440) + 1440) % 1440;
-    return pad(Math.floor(minTotal / 60)) + ":" + pad(minTotal % 60);
-  }
+  function parseHM(h, m) { return h * 60 + m; }
+  function fmt(min) { min = ((min % 1440) + 1440) % 1440; return pad(Math.floor(min / 60)) + ":" + pad(min % 60); }
+  function hoursToHM(hours) { var tot = Math.round(hours * 60); return { h: Math.floor(tot / 60), m: tot % 60 }; }
 
-  // Core computation. Returns a plan object.
-  function computePlan(opts) {
-    var age = (profile && profile.age) ? profile.age : 22; // default young adult
-    var range = nsfRange(age);
-    var lo = range[0], hi = range[1];
-    var mid = (lo + hi) / 2;
-
-    var wakeMin = opts.wakeMin;         // minutes since midnight (tomorrow)
-    var workEndMin = opts.workEndMin;   // minutes since midnight (today)
-    var lastNight = opts.lastNight;     // hours or null
-
-    // Sleep debt
-    var debt = 0;
-    if (lastNight != null && lastNight >= 0) debt = Math.max(0, mid - lastNight);
-    debt = Math.round(debt * 10) / 10;
-
-    // Target hours: aim at midpoint, add part of debt, capped at range max
-    var target = Math.min(hi, mid + Math.min(debt, 1.5));
-
-    // Cycle mapping: choose whole cycles closest to target, clamped to NSF range
-    var minCycles = Math.ceil(lo / 1.5);
-    var maxCycles = Math.floor(hi / 1.5);
-    var cycles = clamp(Math.round(target / 1.5), minCycles, maxCycles);
-
-    var cooldown = cooldownFromWorkEnd(workEndMin);
-    var sleepMin = cycles * CYCLE_MIN;
-    var hours = sleepMin / 60;
-
-    // Bedtime = wake - sleep - fall-asleep latency (count back from wake)
-    var bedMin = wakeMin - (sleepMin + FALL_ASLEEP);
-
-    // Feasibility: earliest you could sleep = workEnd + cooldown.
-    // Anchor everything to an absolute timeline where wake is next morning
-    // (1440 + wakeMin). Work that ends at a clock time <= wake (e.g. a night
-    // shift ending 02:30 before a 06:30 wake) belongs to that same early
-    // morning, so place it on the next day; an evening finish stays on day 0.
-    var feasible = true, availableHours = null;
+  // Body Load: physical stats + how late the last activity ends → onset latency
+  function onsetLatency(workEndMin, prof) {
+    var late = false;
     if (workEndMin != null) {
-      var workEndAbs = (workEndMin <= wakeMin) ? workEndMin + 1440 : workEndMin;
-      var earliestSleep = workEndAbs + cooldown;
-      var wakeAbs = wakeMin + 1440;                            // wake is next morning
-      var bedAbs = wakeAbs - (sleepMin + FALL_ASLEEP);
-      availableHours = Math.round(((wakeAbs - earliestSleep) / 60) * 10) / 10;
-      if (bedAbs < earliestSleep) {
-        // Not enough time — pick the largest number of cycles that fits
+      var hr = Math.floor(workEndMin / 60); if (hr <= 5) hr += 24;
+      if (hr >= 21) late = true;
+    }
+    // very low BMR (small/older body) fatigues a touch more; treat high load as tired
+    return late ? ONSET_TIRED : ONSET_MIN;
+  }
+
+  var wrap = function (m) { return ((m % 1440) + 1440) % 1440; };
+  function computePlan(workEndMin, wakeMin) {
+    var age = profile && profile.age ? profile.age : 22;
+    var range = nsfRange(age), lo = range[0], hi = range[1], mid = (lo + hi) / 2;
+
+    // Sleep debt from recent history (need - slept), rolling, capped
+    var debtH = 0;
+    for (var i = 0; i < history.length && i < 3; i++) {
+      var e = history[i]; if (e && typeof e.hours === "number") debtH += Math.max(0, mid - e.hours);
+    }
+    debtH = Math.min(debtH, 3);
+    var debtMin = Math.round(debtH * 60);
+
+    var target = Math.min(hi, mid + Math.min(debtH, 1.5));
+    var minC = Math.ceil(lo / 1.5), maxC = Math.floor(hi / 1.5);
+    var cycles = clamp(Math.round(target / 1.5), minC, maxC);
+
+    var onset = onsetLatency(workEndMin, profile);   // 15-20 min Sleep Onset Latency
+    var sleepMin = cycles * CYCLE;                    // minutes actually asleep
+    // Wake you at a 90-min cycle boundary in Light Sleep, `onset` min before your
+    // hard deadline. Bedtime is that boundary minus the sleep cycles.
+    var bestPoint = wakeMin - onset;
+    var bedMin = bestPoint - sleepMin;
+
+    // Feasibility: you must be able to lie down (bedtime) after work ends.
+    var feasible = true, avail = null;
+    if (workEndMin != null) {
+      var weAbs = (workEndMin <= wakeMin) ? workEndMin + 1440 : workEndMin;
+      var wakeAbs = wakeMin + 1440, bestAbs = wakeAbs - onset, bedAbs = bestAbs - sleepMin;
+      avail = Math.round(((wakeAbs - weAbs) / 60) * 10) / 10;
+      if (bedAbs < weAbs) {
         feasible = false;
-        var room = wakeAbs - earliestSleep - FALL_ASLEEP;      // minutes available for cycles
-        var fitCycles = Math.floor(room / CYCLE_MIN);
-        fitCycles = clamp(fitCycles, 1, maxCycles);
-        cycles = fitCycles;
-        sleepMin = cycles * CYCLE_MIN;
-        hours = sleepMin / 60;
-        bedMin = wakeMin - (sleepMin + FALL_ASLEEP);
+        var room = bestAbs - weAbs, fit = clamp(Math.floor(room / CYCLE), 1, maxC);
+        cycles = fit; sleepMin = cycles * CYCLE; bedMin = bestPoint - sleepMin;
       }
     }
 
-    // Energy score
-    var achieved = hours;
-    var score;
-    if (achieved >= lo && achieved <= hi) {
-      // within healthy range: 86–99, peaking near midpoint
-      var dist = Math.abs(achieved - mid);
-      var span = Math.max(hi - mid, mid - lo);
-      score = 99 - (dist / span) * 12;
-    } else if (achieved < lo) {
-      score = 86 * (achieved / lo);
-    } else {
-      score = 92 - (achieved - hi) * 6;
-    }
-    score -= debt * 6;
-    if (!feasible) score -= 10;
+    var hours = sleepMin / 60;                        // asleep hours (score/debt)
+    var inBedMin = wrap(wakeMin - bedMin);            // bed-to-wake (display)
+
+    // Sleep Score (calibrated so a solid night ~ 85-95)
+    var score, dist = Math.abs(hours - mid), span = Math.max(hi - mid, mid - lo) || 1;
+    if (hours >= lo && hours <= hi) score = 95 - (dist / span) * 9;
+    else if (hours < lo) score = 90 * (hours / lo);
+    else score = 88 - (hours - hi) * 6;
+    score -= debtH * 4; if (!feasible) score -= 8;
     score = clamp(Math.round(score), 30, 99);
 
-    // Alternative bedtimes for 3–6 cycles (for the list)
-    var alts = [];
-    [6, 5, 4, 3].forEach(function (c) {
-      alts.push({ cycles: c, hours: (c * CYCLE_MIN) / 60, bedMin: wakeMin - (c * CYCLE_MIN + FALL_ASLEEP) });
-    });
+    var eff = clamp(Math.round(100 - Math.abs(hours - mid) / mid * 55 - debtH * 3), 45, 99);
+
+    // Cycle marks: bedtime, +90 each, ending at bestPoint (cycles+1 marks)
+    var cyc = [];
+    for (var c = 0; c <= cycles; c++) cyc.push(wrap(bedMin + c * CYCLE));
 
     return {
-      wakeMin: wakeMin, bedMin: bedMin, cycles: cycles, hours: Math.round(hours * 10) / 10,
-      cooldown: cooldown, debt: debt, mid: mid, lo: lo, hi: hi, score: score,
-      feasible: feasible, availableHours: availableHours, lastNight: lastNight,
-      workEndMin: workEndMin, alts: alts
+      date: todayKey(), workEndMin: workEndMin, wakeMin: wakeMin, bedMin: wrap(bedMin), onset: onset,
+      cycles: cycles, sleepMin: sleepMin, hours: Math.round(hours * 100) / 100, inBedMin: inBedMin,
+      score: score, eff: eff, debtMin: debtMin, feasible: feasible, avail: avail,
+      lo: lo, hi: hi, mid: mid, cycleMarks: cyc, bestPoint: wrap(bestPoint),
+      windowStart: wrap(wakeMin - WINDOW), windowEnd: wakeMin
     };
   }
 
-  /* ---------------- i18n apply ---------------- */
-  var aiIsGenerating = false;
-  var lastAiError = null;
+  function todayKey() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function longDate(lng) { return new Date().toLocaleDateString(lng === "th" ? "th-TH" : "en-US", { day: "numeric", month: "long", year: "numeric" }); }
 
+  /* ---------------- Theme ---------------- */
+  function applyTheme() {
+    document.documentElement.setAttribute("data-theme", prefs.theme === "dark" ? "dark" : "light");
+    var meta = $("themeColorMeta"); if (meta) meta.setAttribute("content", prefs.theme === "dark" ? "#060b18" : "#eef2fb");
+    var dt = $("darkToggle"); if (dt) dt.checked = prefs.theme === "dark";
+  }
+
+  /* ---------------- i18n apply ---------------- */
   function applyI18n() {
     document.documentElement.lang = lang;
     document.querySelectorAll("[data-i18n]").forEach(function (el) { el.textContent = t(el.getAttribute("data-i18n")); });
     document.querySelectorAll("[data-i18n-html]").forEach(function (el) { el.innerHTML = t(el.getAttribute("data-i18n-html")); });
-    document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) { el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder"))); });
+    var lv = $("langVal"); if (lv) lv.textContent = lang === "th" ? T.th.langNameTh : T.en.langNameEn;
+    updateGreeting();
+    renderAll();
+  }
+  function setLang(l) { lang = l; prefs.lang = l; save(LS.prefs, prefs); applyI18n(); }
 
-    $("langTh").classList.toggle("active", lang === "th");
-    $("langEn").classList.toggle("active", lang === "en");
-    $("langTh").setAttribute("aria-pressed", String(lang === "th"));
-    $("langEn").setAttribute("aria-pressed", String(lang === "en"));
-
-    if ($("aiBtnLabel")) $("aiBtnLabel").textContent = aiIsGenerating ? t("aiGenerating") : t("aiBtn");
-    if (alarmStatusState) setAlarmStatus(alarmStatusState.key, alarmStatusState.vars, true);
-
-    // Re-render dynamic sections in the new language
-    if (lastPlan) renderPlan(lastPlan);
-    renderProfileSummary();
-    if (currentChallenge && alarmModal.classList.contains("active")) refreshChallenge();
+  function updateGreeting() {
+    var h = new Date().getHours(), key = h < 5 ? "greetNight" : h < 12 ? "greetMorning" : h < 17 ? "greetAfternoon" : h < 21 ? "greetEvening" : "greetNight";
+    var g = $("greetTitle"); if (g) g.textContent = t(key);
   }
 
-  function setLang(l) {
-    if (l !== "th" && l !== "en" || l === lang) return;
-    lang = l;
-    try { localStorage.setItem(LS.lang, l); } catch (e) {}
-    applyI18n();
+  /* ---------------- Rendering ---------------- */
+  function ratingFor(score) {
+    if (score >= 85) return { txt: t("ratingExcellent"), col: "var(--green)" };
+    if (score >= 70) return { txt: t("ratingGood"), col: "var(--green)" };
+    if (score >= 55) return { txt: t("ratingFair"), col: "var(--amber)" };
+    return { txt: t("ratingPoor"), col: "var(--danger)" };
   }
-  $("langTh").addEventListener("click", function () { setLang("th"); });
-  $("langEn").addEventListener("click", function () { setLang("en"); });
+  function debtBadge(debtMin) {
+    if (debtMin <= 30) return { cls: "badge-green", txt: t("badgeLow") };
+    if (debtMin <= 90) return { cls: "badge-amber", txt: t("badgeMed") };
+    return { cls: "badge-red", txt: t("badgeHigh") };
+  }
+  function hm(min) { var h = Math.floor(min / 60), m = min % 60; return t("hoursMin", { h: h, m: m }); }
 
-  /* ---------------- Tabs ---------------- */
-  var panels = { home: $("panel-home"), alarm: $("panel-alarm"), profile: $("panel-profile"), about: $("panel-about") };
-  document.querySelectorAll(".tab-btn").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      if (btn.classList.contains("active")) return;
-      document.querySelectorAll(".tab-btn").forEach(function (b) { b.classList.toggle("active", b === btn); });
-      var target = btn.dataset.tab;
-      Object.keys(panels).forEach(function (key) {
-        var p = panels[key];
-        if (key === target) { p.hidden = false; p.classList.remove("panel-enter"); void p.offsetWidth; p.classList.add("panel-enter"); }
-        else { p.hidden = true; }
-      });
-      window.scrollTo({ top: 0, behavior: "smooth" });
+  var GAUGE_C = 2 * Math.PI * 80, GAUGE_ARC = GAUGE_C * 0.75;
+  function renderGauge(score) {
+    var fg = $("gaugeFg"); if (!fg) return;
+    fg.style.strokeDasharray = GAUGE_ARC.toFixed(1) + " " + GAUGE_C.toFixed(1);
+    fg.style.strokeDashoffset = (GAUGE_ARC * (1 - score / 100)).toFixed(1);
+    $("scoreNum").textContent = score;
+    var r = ratingFor(score); $("scoreRate").textContent = r.txt; $("scoreRate").style.color = r.col;
+  }
+
+  function renderHome() {
+    if (plan) {
+      renderGauge(plan.score);
+      $("homeBed").textContent = fmt(plan.bedMin);
+      $("homeWake").textContent = fmt(plan.wakeMin);
+      var b = debtBadge(plan.debtMin), bb = $("debtBadgeHome"); bb.hidden = false; bb.className = "badge " + b.cls; bb.textContent = b.txt;
+      $("debtSubHome").textContent = plan.debtMin > 0 ? t("debtSub", { v: hm(plan.debtMin) }) : t("debtSubNone");
+    } else {
+      renderGauge(0); $("scoreNum").textContent = "--"; $("scoreRate").textContent = "–";
+      $("homeBed").textContent = "--:--"; $("homeWake").textContent = "--:--";
+      $("debtBadgeHome").hidden = true; $("debtSubHome").textContent = t("debtSubEmpty");
+    }
+  }
+
+  function renderResult() {
+    if (!plan) return;
+    $("resultDate").textContent = longDate(lang);
+    $("wakeDate").textContent = longDate(lang);
+    $("resBed").textContent = fmt(plan.bedMin);
+    $("resWake").textContent = fmt(plan.wakeMin);
+    var hmv = { h: Math.floor(plan.inBedMin / 60), m: plan.inBedMin % 60 };
+    $("resTotal").textContent = t("hoursMinShort", { h: hmv.h, m: hmv.m });
+    $("resEnough").textContent = plan.feasible && plan.hours >= plan.lo ? t("enough") : t("notEnough");
+
+    // countdown to bedtime
+    var now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
+    var diff = plan.bedMin - nowMin; if (diff < 0) diff += 1440;
+    if (diff > 12 * 60) $("resCountdown").textContent = t("countdownSoon");
+    else $("resCountdown").textContent = t("countdownIn", { h: Math.floor(diff / 60), m: diff % 60 });
+
+    // cycle strip
+    var strip = $("cycleStrip"), times = $("cycleTimes"); strip.innerHTML = ""; times.innerHTML = "";
+    var n = plan.cycles;
+    for (var i = 0; i < n; i++) {
+      var isWake = false;
+      strip.appendChild(cycEl(i + 1, false));
+    }
+    strip.appendChild(cycEl(0, true));
+    plan.cycleMarks.forEach(function (mk) {
+      var s = document.createElement("span"); s.textContent = fmt(mk); times.appendChild(s);
     });
-  });
 
-  /* ---------------- Profile / Setup ---------------- */
-  var selectedSex = (profile && profile.sex) ? profile.sex : "male";
-  var sexSeg = $("sexSeg");
-  function paintSex() {
-    sexSeg.querySelectorAll(".seg-btn").forEach(function (b) { b.classList.toggle("active", b.dataset.sex === selectedSex); });
+    // debt
+    var b = debtBadge(plan.debtMin); var rb = $("resDebtBadge"); rb.className = "badge " + b.cls; rb.textContent = b.txt;
+    var advice = plan.debtMin > 90 ? t("debtAdviceHigh") : t("debtAdvice");
+    $("resDebtText").textContent = (plan.debtMin > 0 ? t("debtSub", { v: hm(plan.debtMin) }) : t("debtSubNone")) + " · " + advice;
+    $("resDebtBar").style.width = clamp(Math.round(plan.debtMin / 180 * 100), 6, 100) + "%";
+
+    // wake-up window
+    $("windowRange").textContent = fmt(plan.windowStart) + " - " + fmt(plan.windowEnd);
+    $("winStart").textContent = fmt(plan.windowStart);
+    $("winEnd").textContent = fmt(plan.windowEnd);
+    $("bestPoint").textContent = fmt(plan.bestPoint);
+    var pct = ((plan.bestPoint - plan.windowStart) / WINDOW) * 100;
+    $("winFill").style.left = "0%"; $("winFill").style.width = pct + "%";
+    $("winHandle").style.left = pct + "%";
+
+    // efficiency ring
+    var ec = 2 * Math.PI * 31;
+    var ef = $("effFg"); ef.style.strokeDasharray = ec.toFixed(1); ef.style.strokeDashoffset = (ec * (1 - plan.eff / 100)).toFixed(1);
+    $("effNum").textContent = plan.eff + "%";
+    $("effScore").textContent = plan.score;
+    var rr = ratingFor(plan.score); $("effRate").textContent = rr.txt; $("effRate").style.color = rr.col;
+    $("effTotal").textContent = t("hoursMinShort", { h: hmv.h, m: hmv.m });
+    $("effPct").textContent = plan.eff + "%";
   }
-  sexSeg.querySelectorAll(".seg-btn").forEach(function (b) {
-    b.addEventListener("click", function () { selectedSex = b.dataset.sex; paintSex(); });
-  });
-
-  function hydrateProfileForm() {
-    if (!profile) return;
-    selectedSex = profile.sex || "male";
-    $("ageInput").value = profile.age || "";
-    $("weightInput").value = profile.weight || "";
-    $("heightInput").value = profile.height || "";
-    paintSex();
+  function cycEl(num, isWake) {
+    var d = document.createElement("div"); d.className = "cyc" + (isWake ? " wakec" : "");
+    var cap = document.createElement("div"); cap.className = "cyc-cap";
+    cap.textContent = isWake ? "☀️" : (lang === "th" ? "รอบ " + num : "C" + num);
+    var blk = document.createElement("div"); blk.className = "cyc-block"; blk.textContent = isWake ? "☀️" : "🌙";
+    d.appendChild(cap); d.appendChild(blk); return d;
   }
 
-  function renderProfileSummary() {
-    var el = $("profileSummary");
-    if (!profile) { el.hidden = true; return; }
-    var r = nsfRange(profile.age);
-    var bmr = mifflinBMR(profile.sex, profile.weight, profile.height, profile.age);
-    el.hidden = false;
-    el.textContent = t("profileSummaryLabel", {
-      sex: t(profile.sex), age: profile.age, w: profile.weight, h: profile.height,
-      bmr: bmr, lo: r[0], hi: r[1]
-    });
-  }
-
-  $("saveProfileBtn").addEventListener("click", function () {
-    var age = parseFloat($("ageInput").value);
-    var w = parseFloat($("weightInput").value);
-    var h = parseFloat($("heightInput").value);
-    var notice = $("profileNotice");
-    if (!(age >= 10 && age <= 100) || !(w >= 25 && w <= 250) || !(h >= 100 && h <= 230)) {
-      notice.hidden = false; notice.className = "notice notice-error"; notice.textContent = t("profileErr");
+  function renderHistory() {
+    var bars = $("histBars"), empty = $("histEmpty"), list = $("histList");
+    bars.innerHTML = ""; list.innerHTML = "";
+    if (!history.length) {
+      empty.hidden = false; bars.style.display = "none";
+      $("histAvgScore").textContent = "--"; $("histAvgSleep").textContent = "--";
       return;
     }
-    profile = { sex: selectedSex, age: age, weight: w, height: h };
-    saveJSON(LS.profile, profile);
-    var r = nsfRange(age);
-    var bmr = mifflinBMR(selectedSex, w, h, age);
-    notice.hidden = false; notice.className = "notice notice-info";
-    notice.textContent = t("profileSaved", { bmr: bmr, lo: r[0], hi: r[1] });
-    renderProfileSummary();
-  });
+    empty.hidden = true; bars.style.display = "flex";
+    var recent = history.slice(0, 7).slice().reverse();
+    var maxScore = 100;
+    recent.forEach(function (e) {
+      var bar = document.createElement("div"); bar.className = "hbar";
+      var val = document.createElement("div"); val.className = "hb-val"; val.textContent = e.score;
+      var fill = document.createElement("div"); fill.className = "hb-fill"; fill.style.height = Math.max(6, e.score / maxScore * 96) + "px";
+      var day = document.createElement("div"); day.className = "hb-day"; day.textContent = dayLabel(e.date);
+      bar.appendChild(val); bar.appendChild(fill); bar.appendChild(day); bars.appendChild(bar);
+    });
+    var avgS = Math.round(history.slice(0, 7).reduce(function (a, e) { return a + e.score; }, 0) / Math.min(history.length, 7));
+    var avgH = history.slice(0, 7).reduce(function (a, e) { return a + e.hours; }, 0) / Math.min(history.length, 7);
+    $("histAvgScore").textContent = avgS;
+    var ah = hoursToHM(avgH); $("histAvgSleep").textContent = t("hoursMinShort", { h: ah.h, m: ah.m });
 
-  /* ---------------- Daily calculation ---------------- */
-  var calcBtn = $("calcBtn");
-
-  function renderPlan(plan) {
-    // Ring + score
-    var r = 86, C = 2 * Math.PI * r;
-    var fg = $("ringFg");
-    fg.style.strokeDasharray = C.toFixed(1);
-    fg.style.strokeDashoffset = (C * (1 - plan.score / 100)).toFixed(1);
-    $("energyScore").innerHTML = plan.score + "<span>%</span>";
-
-    $("kpiBedtime").textContent = fmt(plan.bedMin);
-    $("kpiWaketime").textContent = fmt(plan.wakeMin);
-
-    // Status
-    var statusKey = plan.score >= 90 ? "statusGreat" : plan.score >= 78 ? "statusGood" : plan.score >= 62 ? "statusOk" : "statusLow";
-    $("heroStatus").textContent = t(statusKey);
-    $("heroHint").textContent = t("hintPlan", { bed: fmt(plan.bedMin), wake: fmt(plan.wakeMin), hours: plan.hours, cycles: plan.cycles });
-
-    // Breakdown (3 processing steps)
-    var bk = $("breakdown");
-    var bodyD = t("bkBodyD", { end: plan.workEndMin != null ? fmt(plan.workEndMin) : "—", cooldown: plan.cooldown });
-    var debtD = plan.debt > 0
-      ? t("bkDebtD", { last: plan.lastNight, mid: plan.mid, debt: plan.debt })
-      : t("bkDebtNone", { mid: plan.mid });
-    var cycleD = t("bkCycleD", { wake: fmt(plan.wakeMin), cycles: plan.cycles, hours: plan.hours });
-    bk.innerHTML =
-      step(1, t("bkBodyT"), bodyD) +
-      step(2, t("bkDebtT"), debtD) +
-      step(3, t("bkCycleT"), cycleD);
-    $("breakdownWrap").hidden = false;
-
-    // Bedtime alternatives list
-    var list = $("bedlist");
-    list.innerHTML = "";
-    plan.alts.forEach(function (a) {
-      var isBest = a.cycles === plan.cycles;
-      var row = document.createElement("div");
-      row.className = "bedrow" + (isBest ? " best" : "");
-      var bt = document.createElement("div"); bt.className = "bt"; bt.textContent = fmt(a.bedMin);
-      if (isBest) { var b = document.createElement("span"); b.className = "badge-best"; b.textContent = t("bestBadge"); bt.appendChild(b); }
-      var bm = document.createElement("div"); bm.className = "bm";
-      bm.textContent = t("bedMeta", { cycles: a.cycles, hours: a.hours });
-      row.appendChild(bt); row.appendChild(bm);
+    history.slice(0, 10).forEach(function (e) {
+      var row = document.createElement("div"); row.className = "lrow";
+      var hmv = hoursToHM(e.hours);
+      row.innerHTML = '<span class="li">🌙</span><span class="lt"><span class="lt-main">' + fullDate(e.date) +
+        '</span><span class="lt-sub">' + fmt(e.bedMin) + ' → ' + fmt(e.wakeMin) + ' · ' + t("hoursMinShort", { h: hmv.h, m: hmv.m }) + '</span></span>' +
+        '<span class="lv" style="font-weight:800;color:var(--primary)">' + e.score + '</span>';
       list.appendChild(row);
     });
-    list.hidden = false;
+  }
+  function dayLabel(dateStr) {
+    var p = dateStr.split("-"), d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return d.toLocaleDateString(lang === "th" ? "th-TH" : "en-US", { weekday: "short" });
+  }
+  function fullDate(dateStr) {
+    var p = dateStr.split("-"), d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return d.toLocaleDateString(lang === "th" ? "th-TH" : "en-US", { day: "numeric", month: "short" });
   }
 
-  function step(n, title, html) {
-    return '<div class="step"><div class="step-num">' + n + '</div><div class="step-body">' +
-      '<div class="step-title">' + escapeHtml(title) + '</div>' +
-      '<div class="step-text">' + html + '</div></div></div>';
+  function renderProfile() {
+    var age = profile ? profile.age : null, sex = profile ? profile.sex : null;
+    $("pvAge").textContent = age ? t("yearsUnit", { v: age }) : "–";
+    $("pvSex").textContent = sex ? t(sex) : "–";
+    $("pvWeight").textContent = profile ? t("kgUnit", { v: profile.weight }) : "–";
+    $("pvHeight").textContent = profile ? t("cmUnit", { v: profile.height }) : "–";
+    var r = nsfRange(age || 22); $("pvGoal").textContent = t("goalUnit", { lo: r[0], hi: r[1] });
+    $("tgStatus").textContent = (prefs.tgToken && prefs.tgChatId) ? t("on") : t("off");
+    $("langVal").textContent = lang === "th" ? T.th.langNameTh : T.en.langNameEn;
+    // sync alarm prefs UI
+    if ($("alarmEnable")) $("alarmEnable").checked = prefs.alarmEnabled;
+    if ($("vibrateEnable")) $("vibrateEnable").checked = prefs.vibrate;
+    if ($("volumeVal")) $("volumeVal").textContent = t(prefs.volume === "low" ? "volLow" : prefs.volume === "high" ? "volHigh" : "volMedium");
   }
-  function escapeHtml(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 
-  calcBtn.addEventListener("click", function () {
-    var workEndMin = parseTime($("workEndInput").value);
-    var wakeMin = parseTime($("wakeInput").value);
-    var calcNotice = $("calcNotice");
-    var setupNotice = $("setupNotice");
-    calcNotice.hidden = true;
+  function renderAll() { renderHome(); if (plan) renderResult(); renderHistory(); renderProfile(); }
 
-    if (wakeMin == null || workEndMin == null) {
-      calcNotice.hidden = false; calcNotice.className = "notice notice-error"; calcNotice.textContent = t("timeErr");
-      return;
+  /* ---------------- Wheel picker ----------------
+     The value of record is kept in el.dataset.value (not the scroll position),
+     because these live inside a display:none panel at init where scrollTop
+     cannot be set. syncWheel() re-applies the scroll offset whenever the panel
+     becomes visible, and reads always come from dataset.value. */
+  var ITEM_H = 56;
+  function buildWheel(el, min, max, value) {
+    el.innerHTML = "";
+    var padTop = document.createElement("div"); padTop.className = "wheel-pad"; el.appendChild(padTop);
+    for (var v = min; v <= max; v++) {
+      var it = document.createElement("div"); it.className = "wheel-item"; it.textContent = pad(v); it.dataset.val = v;
+      el.appendChild(it);
     }
+    var padBot = document.createElement("div"); padBot.className = "wheel-pad"; el.appendChild(padBot);
+    el.dataset.min = min; el.dataset.max = max; el.dataset.value = clamp(value, min, max);
+    var tmr = null;
+    el.addEventListener("scroll", function () {
+      var idx = clamp(Math.round(el.scrollTop / ITEM_H), 0, max - min);
+      el.dataset.value = min + idx; highlightWheel(el);
+      if (tmr) clearTimeout(tmr);
+      tmr = setTimeout(function () { el.scrollTo({ top: idx * ITEM_H, behavior: "smooth" }); }, 90);
+    });
+    el.addEventListener("click", function (e) {
+      var it = e.target.closest(".wheel-item"); if (!it) return;
+      var idx = (+it.dataset.val) - min; el.dataset.value = +it.dataset.val;
+      el.scrollTo({ top: idx * ITEM_H, behavior: "smooth" }); highlightWheel(el);
+    });
+    highlightWheel(el);
+  }
+  function highlightWheel(el) {
+    var idx = (+el.dataset.value) - (+el.dataset.min);
+    el.querySelectorAll(".wheel-item").forEach(function (it, i) { it.classList.toggle("sel", i === idx); });
+  }
+  function syncWheel(el) { el.scrollTop = ((+el.dataset.value) - (+el.dataset.min)) * ITEM_H; highlightWheel(el); }
+  function syncWheels() { ["weH", "weM", "wkH", "wkM"].forEach(function (id) { var el = $(id); if (el) syncWheel(el); }); }
+  function readWheel(el) { return +el.dataset.value; }
 
-    // Profile hint
-    setupNotice.hidden = !!profile;
-    if (!profile) { setupNotice.className = "notice notice-info"; setupNotice.textContent = t("needProfile"); }
+  /* ---------------- Tabs & steps ---------------- */
+  var panels = { home: $("p-home"), sleep: $("p-sleep"), history: $("p-history"), profile: $("p-profile") };
+  function switchTab(tab) {
+    document.querySelectorAll(".nav-btn").forEach(function (b) { b.classList.toggle("active", b.dataset.tab === tab); });
+    Object.keys(panels).forEach(function (k) {
+      var p = panels[k];
+      if (k === tab) { p.hidden = false; p.classList.remove("enter"); void p.offsetWidth; p.classList.add("enter"); }
+      else p.hidden = true;
+    });
+    if (tab === "sleep") requestAnimationFrame(syncWheels);
+    window.scrollTo({ top: 0 });
+  }
+  document.querySelectorAll(".nav-btn").forEach(function (b) { b.addEventListener("click", function () { switchTab(b.dataset.tab); }); });
 
-    var lnRaw = $("lastNightInput").value;
-    var lastNight = lnRaw === "" ? null : clamp(parseFloat(lnRaw), 0, 14);
-    if (lastNight != null && isNaN(lastNight)) lastNight = null;
-    if (lastNight != null) saveJSON(LS.lastNight, lastNight);
+  var steps = { input: $("step-input"), result: $("step-result"), wake: $("step-wake") };
+  function gotoStep(name) {
+    var order = ["input", "result", "wake"], idx = order.indexOf(name);
+    Object.keys(steps).forEach(function (k) { steps[k].hidden = k !== name; });
+    var dots = $("stepper").querySelectorAll(".sdot");
+    dots.forEach(function (d, i) { d.classList.toggle("on", i <= idx); });
+    if (name === "input") requestAnimationFrame(syncWheels);
+    window.scrollTo({ top: 0 });
+  }
 
-    var plan = computePlan({ wakeMin: wakeMin, workEndMin: workEndMin, lastNight: lastNight });
-    lastPlan = plan;
-    saveJSON(LS.plan, plan);
-    renderPlan(plan);
+  $("goCalcBtn").addEventListener("click", function () { switchTab("sleep"); gotoStep("input"); });
+  $("stepBackHome").addEventListener("click", function () { switchTab("home"); });
+  $("stepBackInput").addEventListener("click", function () { gotoStep("input"); });
+  $("stepBackResult").addEventListener("click", function () { gotoStep("result"); });
+  $("toWakeBtn").addEventListener("click", function () { gotoStep("wake"); });
+  $("debtRowHome").addEventListener("click", function () { if (plan) { switchTab("sleep"); gotoStep("result"); } else { switchTab("sleep"); gotoStep("input"); } });
 
-    if (!plan.feasible) {
-      calcNotice.hidden = false; calcNotice.className = "notice notice-warn";
-      calcNotice.textContent = t("tightWarn", { have: plan.availableHours != null ? plan.availableHours : "?" });
+  /* ---------------- Calculate ---------------- */
+  $("calcBtn").addEventListener("click", function () {
+    var weMin = parseHM(readWheel($("weH")), readWheel($("weM")));
+    var wkMin = parseHM(readWheel($("wkH")), readWheel($("wkM")));
+    $("calcError").hidden = true;
+    var p = computePlan(weMin, wkMin);
+    plan = p; save(LS.plan, p);
+    // record history (upsert by date)
+    var rec = { date: p.date, bedMin: p.bedMin, wakeMin: p.wakeMin, cycles: p.cycles, hours: p.hours, score: p.score, eff: p.eff, debtMin: p.debtMin };
+    history = history.filter(function (e) { return e.date !== p.date; });
+    history.unshift(rec); history = history.slice(0, 30); save(LS.history, history);
+    renderAll();
+    gotoStep("result");
+  });
+
+  /* ---------------- Telegram ---------------- */
+  function tgConfigured() { return prefs.tgToken && prefs.tgChatId; }
+  function sendTelegram(text) {
+    return fetch("https://api.telegram.org/bot" + encodeURIComponent(prefs.tgToken) + "/sendMessage", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: prefs.tgChatId, text: text })
+    }).then(function (r) { return r.json(); }).then(function (d) { if (!d.ok) throw new Error(d.description || "error"); return d; });
+  }
+  $("sendTgBtn").addEventListener("click", function () {
+    var box = $("tgResult"); box.hidden = false;
+    if (!tgConfigured()) { box.className = "notice notice-warn"; box.textContent = t("tgNotConfigured"); return; }
+    if (!plan) return;
+    box.className = "notice notice-info"; box.textContent = t("tgSending");
+    var hmv = hoursToHM(plan.hours);
+    var msg = t("tgPlanMsg", { bed: fmt(plan.bedMin), wake: fmt(plan.wakeMin), total: t("hoursMinShort", { h: hmv.h, m: hmv.m }), cycles: plan.cycles, score: plan.score });
+    sendTelegram(msg).then(function () { box.className = "notice notice-ok"; box.textContent = t("tgSent"); })
+      .catch(function (e) { box.className = "notice notice-error"; box.textContent = t("tgFail") + e.message; });
+  });
+
+  /* ---------------- Profile editor ---------------- */
+  var selSex = profile && profile.sex ? profile.sex : "male";
+  function paintSex() { $("sexSeg").querySelectorAll(".seg-btn").forEach(function (b) { b.classList.toggle("active", b.dataset.sex === selSex); }); }
+  $("sexSeg").querySelectorAll(".seg-btn").forEach(function (b) { b.addEventListener("click", function () { selSex = b.dataset.sex; paintSex(); }); });
+  function openProfileEditor() {
+    var ed = $("profileEditor"); ed.hidden = false;
+    if (profile) { selSex = profile.sex; $("ageInput").value = profile.age; $("weightInput").value = profile.weight; $("heightInput").value = profile.height; }
+    paintSex(); ed.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  $("editProfileBtn").addEventListener("click", openProfileEditor);
+  document.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", openProfileEditor); });
+  $("saveProfileBtn").addEventListener("click", function () {
+    var age = parseFloat($("ageInput").value), w = parseFloat($("weightInput").value), h = parseFloat($("heightInput").value);
+    var n = $("profileNotice");
+    if (!(age >= 10 && age <= 100) || !(w >= 25 && w <= 250) || !(h >= 100 && h <= 230)) {
+      n.hidden = false; n.className = "notice notice-error"; n.textContent = t("profileErr"); return;
     }
-
-    // Reflect into alarm tab
-    $("alarmTimeInput").value = fmt(plan.wakeMin);
+    profile = { sex: selSex, age: age, weight: w, height: h }; save(LS.profile, profile);
+    var r = nsfRange(age), bm = bmr(selSex, w, h, age);
+    n.hidden = false; n.className = "notice notice-ok"; n.textContent = t("profileSaved", { bmr: bm, lo: r[0], hi: r[1] });
+    renderProfile();
   });
 
-  /* ---------------- AI insight (Gemini, optional) ---------------- */
-  var aiBtn = $("aiBtn");
-  function keyLooksReal() {
-    return GEMINI_API_KEY && GEMINI_API_KEY.length > 20 && GEMINI_API_KEY.indexOf("YOUR_") !== 0;
-  }
-  function setAiLoading(on) {
-    aiIsGenerating = on;
-    aiBtn.disabled = on;
-    $("aiSpinner").hidden = !on;
-    $("aiBtnLabel").textContent = on ? t("aiGenerating") : t("aiBtn");
-  }
-  function buildAiPrompt(mood, plan) {
-    var planLine = plan
-      ? ("Recommended bedtime " + fmt(plan.bedMin) + ", wake " + fmt(plan.wakeMin) + ", " + plan.hours + "h (" + plan.cycles + " cycles), energy score " + plan.score + "%.")
-      : "No plan computed yet.";
-    return "You are a calm sleep and circadian coach. Given the user's plan and mood, write a short, warm, fully SCREEN-FREE 20-minute wind-down routine broken into 3 timed steps (0-5, 5-12, 12-20 min), tailored to the mood. Then one short line of encouragement. No markdown symbols (*, #, `), plain short lines only.\n\nPlan: " + planLine + "\nMood: " + (mood || "(not specified)") + "\n\n" + t("aiPromptLang");
-  }
-  aiBtn.addEventListener("click", function () {
-    $("aiKeyWarn").hidden = true; $("aiError").hidden = true; $("aiResult").hidden = true;
-    if (!keyLooksReal()) { $("aiKeyWarn").hidden = false; return; }
-    var mood = $("moodInput").value.trim();
-    var prompt = buildAiPrompt(mood, lastPlan);
-    setAiLoading(true);
-    fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-goog-api-key": GEMINI_API_KEY },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-    }).then(function (res) {
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return res.json();
-    }).then(function (data) {
-      var text = data && data.candidates && data.candidates[0] && data.candidates[0].content &&
-        data.candidates[0].content.parts && data.candidates[0].content.parts[0] &&
-        data.candidates[0].content.parts[0].text;
-      if (!text) throw new Error("empty response");
-      var out = $("aiResult");
-      out.hidden = false;
-      out.innerHTML = text.split("\n").map(function (l) { return escapeHtml(l.replace(/[*`#]/g, "").trim()); })
-        .filter(Boolean).map(function (l) { return "<div>" + l + "</div>"; }).join("");
-    }).catch(function (err) {
-      lastAiError = err.message;
-      var e = $("aiError"); e.hidden = false; e.textContent = t("aiErrPrefix") + err.message;
-    }).finally(function () { setAiLoading(false); });
+  /* ---------------- Telegram settings editor ---------------- */
+  $("tgSettingsRow").addEventListener("click", function () {
+    var ed = $("tgEditor"); ed.hidden = !ed.hidden;
+    if (!ed.hidden) { $("tgToken").value = prefs.tgToken || ""; $("tgChatId").value = prefs.tgChatId || ""; ed.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  });
+  $("tgSaveBtn").addEventListener("click", function () {
+    var tok = $("tgToken").value.trim(), cid = $("tgChatId").value.trim(), box = $("tgSettingsResult"); box.hidden = false;
+    if (!tok || !cid) { box.className = "notice notice-error"; box.textContent = t("tgNeedBoth"); return; }
+    prefs.tgToken = tok; prefs.tgChatId = cid; save(LS.prefs, prefs);
+    box.className = "notice notice-info"; box.textContent = t("tgSending");
+    sendTelegram(t("tgTestMsg")).then(function () { box.className = "notice notice-ok"; box.textContent = t("tgSaved"); renderProfile(); })
+      .catch(function (e) { box.className = "notice notice-error"; box.textContent = t("tgFail") + e.message; });
   });
 
-  /* ---------------- Live clock ---------------- */
-  function updateClock() {
-    var now = new Date();
-    $("liveClock").textContent = pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
-    $("liveDate").textContent = now.toLocaleDateString(lang === "th" ? "th-TH" : undefined, { weekday: "long", month: "long", day: "numeric" });
-  }
-  updateClock();
-  setInterval(updateClock, 1000);
-
-  /* ---------------- Alarm ---------------- */
-  var alarmModal = $("alarmModal");
-  var alarmStatusState = { key: "noAlarm", vars: null };
-  var alarmCheckInterval = null, targetH = null, targetM = null, firedThisMinute = false;
-  var isTestFire = false, testTimeoutId = null;
-
-  function setAlarmStatus(key, vars, silent) {
-    alarmStatusState = { key: key, vars: vars || null };
-    var el = $("alarmStatus");
-    if (el) el.textContent = t(key, vars || undefined);
-  }
-
-  function checkAlarmTime() {
-    var now = new Date();
-    if (now.getHours() === targetH && now.getMinutes() === targetM) {
-      if (!firedThisMinute) {
-        firedThisMinute = true;
-        if (alarmModal.classList.contains("active")) return;
-        isTestFire = false;
-        fireAlarm();
-      }
-    } else { firedThisMinute = false; }
-  }
-
-  $("setAlarmBtn").addEventListener("click", function () {
-    var v = $("alarmTimeInput").value;
-    if (!v) { setAlarmStatus("chooseTimeFirst"); return; }
-    var p = v.split(":"); targetH = parseInt(p[0], 10); targetM = parseInt(p[1], 10);
-    firedThisMinute = false;
-    if (alarmCheckInterval) clearInterval(alarmCheckInterval);
-    alarmCheckInterval = setInterval(checkAlarmTime, 1000);
-    setAlarmStatus("alarmArmed", { time: v });
+  /* ---------------- Settings actions ---------------- */
+  $("darkToggle").addEventListener("change", function () { prefs.theme = this.checked ? "dark" : "light"; save(LS.prefs, prefs); applyTheme(); });
+  $("langRow").addEventListener("click", function () { setLang(lang === "th" ? "en" : "th"); });
+  $("aboutRow").addEventListener("click", function () { alert(t("aboutMsg")); });
+  $("privacyRow").addEventListener("click", function () { alert(t("privacyMsg")); });
+  $("unitRow").addEventListener("click", function () { /* metric only for now */ });
+  $("volumeRow").addEventListener("click", function () {
+    var order = ["low", "medium", "high"], i = order.indexOf(prefs.volume);
+    prefs.volume = order[(i + 1) % 3]; save(LS.prefs, prefs);
+    $("volumeVal").textContent = t(prefs.volume === "low" ? "volLow" : prefs.volume === "high" ? "volHigh" : "volMedium");
   });
+  $("alarmEnable").addEventListener("change", function () { prefs.alarmEnabled = this.checked; save(LS.prefs, prefs); });
+  $("vibrateEnable").addEventListener("change", function () { prefs.vibrate = this.checked; save(LS.prefs, prefs); });
 
-  $("useRecommendedBtn").addEventListener("click", function () {
-    if (!lastPlan) { setAlarmStatus("noPlanYet"); return; }
-    var v = fmt(lastPlan.wakeMin);
-    $("alarmTimeInput").value = v;
-    setAlarmStatus("usedRecommended", { time: v });
-  });
-
-  $("testAlarmLink").addEventListener("click", function () {
-    if (alarmModal.classList.contains("active")) return;
-    if (testTimeoutId) clearTimeout(testTimeoutId);
-    setAlarmStatus("testFiring");
-    testTimeoutId = setTimeout(function () { testTimeoutId = null; isTestFire = true; fireAlarm(); }, 2500);
-  });
-
-  /* ---------- Alarm sound ---------- */
+  /* ---------------- Alarm (gentle) ---------------- */
   var audioCtx = null, beepId = null;
+  function volGain() { return prefs.volume === "low" ? 0.1 : prefs.volume === "high" ? 0.34 : 0.2; }
   function startSound() {
     try {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === "suspended") audioCtx.resume().catch(function () {});
       var beep = function () {
-        if (!audioCtx) return;
-        audioCtx.resume().catch(function () {});
-        var osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-        osc.type = "sine"; osc.frequency.value = 880; gain.gain.value = 0.22;
-        osc.connect(gain).connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        if (!audioCtx) return; audioCtx.resume().catch(function () {});
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = "sine"; o.frequency.value = 660; g.gain.value = volGain();
+        o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.35);
       };
-      beep(); beepId = setInterval(beep, 700);
-    } catch (e) { /* audio unavailable */ }
+      beep(); beepId = setInterval(beep, 900);
+      if (prefs.vibrate && navigator.vibrate) navigator.vibrate([300, 200, 300]);
+    } catch (e) {}
   }
-  function stopSound() {
-    if (beepId) { clearInterval(beepId); beepId = null; }
-    if (audioCtx) { audioCtx.close(); audioCtx = null; }
+  function stopSound() { if (beepId) { clearInterval(beepId); beepId = null; } if (audioCtx) { audioCtx.close(); audioCtx = null; } if (navigator.vibrate) navigator.vibrate(0); }
+  function fireAlarm(timeStr) {
+    $("modalTime").textContent = timeStr;
+    var m = $("alarmModal"); m.classList.add("active"); m.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden"; startSound();
   }
+  function dismissAlarm() {
+    stopSound(); var m = $("alarmModal"); m.classList.remove("active"); m.setAttribute("aria-hidden", "true"); document.body.style.overflow = "";
+  }
+  $("dismissAlarmBtn").addEventListener("click", dismissAlarm);
+  $("testAlarmBtn").addEventListener("click", function () { fireAlarm(plan ? fmt(plan.bestPoint) : "06:15"); });
 
-  /* ---------- Challenge modal ---------- */
-  var countdownEl = $("countdown"), challengeQ = $("challengeQ"), challengeInput = $("challengeInput");
-  var challengeError = $("challengeError"), emergency = $("emergency");
-  var appRoot = document.querySelector(".app"), tabbar = document.querySelector(".tabbar-wrap");
-  var countdownInterval = null, remaining = 300, lastErrType = null;
+  // real in-app alarm check (fires at best wake point when app open & enabled)
+  var lastFireKey = null;
+  setInterval(function () {
+    if (!prefs.alarmEnabled || !plan) return;
+    var now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
+    if (nowMin === ((plan.bestPoint % 1440) + 1440) % 1440) {
+      var key = todayKey() + "-" + plan.bestPoint;
+      if (lastFireKey !== key && !$("alarmModal").classList.contains("active")) { lastFireKey = key; fireAlarm(fmt(plan.bestPoint)); }
+    }
+  }, 1000);
 
-  function genChallenge() {
-    if (Math.random() < 0.5) {
-      var a = Math.floor(Math.random() * 90) + 10, b = Math.floor(Math.random() * 90) + 10;
-      var op = Math.random() < 0.5 ? "+" : "-";
-      if (op === "-" && a < b) { var tmp = a; a = b; b = tmp; }
-      var ans = op === "+" ? a + b : a - b;
-      return { type: "math", question: a + " " + op + " " + b + " = ?", answer: String(ans) };
-    }
-    var phrases = PHRASES[lang] || PHRASES.th;
-    var i = Math.floor(Math.random() * phrases.length);
-    return { type: "phrase", phraseIndex: i, answer: phrases[i], question: t("retypePhrase", { phrase: phrases[i] }) };
-  }
-  function refreshChallenge() {
-    if (!currentChallenge) return;
-    if (currentChallenge.type === "phrase") {
-      var phrases = PHRASES[lang] || PHRASES.th;
-      var p = phrases[currentChallenge.phraseIndex % phrases.length];
-      currentChallenge.answer = p;
-      currentChallenge.question = t("retypePhrase", { phrase: p });
-    }
-    challengeQ.textContent = currentChallenge.question;
-  }
-  function updateCountdown() {
-    countdownEl.textContent = pad(Math.floor(remaining / 60)) + ":" + pad(remaining % 60);
-  }
-  function tick() {
-    remaining -= 1;
-    if (remaining <= 0) { remaining = 0; updateCountdown(); clearInterval(countdownInterval); countdownInterval = null; emergency.hidden = false; return; }
-    updateCountdown();
-  }
-  function fireAlarm() {
-    currentChallenge = genChallenge();
-    challengeQ.textContent = currentChallenge.question;
-    challengeInput.value = ""; lastErrType = null; challengeError.hidden = true;
-    emergency.hidden = true; remaining = 300; updateCountdown();
-    alarmModal.classList.add("active"); alarmModal.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden";
-    if (appRoot) appRoot.setAttribute("inert", ""); if (tabbar) tabbar.setAttribute("inert", "");
-    stopSound(); startSound();
-    if (countdownInterval) clearInterval(countdownInterval);
-    countdownInterval = setInterval(tick, 1000);
-    setTimeout(function () { challengeInput.focus(); }, 50);
-  }
-  function resolveAlarm() {
-    var wasTest = isTestFire;
-    stopSound();
-    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-    if (testTimeoutId) { clearTimeout(testTimeoutId); testTimeoutId = null; }
-    if (!wasTest && alarmCheckInterval) { clearInterval(alarmCheckInterval); alarmCheckInterval = null; }
-    isTestFire = false;
-    alarmModal.classList.remove("active"); alarmModal.setAttribute("aria-hidden", "true");
-    document.body.style.overflow = "";
-    if (appRoot) appRoot.removeAttribute("inert"); if (tabbar) tabbar.removeAttribute("inert");
-    setAlarmStatus((wasTest && alarmCheckInterval) ? "testSolved" : "alarmResolved");
-  }
-  function submitChallenge() {
-    if (!currentChallenge) return;
-    if (challengeInput.value.trim() === currentChallenge.answer) { resolveAlarm(); return; }
-    lastErrType = currentChallenge.type;
-    challengeError.hidden = false;
-    challengeError.textContent = currentChallenge.type === "math" ? t("wrongMath") : t("wrongPhrase");
-    var box = challengeInput.closest(".challenge-box");
-    box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake");
-    challengeInput.value = ""; challengeInput.focus();
-  }
-  $("challengeSubmit").addEventListener("click", submitChallenge);
-  challengeInput.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); submitChallenge(); } });
-  document.addEventListener("keydown", function (e) { if (alarmModal.classList.contains("active") && e.key === "Escape") e.preventDefault(); });
+  /* ---------------- Topbar scroll shadow ---------------- */
+  window.addEventListener("scroll", function () { $("topbar").classList.toggle("scrolled", window.scrollY > 4); }, { passive: true });
 
   /* ---------------- Init ---------------- */
-  hydrateProfileForm();
-  var savedLast = loadJSON(LS.lastNight);
-  if (savedLast != null) $("lastNightInput").value = savedLast;
+  applyTheme();
+  buildWheel($("weH"), 0, 23, plan ? Math.floor(plan.workEndMin / 60) : 22);
+  buildWheel($("weM"), 0, 59, plan ? plan.workEndMin % 60 : 30);
+  buildWheel($("wkH"), 0, 23, plan ? Math.floor(plan.wakeMin / 60) : 7);
+  buildWheel($("wkM"), 0, 59, plan ? plan.wakeMin % 60 : 0);
   applyI18n();
-  if (lastPlan) { renderPlan(lastPlan); $("alarmTimeInput").value = fmt(lastPlan.wakeMin); }
+  updateGreeting();
 
-  /* ---------------- PWA ---------------- */
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
-      navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(function () {});
-    });
-  }
+  if ("serviceWorker" in navigator) window.addEventListener("load", function () { navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(function () {}); });
 })();
 </script>
 </body>
