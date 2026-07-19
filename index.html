@@ -378,6 +378,64 @@
   .modal-panel h2 { margin: 8px 0 4px; font-size: 22px; }
   .modal-panel .m-sub { color: var(--muted); font-size: 13px; margin: 0 0 6px; }
   .modal-panel .m-time { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--primary); margin: 8px 0 18px; }
+  .modal-panel.left { text-align: left; }
+  .modal-scroll { max-height: calc(100dvh - 48px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ---------- Topbar (no side buttons) ---------- */
+  .topbar.solo { justify-content: center; }
+
+  /* ---------- Mood picker ---------- */
+  .mood-row { display: flex; gap: 8px; margin-top: 4px; }
+  .mood-btn {
+    flex: 1; background: var(--field); border: 1.5px solid var(--line-2); border-radius: var(--r-md);
+    padding: 12px 4px 9px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px;
+    transition: border-color .18s, background .18s, transform .12s; color: var(--muted);
+  }
+  .mood-btn:active { transform: scale(.95); }
+  .mood-btn .me { font-size: 26px; line-height: 1; }
+  .mood-btn .ml { font-size: 10.5px; font-weight: 700; }
+  .mood-btn.sel { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+
+  /* ---------- NSF reference table ---------- */
+  .nsf-table { margin-top: 6px; }
+  .nsf-row { display: flex; align-items: center; gap: 10px; padding: 10px 8px; border-radius: 10px; border-bottom: 1px solid var(--line); }
+  .nsf-row:last-child { border-bottom: none; }
+  .nsf-row.you { background: var(--primary-soft); border-bottom: none; border: 1px solid var(--primary); }
+  .nsf-row .nsf-age { flex: 1; font-size: 13px; font-weight: 700; }
+  .nsf-row .nsf-age small { display: block; font-weight: 600; color: var(--muted); font-size: 11px; }
+  .nsf-row .nsf-hours { font-size: 13px; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; }
+  .nsf-you-tag { font-size: 10px; font-weight: 800; color: #fff; background: var(--primary); padding: 2px 7px; border-radius: 999px; }
+  .nsf-compare { margin-top: 12px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  .nsf-compare b { color: var(--ink); }
+
+  /* ---------- Mood correlation ---------- */
+  .corr-list { margin-top: 8px; }
+  .corr-item { padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .corr-item:last-child { border-bottom: none; }
+  .corr-top { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 700; }
+  .corr-top .ce { font-size: 19px; }
+  .corr-top .cc { margin-left: auto; font-size: 11.5px; color: var(--muted); font-weight: 600; }
+  .corr-track { height: 7px; border-radius: 5px; background: var(--line-2); margin-top: 7px; overflow: hidden; }
+  .corr-track > i { display: block; height: 100%; border-radius: 5px; background: var(--grad); }
+  .corr-insight { margin-top: 12px; }
+
+  /* ---------- Home notes ---------- */
+  .note-card { background: var(--amber-bg); border: 1px solid transparent; }
+  .note-card .nc-head { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 800; color: var(--amber); }
+  .note-card .nc-body { margin-top: 8px; font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+
+  /* ---------- Onboarding ---------- */
+  .onb { position: fixed; inset: 0; z-index: 1200; background: var(--bg);
+    background-image: radial-gradient(900px 420px at 15% -8%, var(--bg-grad-1), transparent 60%), radial-gradient(800px 380px at 96% 4%, var(--bg-grad-2), transparent 55%);
+    display: flex; align-items: flex-start; justify-content: center; overflow-y: auto;
+    padding: calc(30px + var(--safe-top)) 20px calc(30px + var(--safe-bottom)); }
+  .onb-card { width: 100%; max-width: 420px; }
+  .onb-logo { width: 62px; height: 62px; border-radius: 18px; background: var(--navy); display: grid; place-items: center; font-size: 32px; margin: 8px auto 14px; box-shadow: 0 12px 26px rgba(27,38,71,0.35); }
+  .onb h1 { text-align: center; font-size: 23px; font-weight: 800; margin: 0 0 4px; }
+  .onb .onb-sub { text-align: center; color: var(--muted); font-size: 13.5px; margin: 0 0 20px; line-height: 1.5; }
+  .onb .card { margin-bottom: 14px; }
+  input[type="time"] { width: 100%; background: var(--field); border: 1px solid var(--line-2); border-radius: var(--r-md); padding: 13px 14px; color: var(--ink); font-size: 16px; font-variant-numeric: tabular-nums; }
+  input[type="time"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(61,91,245,0.16); }
 
   @media (prefers-reduced-motion: reduce) { * { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
 </style>
@@ -385,10 +443,8 @@
 <body>
 <div class="app">
 
-  <div class="topbar" id="topbar">
-    <button class="tb-btn" id="tbLeft" aria-label="menu">☰</button>
+  <div class="topbar solo" id="topbar">
     <div class="tb-title" id="tbTitle"><span class="tb-brand"><span class="logo">🌙</span><span class="wm">TimeSync</span></span></div>
-    <button class="tb-btn" id="tbRight" aria-label="notifications">🔔</button>
   </div>
 
   <main>
@@ -441,6 +497,11 @@
             <div class="pv" id="homeWake">--:--</div>
             <div class="pw" data-i18n="tomorrow">พรุ่งนี้</div>
           </div>
+        </div>
+
+        <div class="card note-card" id="homeNoteCard" hidden style="margin-top:16px">
+          <div class="nc-head">📌 <span data-i18n="homeNotesTitle">โน้ตสำคัญสำหรับพรุ่งนี้</span></div>
+          <div class="nc-body" id="homeNoteBody"></div>
         </div>
 
         <div style="margin-top:18px" class="row-gap">
@@ -545,6 +606,20 @@
             <div class="wd-emoji">🧘</div>
           </div>
 
+          <div class="card" id="moodCard">
+            <h2 data-i18n="moodTitle">รู้สึกอย่างไรก่อนนอนคืนนี้?</h2>
+            <p class="sub" data-i18n="moodSub">ประเมินอารมณ์เพื่อวิเคราะห์ความสัมพันธ์กับการนอน</p>
+            <div class="mood-row" id="moodRow">
+              <button class="mood-btn" data-mood="exhausted"><span class="me">😫</span><span class="ml" data-i18n="moodExhausted">เหนื่อยล้า</span></button>
+              <button class="mood-btn" data-mood="stressed"><span class="me">😣</span><span class="ml" data-i18n="moodStressed">เครียด</span></button>
+              <button class="mood-btn" data-mood="neutral"><span class="me">😐</span><span class="ml" data-i18n="moodNeutral">เฉย ๆ</span></button>
+              <button class="mood-btn" data-mood="good"><span class="me">🙂</span><span class="ml" data-i18n="moodGood">ดี</span></button>
+              <button class="mood-btn" data-mood="great"><span class="me">😄</span><span class="ml" data-i18n="moodGreat">สดชื่น</span></button>
+            </div>
+            <button class="btn btn-primary" id="moodSaveBtn" style="margin-top:14px" data-i18n="moodSave">บันทึกความรู้สึก</button>
+            <div id="moodNotice" class="notice notice-ok" hidden></div>
+          </div>
+
           <div class="row-gap">
             <button class="btn btn-primary" id="toWakeBtn" data-i18n="viewSmartWake">ดูหน้าปลุกอัจฉริยะ →</button>
             <button class="btn btn-ghost" id="sendTgBtn" data-i18n="sendTelegram">📨 ส่งแผนไป Telegram</button>
@@ -618,6 +693,21 @@
           <h2 data-i18n="scoreTrend">แนวโน้ม Sleep Score</h2>
           <div class="hist-bars" id="histBars"></div>
           <div class="hist-empty" id="histEmpty" data-i18n="histEmpty">ยังไม่มีประวัติ — คำนวณเวลานอนคืนแรกของคุณเพื่อเริ่มบันทึก</div>
+        </div>
+
+        <div class="card" id="corrCard">
+          <h2 data-i18n="corrTitle">อารมณ์ส่งผลต่อการนอนอย่างไร</h2>
+          <p class="sub" data-i18n="corrSub">วิเคราะห์ความสัมพันธ์ระหว่างอารมณ์ก่อนนอนกับคุณภาพการนอน</p>
+          <div id="corrEmpty" class="notice notice-info" data-i18n="corrNeedData">บันทึกอารมณ์อย่างน้อย 2-3 คืนเพื่อดูการวิเคราะห์</div>
+          <div class="corr-list" id="corrList" hidden></div>
+          <div class="corr-insight notice notice-info" id="corrInsight" hidden></div>
+        </div>
+
+        <div class="card">
+          <h2 data-i18n="nsfTitle">ตารางเวลานอนตามช่วงอายุ (NSF)</h2>
+          <p class="sub" data-i18n="nsfSub">เทียบพฤติกรรมจริงของคุณกับคำแนะนำมาตรฐาน</p>
+          <div class="nsf-table" id="nsfTable"></div>
+          <div class="nsf-compare" id="nsfCompare"></div>
         </div>
 
         <div class="card listcard" id="histList"></div>
@@ -716,6 +806,61 @@
   </div>
 </div>
 
+<!-- Note-for-tomorrow modal (triggered after mood submit) -->
+<div class="modal" id="noteModal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-panel left modal-scroll">
+    <div class="modal-ico" style="text-align:center">📝</div>
+    <h2 data-i18n="noteTitle">สิ่งสำคัญที่ต้องทำพรุ่งนี้</h2>
+    <p class="m-sub" data-i18n="noteSub">จดสิ่งที่ต้องทำ เพื่อปล่อยวางและหลับสบายขึ้น</p>
+    <div class="field-group" style="margin-top:8px">
+      <textarea id="noteInput" rows="4" style="width:100%;background:var(--field);border:1px solid var(--line-2);border-radius:var(--r-md);padding:13px 14px;color:var(--ink);font-size:15px;line-height:1.5;resize:vertical;min-height:96px" data-i18n-placeholder="notePlaceholder" placeholder="เช่น ประชุม 9 โมง, ส่งงาน, โทรหาลูกค้า"></textarea>
+    </div>
+    <div class="row-gap">
+      <button class="btn btn-primary" id="noteSaveBtn" data-i18n="noteSaveBtn">บันทึกโน้ต</button>
+      <button class="btn btn-nav" id="noteSkipBtn" data-i18n="noteSkip">ข้ามไปก่อน</button>
+    </div>
+  </div>
+</div>
+
+<!-- First-time onboarding (blocking) -->
+<div class="onb" id="onboarding" hidden>
+  <div class="onb-card">
+    <div class="onb-logo">🌙</div>
+    <h1 data-i18n="onbTitle">ยินดีต้อนรับสู่ TimeSync 🌙</h1>
+    <p class="onb-sub" data-i18n="onbSub">กรอกข้อมูลสั้น ๆ เพื่อปรับการคำนวณให้เหมาะกับคุณ</p>
+
+    <div class="card">
+      <div class="field-group">
+        <label class="fl" data-i18n="sex">เพศ</label>
+        <div class="seg" id="onbSexSeg">
+          <button type="button" class="seg-btn active" data-sex="male">♂ <span data-i18n="male">ชาย</span></button>
+          <button type="button" class="seg-btn" data-sex="female">♀ <span data-i18n="female">หญิง</span></button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="fl" data-i18n="onbAge">อายุของคุณ (ปี)</label>
+        <input type="number" id="onbAge" min="10" max="100" inputmode="numeric" placeholder="22">
+      </div>
+      <div class="grid-2">
+        <div class="field-group" style="margin-bottom:0">
+          <label class="fl" data-i18n="onbUsualBed">ปกติเข้านอนกี่โมง</label>
+          <input type="time" id="onbBed" value="23:00">
+        </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label class="fl" data-i18n="onbUsualWake">ปกติตื่นกี่โมง</label>
+          <input type="time" id="onbWake" value="07:00">
+        </div>
+      </div>
+    </div>
+
+    <div id="onbError" class="notice notice-error" hidden></div>
+    <button class="btn btn-primary" id="onbStartBtn" data-i18n="onbStart">เริ่มใช้งาน</button>
+    <p class="btn-hint" style="margin-top:12px"><span class="lock">🔒</span><span data-i18n="dataSafe">ข้อมูลของคุณปลอดภัย</span></p>
+  </div>
+</div>
+
+<audio id="alarmAudio" src="alarm.wav" loop preload="auto"></audio>
+
 <script>
 (function () {
   "use strict";
@@ -725,14 +870,17 @@
 
   var CYCLE = 90, ONSET_MIN = 15, ONSET_TIRED = 20, WINDOW = 30;
 
-  var LS = { profile: "ts2-profile", prefs: "ts2-prefs", history: "ts2-history", plan: "ts2-plan" };
+  var LS = { profile: "ts2-profile", prefs: "ts2-prefs", history: "ts2-history", plan: "ts2-plan", notes: "ts2-notes" };
   function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
-  var profile = load(LS.profile, null);        // {sex,age,weight,height}
-  var prefs = load(LS.prefs, { theme: "light", lang: null, alarmEnabled: true, volume: "medium", vibrate: true, tgToken: "", tgChatId: "" });
-  var history = load(LS.history, []);           // [{date, bedMin, wakeMin, cycles, hours, score, eff, debtMin}]
+  var profile = load(LS.profile, null);        // {sex,age,weight,height,usualBed,usualWake}
+  var prefs = load(LS.prefs, { theme: "light", lang: null, alarmEnabled: true, volume: "medium", vibrate: true, tgToken: "", tgChatId: "", onboarded: false });
+  var history = load(LS.history, []);           // [{date, bedMin, wakeMin, cycles, hours, score, eff, debtMin, mood}]
+  var notes = load(LS.notes, []);               // [{date, text}] — notes are FOR the day after `date`
   var plan = load(LS.plan, null);
+  var MOODS = ["exhausted", "stressed", "neutral", "good", "great"];
+  var MOOD_EMOJI = { exhausted: "😫", stressed: "😣", neutral: "😐", good: "🙂", great: "😄" };
 
   /* ---------------- i18n ---------------- */
   var T = {
@@ -790,7 +938,29 @@
       profileErr:"กรุณากรอกอายุ น้ำหนัก และส่วนสูงให้ถูกต้อง",
       aboutMsg:"TimeSync – Smart Sleep Calculator\nคำนวณเวลานอนด้วยหลักสถิติ NSF/AASM และรอบการนอน 90 นาที ทำงานแบบออฟไลน์ ข้อมูลทั้งหมดเก็บในเครื่องคุณเท่านั้น",
       privacyMsg:"ความเป็นส่วนตัว: ข้อมูลทั้งหมด (โปรไฟล์ ประวัติการนอน) ถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น (localStorage) ไม่มีการส่งขึ้นเซิร์ฟเวอร์ ยกเว้นเมื่อคุณกดส่งไป Telegram ด้วยตนเอง",
-      volPrompt:"เลือกระดับเสียง: 1=เบา, 2=ปานกลาง, 3=ดัง", langNameTh:"ไทย", langNameEn:"อังกฤษ"
+      volPrompt:"เลือกระดับเสียง: 1=เบา, 2=ปานกลาง, 3=ดัง", langNameTh:"ไทย", langNameEn:"อังกฤษ",
+      moodTitle:"รู้สึกอย่างไรก่อนนอนคืนนี้?", moodSub:"ประเมินอารมณ์เพื่อวิเคราะห์ความสัมพันธ์กับการนอน",
+      moodExhausted:"เหนื่อยล้า", moodStressed:"เครียด", moodNeutral:"เฉย ๆ", moodGood:"ดี", moodGreat:"สดชื่น",
+      moodSave:"บันทึกความรู้สึก", moodSaved:"บันทึกอารมณ์แล้ว ✓ กำลังเปิดบันทึกสำหรับพรุ่งนี้...", moodPickFirst:"เลือกอารมณ์ก่อนนะ",
+      noteTitle:"สิ่งสำคัญที่ต้องทำพรุ่งนี้", noteSub:"จดสิ่งที่ต้องทำ เพื่อปล่อยวางและหลับสบายขึ้น",
+      notePlaceholder:"เช่น ประชุม 9 โมง, ส่งงาน, โทรหาลูกค้า", noteSaveBtn:"บันทึกโน้ต", noteSkip:"ข้ามไปก่อน",
+      homeNotesTitle:"โน้ตสำคัญสำหรับพรุ่งนี้",
+      corrTitle:"อารมณ์ส่งผลต่อการนอนอย่างไร", corrSub:"วิเคราะห์ความสัมพันธ์ระหว่างอารมณ์ก่อนนอนกับคุณภาพการนอน",
+      corrNeedData:"บันทึกอารมณ์อย่างน้อย 2-3 คืนเพื่อดูการวิเคราะห์",
+      corrRowMeta:"{count} คืน · เฉลี่ย {hours} · คะแนน {score}",
+      corrInsightLow:"เมื่อคุณรู้สึก \"{mood}\" ก่อนนอน มักนอนเฉลี่ย {hours} คะแนน {score} — ต่ำกว่าค่าเฉลี่ยรวม {diff}% ลองผ่อนคลาย/งดหน้าจอก่อนนอนในคืนแบบนี้ดูนะ",
+      corrInsightHigh:"เมื่อคุณรู้สึก \"{mood}\" ก่อนนอน คุณนอนได้ดีที่สุด เฉลี่ย {hours} คะแนน {score} — พยายามสร้างคืนแบบนี้บ่อย ๆ",
+      nsfTitle:"ตารางเวลานอนตามช่วงอายุ (NSF)", nsfSub:"เทียบพฤติกรรมจริงของคุณกับคำแนะนำมาตรฐาน",
+      nsfCompareOk:"ค่าเฉลี่ยจริงของคุณ <b>{avg}</b> อยู่ในเกณฑ์ที่แนะนำ (<b>{lo}-{hi} ชม.</b>) เยี่ยมมาก!",
+      nsfCompareLow:"ค่าเฉลี่ยจริงของคุณ <b>{avg}</b> น้อยกว่าเกณฑ์ (<b>{lo}-{hi} ชม.</b>) ควรนอนให้มากขึ้น",
+      nsfCompareHigh:"ค่าเฉลี่ยจริงของคุณ <b>{avg}</b> มากกว่าเกณฑ์ (<b>{lo}-{hi} ชม.</b>) เล็กน้อย",
+      nsfCompareNone:"คำนวณการนอนสักคืนเพื่อเทียบกับเกณฑ์มาตรฐาน",
+      nsfG1:"เด็ก (6-13 ปี)", nsfG2:"วัยรุ่น (14-17 ปี)", nsfG3:"วัยหนุ่มสาว (18-25 ปี)", nsfG4:"ผู้ใหญ่ (26-64 ปี)", nsfG5:"สูงวัย (65 ปีขึ้นไป)",
+      hoursRange:"{lo}-{hi} ชม.",
+      onbTitle:"ยินดีต้อนรับสู่ TimeSync 🌙", onbSub:"กรอกข้อมูลสั้น ๆ เพื่อปรับการคำนวณให้เหมาะกับคุณ",
+      onbAge:"อายุของคุณ (ปี)", onbUsualBed:"ปกติเข้านอนกี่โมง", onbUsualWake:"ปกติตื่นกี่โมง",
+      onbStart:"เริ่มใช้งาน", onbErr:"กรุณากรอกอายุ (10-100) และเวลาให้ครบ",
+      usualSleep:"เวลานอนปกติ"
     },
     en: {
       navHome:"Home", navSleep:"Sleep", navHistory:"History", navProfile:"Profile",
@@ -846,7 +1016,29 @@
       profileErr:"Please enter a valid age, weight and height.",
       aboutMsg:"TimeSync – Smart Sleep Calculator\nCalculates sleep with NSF/AASM statistics and 90-minute cycles. Works offline; all data stays on your device only.",
       privacyMsg:"Privacy: all data (profile, sleep history) is stored on your device only (localStorage). Nothing is sent to a server, except when you manually send to Telegram.",
-      volPrompt:"Choose volume: 1=Low, 2=Medium, 3=High", langNameTh:"Thai", langNameEn:"English"
+      volPrompt:"Choose volume: 1=Low, 2=Medium, 3=High", langNameTh:"Thai", langNameEn:"English",
+      moodTitle:"How do you feel before bed tonight?", moodSub:"Rate your mood to analyze its link to your sleep",
+      moodExhausted:"Exhausted", moodStressed:"Stressed", moodNeutral:"Neutral", moodGood:"Good", moodGreat:"Fresh",
+      moodSave:"Save mood", moodSaved:"Mood saved ✓ opening notes for tomorrow...", moodPickFirst:"Pick a mood first",
+      noteTitle:"Important tasks for tomorrow", noteSub:"Jot down what matters so you can let go and sleep better",
+      notePlaceholder:"e.g. 9am meeting, submit report, call client", noteSaveBtn:"Save note", noteSkip:"Skip for now",
+      homeNotesTitle:"Notes for tomorrow",
+      corrTitle:"How mood affects your sleep", corrSub:"Analyzing the link between pre-sleep mood and sleep quality",
+      corrNeedData:"Log your mood for a few nights to see the analysis",
+      corrRowMeta:"{count} nights · avg {hours} · score {score}",
+      corrInsightLow:"When you feel \"{mood}\" before bed, you average {hours} and score {score} — {diff}% below your overall average. Try to relax and avoid screens on nights like these.",
+      corrInsightHigh:"When you feel \"{mood}\" before bed, you sleep best: avg {hours}, score {score}. Aim for more nights like this.",
+      nsfTitle:"Recommended sleep by age (NSF)", nsfSub:"Compare your actual sleep with the standard",
+      nsfCompareOk:"Your actual average <b>{avg}</b> is within the recommended range (<b>{lo}-{hi}h</b>). Great!",
+      nsfCompareLow:"Your actual average <b>{avg}</b> is below the range (<b>{lo}-{hi}h</b>). Try to sleep more.",
+      nsfCompareHigh:"Your actual average <b>{avg}</b> is a bit above the range (<b>{lo}-{hi}h</b>).",
+      nsfCompareNone:"Calculate a night's sleep to compare against the standard.",
+      nsfG1:"Children (6-13)", nsfG2:"Teens (14-17)", nsfG3:"Young adults (18-25)", nsfG4:"Adults (26-64)", nsfG5:"Older adults (65+)",
+      hoursRange:"{lo}-{hi}h",
+      onbTitle:"Welcome to TimeSync 🌙", onbSub:"A few details to tailor the calculations to you",
+      onbAge:"Your age (years)", onbUsualBed:"Usual bedtime", onbUsualWake:"Usual wake time",
+      onbStart:"Get started", onbErr:"Please enter your age (10-100) and both times.",
+      usualSleep:"Usual sleep time"
     }
   };
 
@@ -1004,6 +1196,7 @@
       $("homeBed").textContent = "--:--"; $("homeWake").textContent = "--:--";
       $("debtBadgeHome").hidden = true; $("debtSubHome").textContent = t("debtSubEmpty");
     }
+    renderHomeNotes();
   }
 
   function renderResult() {
@@ -1057,6 +1250,11 @@
     var rr = ratingFor(plan.score); $("effRate").textContent = rr.txt; $("effRate").style.color = rr.col;
     $("effTotal").textContent = t("hoursMinShort", { h: hmv.h, m: hmv.m });
     $("effPct").textContent = plan.eff + "%";
+
+    // reflect any mood already logged for today
+    var today = history.filter(function (e) { return e.date === todayKey(); })[0];
+    selectedMood = today ? today.mood : selectedMood;
+    paintMood();
   }
   function cycEl(num, isWake) {
     var d = document.createElement("div"); d.className = "cyc" + (isWake ? " wakec" : "");
@@ -1067,6 +1265,7 @@
   }
 
   function renderHistory() {
+    renderNsfTable(); renderCorrelation();
     var bars = $("histBars"), empty = $("histEmpty"), list = $("histList");
     bars.innerHTML = ""; list.innerHTML = "";
     if (!history.length) {
@@ -1121,6 +1320,95 @@
     if ($("vibrateEnable")) $("vibrateEnable").checked = prefs.vibrate;
     if ($("volumeVal")) $("volumeVal").textContent = t(prefs.volume === "low" ? "volLow" : prefs.volume === "high" ? "volHigh" : "volMedium");
   }
+
+  /* ----- Notes (for tomorrow) ----- */
+  function tomorrowKey() { var d = new Date(); d.setDate(d.getDate() + 1); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function activeNote() {
+    var tk = todayKey();
+    var upcoming = notes.filter(function (n) { return n.forDate >= tk; }).sort(function (a, b) { return a.forDate < b.forDate ? -1 : 1; });
+    return upcoming[0] || null;
+  }
+  function renderHomeNotes() {
+    var n = activeNote(), card = $("homeNoteCard");
+    if (n && n.text) { card.hidden = false; $("homeNoteBody").textContent = n.text; }
+    else card.hidden = true;
+  }
+
+  /* ----- Mood ----- */
+  var selectedMood = null;
+  function paintMood() {
+    document.querySelectorAll("#moodRow .mood-btn").forEach(function (b) { b.classList.toggle("sel", b.dataset.mood === selectedMood); });
+  }
+
+  /* ----- NSF reference table ----- */
+  var NSF_GROUPS = [
+    { key: "nsfG1", lo: 9, hi: 11, min: 6, max: 13 },
+    { key: "nsfG2", lo: 8, hi: 10, min: 14, max: 17 },
+    { key: "nsfG3", lo: 7, hi: 9, min: 18, max: 25 },
+    { key: "nsfG4", lo: 7, hi: 9, min: 26, max: 64 },
+    { key: "nsfG5", lo: 7, hi: 8, min: 65, max: 200 }
+  ];
+  function avgHours7() {
+    if (!history.length) return null;
+    var slice = history.slice(0, 7);
+    return slice.reduce(function (a, e) { return a + e.hours; }, 0) / slice.length;
+  }
+  function renderNsfTable() {
+    var box = $("nsfTable"); box.innerHTML = "";
+    var age = profile && profile.age ? profile.age : null;
+    NSF_GROUPS.forEach(function (grp) {
+      var mine = age != null && age >= grp.min && age <= grp.max;
+      var row = document.createElement("div"); row.className = "nsf-row" + (mine ? " you" : "");
+      row.innerHTML = '<div class="nsf-age">' + t(grp.key) + '</div>' +
+        '<div class="nsf-hours">' + t("hoursRange", { lo: grp.lo, hi: grp.hi }) + '</div>' +
+        (mine ? '<span class="nsf-you-tag">' + (lang === "th" ? "คุณ" : "You") + '</span>' : '');
+      box.appendChild(row);
+    });
+    var cmp = $("nsfCompare"), avg = avgHours7();
+    if (avg == null || age == null) { cmp.innerHTML = t("nsfCompareNone"); return; }
+    var band = NSF_GROUPS.filter(function (g) { return age >= g.min && age <= g.max; })[0] || NSF_GROUPS[3];
+    var ah = hoursToHM(avg), avgStr = t("hoursMinShort", { h: ah.h, m: ah.m });
+    var key = avg < band.lo ? "nsfCompareLow" : avg > band.hi ? "nsfCompareHigh" : "nsfCompareOk";
+    cmp.innerHTML = t(key, { avg: avgStr, lo: band.lo, hi: band.hi });
+  }
+
+  /* ----- Mood correlation analytics ----- */
+  function renderCorrelation() {
+    var tagged = history.filter(function (e) { return e.mood && typeof e.score === "number"; });
+    var listBox = $("corrList"), emptyBox = $("corrEmpty"), insightBox = $("corrInsight");
+    var groups = {};
+    tagged.forEach(function (e) {
+      var m = e.mood; if (!groups[m]) groups[m] = { count: 0, score: 0, hours: 0 };
+      groups[m].count++; groups[m].score += e.score; groups[m].hours += e.hours;
+    });
+    var keys = Object.keys(groups);
+    if (tagged.length < 3 || keys.length < 2) {
+      emptyBox.hidden = false; listBox.hidden = true; insightBox.hidden = true; return;
+    }
+    emptyBox.hidden = true; listBox.hidden = false; listBox.innerHTML = "";
+    var stats = keys.map(function (m) { var g = groups[m]; return { mood: m, count: g.count, avgS: g.score / g.count, avgH: g.hours / g.count }; });
+    stats.sort(function (a, b) { return b.avgS - a.avgS; });
+    stats.forEach(function (s) {
+      var ah = hoursToHM(s.avgH);
+      var item = document.createElement("div"); item.className = "corr-item";
+      item.innerHTML =
+        '<div class="corr-top"><span class="ce">' + MOOD_EMOJI[s.mood] + '</span><span>' + t("mood" + cap(s.mood)) + '</span>' +
+        '<span class="cc">' + t("corrRowMeta", { count: s.count, hours: t("hoursMinShort", { h: ah.h, m: ah.m }), score: Math.round(s.avgS) }) + '</span></div>' +
+        '<div class="corr-track"><i style="width:' + Math.round(s.avgS) + '%"></i></div>';
+      listBox.appendChild(item);
+    });
+    var overall = tagged.reduce(function (a, e) { return a + e.score; }, 0) / tagged.length;
+    var lowest = stats[stats.length - 1], highest = stats[0];
+    insightBox.hidden = false;
+    if (lowest.avgS < overall - 2) {
+      var lh = hoursToHM(lowest.avgH);
+      insightBox.innerHTML = t("corrInsightLow", { mood: t("mood" + cap(lowest.mood)), hours: t("hoursMinShort", { h: lh.h, m: lh.m }), score: Math.round(lowest.avgS), diff: Math.max(1, Math.round((overall - lowest.avgS) / overall * 100)) });
+    } else {
+      var hh = hoursToHM(highest.avgH);
+      insightBox.innerHTML = t("corrInsightHigh", { mood: t("mood" + cap(highest.mood)), hours: t("hoursMinShort", { h: hh.h, m: hh.m }), score: Math.round(highest.avgS) });
+    }
+  }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
   function renderAll() { renderHome(); if (plan) renderResult(); renderHistory(); renderProfile(); }
 
@@ -1199,10 +1487,12 @@
     $("calcError").hidden = true;
     var p = computePlan(weMin, wkMin);
     plan = p; save(LS.plan, p);
-    // record history (upsert by date)
-    var rec = { date: p.date, bedMin: p.bedMin, wakeMin: p.wakeMin, cycles: p.cycles, hours: p.hours, score: p.score, eff: p.eff, debtMin: p.debtMin };
+    // record history (upsert by date), preserving any mood already logged today
+    var prior = history.filter(function (e) { return e.date === p.date; })[0];
+    var rec = { date: p.date, bedMin: p.bedMin, wakeMin: p.wakeMin, cycles: p.cycles, hours: p.hours, score: p.score, eff: p.eff, debtMin: p.debtMin, mood: prior ? prior.mood : null };
     history = history.filter(function (e) { return e.date !== p.date; });
     history.unshift(rec); history = history.slice(0, 30); save(LS.history, history);
+    selectedMood = rec.mood;
     renderAll();
     gotoStep("result");
   });
@@ -1277,24 +1567,65 @@
   $("alarmEnable").addEventListener("change", function () { prefs.alarmEnabled = this.checked; save(LS.prefs, prefs); });
   $("vibrateEnable").addEventListener("change", function () { prefs.vibrate = this.checked; save(LS.prefs, prefs); });
 
-  /* ---------------- Alarm (gentle) ---------------- */
-  var audioCtx = null, beepId = null;
-  function volGain() { return prefs.volume === "low" ? 0.1 : prefs.volume === "high" ? 0.34 : 0.2; }
-  function startSound() {
+  /* ---------------- Alarm (gentle) ----------------
+     Primary playback uses a looping <audio> element (alarm.wav) which keeps
+     playing reliably in the background instead of stopping on its own the way
+     the old chained-oscillator scheduler could. A Web Audio beep loop is kept
+     only as a fallback if the file can't be played. */
+  var alarmAudio = $("alarmAudio");
+  var audioUnlocked = false, audioCtx = null, beepId = null, vibrateId = null;
+  function volGain() { return prefs.volume === "low" ? 0.35 : prefs.volume === "high" ? 1.0 : 0.65; }
+
+  // Unlock media playback on the first user gesture so a later programmatic
+  // play() (e.g. the wake-time auto-alarm) is allowed by autoplay policies.
+  function unlockAudio() {
+    if (audioUnlocked || !alarmAudio) return;
+    alarmAudio.muted = true;
+    var p = alarmAudio.play();
+    if (p && p.then) p.then(function () { alarmAudio.pause(); alarmAudio.currentTime = 0; alarmAudio.muted = false; audioUnlocked = true; })
+      .catch(function () { alarmAudio.muted = false; });
+    else { audioUnlocked = true; }
+  }
+  ["pointerdown", "touchstart", "keydown"].forEach(function (ev) {
+    document.addEventListener(ev, unlockAudio, { passive: true });
+  });
+
+  function startBeepFallback() {
     try {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === "suspended") audioCtx.resume().catch(function () {});
       var beep = function () {
         if (!audioCtx) return; audioCtx.resume().catch(function () {});
         var o = audioCtx.createOscillator(), g = audioCtx.createGain();
-        o.type = "sine"; o.frequency.value = 660; g.gain.value = volGain();
+        o.type = "sine"; o.frequency.value = 660; g.gain.value = 0.2 * volGain();
         o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.35);
       };
       beep(); beepId = setInterval(beep, 900);
-      if (prefs.vibrate && navigator.vibrate) navigator.vibrate([300, 200, 300]);
     } catch (e) {}
   }
-  function stopSound() { if (beepId) { clearInterval(beepId); beepId = null; } if (audioCtx) { audioCtx.close(); audioCtx = null; } if (navigator.vibrate) navigator.vibrate(0); }
+  function startSound() {
+    var usedFile = false;
+    if (alarmAudio) {
+      try {
+        alarmAudio.loop = true; alarmAudio.muted = false; alarmAudio.volume = volGain(); alarmAudio.currentTime = 0;
+        var p = alarmAudio.play();
+        usedFile = true;
+        if (p && p.catch) p.catch(function () { startBeepFallback(); });
+      } catch (e) { usedFile = false; }
+    }
+    if (!usedFile) startBeepFallback();
+    if (prefs.vibrate && navigator.vibrate) {
+      navigator.vibrate([300, 200, 300]);
+      vibrateId = setInterval(function () { navigator.vibrate([300, 200, 300]); }, 1800);
+    }
+  }
+  function stopSound() {
+    if (alarmAudio) { try { alarmAudio.pause(); alarmAudio.currentTime = 0; } catch (e) {} }
+    if (beepId) { clearInterval(beepId); beepId = null; }
+    if (audioCtx) { try { audioCtx.close(); } catch (e) {} audioCtx = null; }
+    if (vibrateId) { clearInterval(vibrateId); vibrateId = null; }
+    if (navigator.vibrate) navigator.vibrate(0);
+  }
   function fireAlarm(timeStr) {
     $("modalTime").textContent = timeStr;
     var m = $("alarmModal"); m.classList.add("active"); m.setAttribute("aria-hidden", "false");
@@ -1317,17 +1648,86 @@
     }
   }, 1000);
 
+  /* ---------------- Generic modal helpers ---------------- */
+  function openModal(el) { el.classList.add("active"); el.setAttribute("aria-hidden", "false"); document.body.style.overflow = "hidden"; }
+  function closeModal(el) { el.classList.remove("active"); el.setAttribute("aria-hidden", "true"); document.body.style.overflow = ""; }
+  function parseTimeStr(s) { var p = (s || "").split(":"); return (+p[0]) * 60 + (+p[1]); }
+
+  /* ---------------- Mood assessment ---------------- */
+  document.querySelectorAll("#moodRow .mood-btn").forEach(function (b) {
+    b.addEventListener("click", function () { selectedMood = b.dataset.mood; paintMood(); $("moodNotice").hidden = true; });
+  });
+  function saveMoodToday(mood) {
+    var tk = todayKey(), idx = -1;
+    for (var i = 0; i < history.length; i++) { if (history[i].date === tk) { idx = i; break; } }
+    if (idx >= 0) history[idx].mood = mood;
+    else if (plan) { history.unshift({ date: tk, bedMin: plan.bedMin, wakeMin: plan.wakeMin, cycles: plan.cycles, hours: plan.hours, score: plan.score, eff: plan.eff, debtMin: plan.debtMin, mood: mood }); history = history.slice(0, 30); }
+    save(LS.history, history);
+  }
+  $("moodSaveBtn").addEventListener("click", function () {
+    var note = $("moodNotice");
+    if (!selectedMood) { note.hidden = false; note.className = "notice notice-warn"; note.textContent = t("moodPickFirst"); return; }
+    saveMoodToday(selectedMood);
+    renderHistory();
+    note.hidden = false; note.className = "notice notice-ok"; note.textContent = t("moodSaved");
+    // Workflow: the "note for tomorrow" popup appears only AFTER a mood is submitted
+    setTimeout(openNoteModal, 650);
+  });
+
+  /* ---------------- Note for tomorrow ---------------- */
+  function saveNoteForTomorrow(text) {
+    var fd = tomorrowKey();
+    notes = notes.filter(function (n) { return n.forDate !== fd; });
+    if (text) notes.unshift({ forDate: fd, text: text, ts: Date.now() });
+    notes = notes.slice(0, 30); save(LS.notes, notes);
+  }
+  function openNoteModal() {
+    var fd = tomorrowKey(), existing = notes.filter(function (n) { return n.forDate === fd; })[0];
+    $("noteInput").value = existing ? existing.text : "";
+    openModal($("noteModal"));
+    setTimeout(function () { $("noteInput").focus(); }, 60);
+  }
+  $("noteSaveBtn").addEventListener("click", function () {
+    saveNoteForTomorrow($("noteInput").value.trim());
+    closeModal($("noteModal")); renderHomeNotes();
+  });
+  $("noteSkipBtn").addEventListener("click", function () { closeModal($("noteModal")); });
+
+  /* ---------------- First-time onboarding ---------------- */
+  var onbSex = "male";
+  function paintOnbSex() { $("onbSexSeg").querySelectorAll(".seg-btn").forEach(function (b) { b.classList.toggle("active", b.dataset.sex === onbSex); }); }
+  $("onbSexSeg").querySelectorAll(".seg-btn").forEach(function (b) { b.addEventListener("click", function () { onbSex = b.dataset.sex; paintOnbSex(); }); });
+  function showOnboarding() { $("onboarding").hidden = false; document.body.style.overflow = "hidden"; }
+  $("onbStartBtn").addEventListener("click", function () {
+    var age = parseFloat($("onbAge").value), bed = $("onbBed").value, wake = $("onbWake").value, err = $("onbError");
+    if (!(age >= 10 && age <= 100) || !bed || !wake) { err.hidden = false; err.textContent = t("onbErr"); return; }
+    var wakeMin = parseTimeStr(wake);
+    profile = Object.assign({}, profile || {}, { sex: onbSex, age: age, usualBed: parseTimeStr(bed), usualWake: wakeMin });
+    save(LS.profile, profile);
+    prefs.onboarded = true; save(LS.prefs, prefs);
+    selSex = onbSex;
+    // seed the daily wake picker from the user's usual wake time
+    if ($("wkH")) { $("wkH").dataset.value = Math.floor(wakeMin / 60); $("wkM").dataset.value = wakeMin % 60; highlightWheel($("wkH")); highlightWheel($("wkM")); }
+    $("onboarding").hidden = true; document.body.style.overflow = "";
+    renderAll(); updateGreeting();
+  });
+
   /* ---------------- Topbar scroll shadow ---------------- */
   window.addEventListener("scroll", function () { $("topbar").classList.toggle("scrolled", window.scrollY > 4); }, { passive: true });
 
   /* ---------------- Init ---------------- */
   applyTheme();
+  var defWake = (profile && profile.usualWake != null) ? profile.usualWake : 7 * 60;
   buildWheel($("weH"), 0, 23, plan ? Math.floor(plan.workEndMin / 60) : 22);
   buildWheel($("weM"), 0, 59, plan ? plan.workEndMin % 60 : 30);
-  buildWheel($("wkH"), 0, 23, plan ? Math.floor(plan.wakeMin / 60) : 7);
-  buildWheel($("wkM"), 0, 59, plan ? plan.wakeMin % 60 : 0);
+  buildWheel($("wkH"), 0, 23, plan ? Math.floor(plan.wakeMin / 60) : Math.floor(defWake / 60));
+  buildWheel($("wkM"), 0, 59, plan ? plan.wakeMin % 60 : defWake % 60);
+  if (plan) selectedMood = (history.filter(function (e) { return e.date === plan.date; })[0] || {}).mood || null;
   applyI18n();
   updateGreeting();
+
+  // First-time onboarding: block the app until required info is filled once.
+  if (!prefs.onboarded && !(profile && profile.age)) { paintOnbSex(); showOnboarding(); }
 
   if ("serviceWorker" in navigator) window.addEventListener("load", function () { navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(function () {}); });
 })();

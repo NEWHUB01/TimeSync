@@ -1,12 +1,13 @@
 /* TimeSync service worker */
-const CACHE_NAME = "timesync-v3";
+const CACHE_NAME = "timesync-v4";
 const PRECACHE_URLS = [
   "./",
   "./index.html",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
-  "./apple-touch-icon.png"
+  "./apple-touch-icon.png",
+  "./alarm.wav"
 ];
 
 self.addEventListener("install", (event) => {
