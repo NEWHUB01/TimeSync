@@ -139,6 +139,8 @@
         <input type="time" id="alarmTime" value="07:00">
         <div class="alarm-count" id="alarmCount"></div>
       </div>
+      <label class="check"><input type="checkbox" id="alarmFollow"> ปลุกตามตารางของแต่ละวันแทนเวลาตายตัว
+        <span class="remind-at" id="followNote"></span></label>
       <div class="audio-warn hidden" id="audioWarn">
         🔇 เบราว์เซอร์ยังไม่อนุญาตให้เล่นเสียง — กด "ทดสอบเสียง" หนึ่งครั้งเพื่อปลดล็อก
         ไม่งั้นถึงเวลาปลุกจะได้แค่การแจ้งเตือน ไม่มีเสียง
@@ -345,16 +347,48 @@
   <!-- ============ ตั้งค่า ============ -->
   <section class="panel" id="panel-settings">
     <div class="card">
+      <h2>ตารางเวลานอน–ตื่น</h2>
+      <p class="sub">ถ้าเวลาทำงานแต่ละวันไม่เหมือนกัน ตั้งแยกรายวันได้ — หรือใช้โหมดง่ายเหมือนเดิมก็ได้</p>
+
+      <div class="seg" id="schedMode">
+        <button class="seg-btn active" data-mode="simple">ง่าย — เหมือนกันทุกวัน</button>
+        <button class="seg-btn" data-mode="weekly">แยกรายวัน (จ–อา)</button>
+      </div>
+
+      <div id="schedSimple">
+        <div class="field">
+          <label>เวลาตื่นประจำ</label>
+          <input type="time" id="usualWake" value="07:00">
+        </div>
+        <div class="note-line" id="simpleBedNote"></div>
+      </div>
+
+      <div id="schedWeekly" class="hidden">
+        <div class="week-grid" id="weekGrid"></div>
+        <div class="row-actions">
+          <button class="btn ghost" id="weekFill">เติมทุกวันด้วยเวลาเดียวกัน</button>
+        </div>
+      </div>
+
+      <div class="override-box">
+        <h3>เฉพาะวันเดียว</h3>
+        <p class="sub">ตั้งเวลาพิเศษให้วันใดวันหนึ่ง โดยไม่กระทบตารางประจำ เช่น วันที่ต้องบินเช้าหรือเข้ากะดึก</p>
+        <div class="override-form">
+          <div class="field"><label>วันที่</label><input type="date" id="ovDate"></div>
+          <div class="field"><label>ตื่น</label><input type="time" id="ovWake" value="06:00"></div>
+          <div class="field grow"><label>เหตุผล (ไม่บังคับ)</label><input type="text" id="ovNote" placeholder="เช่น บินเช้า" maxlength="40"></div>
+          <div class="field"><label>&nbsp;</label><button class="btn" id="ovSave">ตั้ง</button></div>
+        </div>
+        <div class="override-list" id="overrideList"></div>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>ตั้งค่า</h2>
 
       <div class="field">
         <label>ช่วงอายุ (ใช้กับชาร์ตเวลานอนสากล)</label>
         <select id="ageGroup"></select>
-      </div>
-
-      <div class="field">
-        <label>เวลาตื่นประจำ</label>
-        <input type="time" id="usualWake" value="07:00">
       </div>
 
       <div class="field">

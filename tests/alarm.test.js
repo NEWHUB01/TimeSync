@@ -185,7 +185,7 @@ describe('ALARM_SOUNDS', () => {
 describe('migrate v3 → v4', () => {
   test('เก็บเวลาปลุกเดิมไว้ และเติมค่าเสียง/ความดังใหม่', () => {
     const s = C.migrate({ version: 3, alarm: { on: true, time: '05:45' } });
-    assert.equal(s.version, 4);
+    assert.equal(s.version, C.STATE_VERSION);
     assert.equal(s.alarm.on, true);
     assert.equal(s.alarm.time, '05:45');
     assert.equal(s.alarm.sound, 'classic');
@@ -217,9 +217,9 @@ describe('migrate v3 → v4', () => {
     assert.equal(s.alarm.customId, 'snd_123');
   });
 
-  test('อัปเกรดข้ามจาก v1 ถึง v4 ได้ครบ', () => {
+  test('อัปเกรดข้ามจาก v1 ถึงเวอร์ชันล่าสุดได้ครบ', () => {
     const s = C.migrate({ ageGroup: 'teen', usualWake: '06:00' });
-    assert.equal(s.version, 4);
+    assert.equal(s.version, C.STATE_VERSION);
     assert.equal(s.alarm.time, '06:00');    // v2→v3 ตั้งจากเวลาตื่นประจำ
     assert.equal(s.alarm.sound, 'classic'); // v3→v4 เติมค่าเสียง
     assert.equal(s.reminders.log.on, true);

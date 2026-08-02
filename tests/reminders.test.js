@@ -18,6 +18,8 @@ function baseState(over) {
   for (const [k, v] of Object.entries((over && over.reminders) || {})) {
     s.reminders[k] = Object.assign({}, s.reminders[k], v);
   }
+  // ตารางโหมดง่ายต้องสอดคล้องกับ usualWake ที่เทสต์ตั้ง (ปกติ migrate เป็นคนทำให้)
+  s.schedule = { mode: 'simple', simple: { bed: '', wake: s.usualWake }, weekly: {}, overrides: {} };
   return s;
 }
 

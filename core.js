@@ -13,7 +13,7 @@
 
   /* ---------- ค่าคงที่ ---------- */
   const MIN_PER_DAY = 1440;
-  const STATE_VERSION = 4;
+  const STATE_VERSION = 5;
 
   const TH_DAY = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
   const TH_MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
@@ -297,6 +297,91 @@
   }
   const DEFAULT_CYCLES = 5;
 
+  /* =========================================================
+     ตารางเวลานอน/ตื่น (Phase 3)
+     รองรับตารางชีวิตที่ไม่คงที่ — ลำดับความสำคัญ:
+       override เฉพาะวัน  >  ตารางรายวัน (จ–อา)  >  โหมดง่าย
+     ========================================================= */
+  const WEEKDAYS = [
+    { i: 1, short: 'จ',  label: 'จันทร์' },
+    { i: 2, short: 'อ',  label: 'อังคาร' },
+    { i: 3, short: 'พ',  label: 'พุธ' },
+    { i: 4, short: 'พฤ', label: 'พฤหัสบดี' },
+    { i: 5, short: 'ศ',  label: 'ศุกร์' },
+    { i: 6, short: 'ส',  label: 'เสาร์' },
+    { i: 0, short: 'อา', label: 'อาทิตย์' },
+  ];
+
+  /**
+   * ตารางที่มีผลกับวันที่กำหนด (วันที่ = วันที่ "ตื่น")
+   * คืน { bed, wake, source } โดย bed อาจว่าง = ให้คำนวณจาก wake
+   */
+  function scheduleFor(state, date) {
+    const sc = state.schedule || {};
+    const key = dateKey(date);
+    const ov = (sc.overrides || {})[key];
+    if (ov && ov.wake) return { bed: ov.bed || '', wake: ov.wake, source: 'override', note: ov.note || '' };
+
+    if (sc.mode === 'weekly') {
+      const day = (sc.weekly || {})[date.getDay()];
+      if (day && day.wake) return { bed: day.bed || '', wake: day.wake, source: 'weekly' };
+    }
+    const simple = sc.simple || {};
+    return { bed: simple.bed || '', wake: simple.wake || state.usualWake || '07:00', source: 'simple' };
+  }
+
+  /**
+   * การนอน "รอบถัดไป" จะไปตื่นวันไหน
+   * ตี 0–5 ถือว่ายังเป็นคืนของเมื่อวาน → ตื่นวันนี้ นอกนั้นคือเตรียมนอนคืนนี้ → ตื่นพรุ่งนี้
+   */
+  function sleepTargetDate(now) {
+    now = now || new Date();
+    return now.getHours() < 5 ? new Date(now) : addDays(now, 1);
+  }
+
+  /** เวลาตื่นที่มีผลกับการนอนรอบถัดไป */
+  function wakeTimeFor(state, now) {
+    return scheduleFor(state, sleepTargetDate(now)).wake;
+  }
+
+  /** เวลาเข้านอนที่มีผลกับคืนนี้ (นาทีจากเที่ยงคืน) */
+  function bedtimeMinFor(state, now) {
+    const sch = scheduleFor(state, sleepTargetDate(now));
+    if (sch.bed) return parseHM(sch.bed);
+    return usualBedtimeMin({ usualWake: sch.wake, cycleLen: state.cycleLen, latency: state.latency });
+  }
+
+  /** ตั้ง override เฉพาะวัน — ไม่กระทบตารางประจำ */
+  function setOverride(state, key, entry) {
+    if (!state.schedule.overrides) state.schedule.overrides = {};
+    if (!entry || !entry.wake) delete state.schedule.overrides[key];
+    else state.schedule.overrides[key] = { bed: entry.bed || '', wake: entry.wake, note: entry.note || '' };
+    return state;
+  }
+
+  /** ลบ override ที่เลยวันไปแล้ว ไม่ให้ค้างสะสม */
+  function pruneOverrides(state, now) {
+    const ovs = (state.schedule || {}).overrides || {};
+    const todayKey = dateKey(now || new Date());
+    for (const k of Object.keys(ovs)) if (k < todayKey) delete ovs[k];
+    return state;
+  }
+
+  /**
+   * เวลาปลุกที่มีผลจริง — ตามตารางถ้าเปิด followSchedule ไว้
+   * ถ้าเวลาตื่นของวันนี้ผ่านไปเกินช่วง grace แล้ว ให้ใช้ของวันพรุ่งนี้แทน
+   * (ไม่งั้นตอนหัวค่ำจะโชว์เวลาตื่นของวันนี้ ทั้งที่ครั้งต่อไปคือเช้าพรุ่งนี้)
+   */
+  function effectiveAlarmTime(state, now) {
+    const a = state.alarm || {};
+    if (!a.followSchedule) return a.time;
+    now = now || new Date();
+    const todayWake = scheduleFor(state, now).wake;
+    const lateMin = (now - todayAt(parseHM(todayWake), now)) / 60000;
+    if (lateMin <= ALARM_GRACE) return todayWake;
+    return scheduleFor(state, addDays(now, 1)).wake;
+  }
+
   /**
    * หา Date ของ "ครั้งถัดไป" ที่นาฬิกาจะชี้ไปที่ targetMin
    * ถ้าเวลานั้นของวันนี้ผ่านไปแล้ว จะได้ของวันพรุ่งนี้
@@ -372,8 +457,8 @@
       });
     }
 
-    // 2) เตือนก่อนถึงเวลาเข้านอน
-    const bedMin = usualBedtimeMin(state);
+    // 2) เตือนก่อนถึงเวลาเข้านอน (ตามตารางของคืนนี้)
+    const bedMin = bedtimeMinFor(state, now);
     if (R.bedtime && R.bedtime.on) {
       const lead = R.bedtime.leadMin || 0;
       push('bedtime', lastOccurrence(bedMin - lead, now), {
@@ -499,8 +584,16 @@
     return {
       version: STATE_VERSION,
       ageGroup: 'young',
-      usualWake: '07:00',
+      usualWake: '07:00',        // คงไว้เพื่อความเข้ากันได้ — ค่าจริงอยู่ใน schedule.simple.wake
       latency: 15,
+
+      // --- Phase 3: ตารางที่ไม่คงที่ ---
+      schedule: {
+        mode: 'simple',          // 'simple' = โหมดเดิม (ค่าเริ่มต้น) | 'weekly' = แยกรายวัน
+        simple: { bed: '', wake: '07:00' },
+        weekly: {},              // { 0..6: {bed, wake} }
+        overrides: {},           // { 'YYYY-MM-DD': {bed, wake, note} }
+      },
       cycleLen: 90,
       debtWindow: 14,
       sleepLogs: {},
@@ -528,6 +621,7 @@
         snoozeMin: 9,
         maxSnooze: 3,
         vibrate: true,
+        followSchedule: false,   // Phase 3: ปลุกตามเวลาตื่นของแต่ละวันในตาราง
         snoozedUntil: null,
         snoozeCount: 0,
         lastRung: '',
@@ -579,6 +673,20 @@
       s.version = 4;
       return s;
     },
+
+    // v4 → v5 : เพิ่มตารางรายวัน โดยยกเวลาตื่นเดิมมาเป็นโหมดง่าย (ผู้ใช้ไม่รู้สึกว่าอะไรเปลี่ยน)
+    // ต้องดูจาก raw ว่าผู้ใช้เคยมี schedule จริงไหม — ไม่งั้นค่าเริ่มต้นจะทับ usualWake เดิมทิ้ง
+    function v4_to_v5(s, raw) {
+      const d = defaults();
+      const had = raw && raw.schedule && typeof raw.schedule === 'object';
+      s.schedule = Object.assign({}, d.schedule, had ? raw.schedule : null);
+      s.schedule.simple = Object.assign({ bed: '', wake: '' }, had ? raw.schedule.simple : null);
+      if (!s.schedule.simple.wake) s.schedule.simple.wake = s.usualWake || d.schedule.simple.wake;
+      s.schedule.weekly = s.schedule.weekly || {};
+      s.schedule.overrides = s.schedule.overrides || {};
+      s.version = 5;
+      return s;
+    },
   ];
 
   function migrate(raw) {
@@ -590,7 +698,7 @@
     while (v < STATE_VERSION) {
       const step = MIGRATIONS[v - 1];
       if (!step) break;
-      s = step(s) || s;
+      s = step(s, raw) || s;
       v = Number(s.version) || v + 1;
     }
     s.version = STATE_VERSION;
@@ -615,6 +723,17 @@
     }
     // เสียงที่ผู้ใช้อัปโหลดหายไป (ล้าง IndexedDB) → ถอยกลับไปใช้เสียงมาตรฐาน
     if (s.alarm.sound === 'custom' && !s.alarm.customId) s.alarm.sound = base.alarm.sound;
+
+    if (!s.schedule || typeof s.schedule !== 'object') s.schedule = base.schedule;
+    else s.schedule = Object.assign({}, base.schedule, s.schedule);
+    if (s.schedule.mode !== 'weekly') s.schedule.mode = 'simple';
+    if (!s.schedule.simple || !s.schedule.simple.wake) {
+      s.schedule.simple = { bed: '', wake: s.usualWake || base.schedule.simple.wake };
+    }
+    if (!s.schedule.weekly || typeof s.schedule.weekly !== 'object') s.schedule.weekly = {};
+    if (!s.schedule.overrides || typeof s.schedule.overrides !== 'object') s.schedule.overrides = {};
+    // usualWake สะท้อนโหมดง่ายเสมอ เพื่อให้โค้ดเดิมที่อ่านค่านี้ยังทำงานได้
+    s.usualWake = s.schedule.simple.wake;
     if (!s.reminders || typeof s.reminders !== 'object') s.reminders = base.reminders;
     for (const k of Object.keys(base.reminders)) {
       s.reminders[k] = Object.assign({}, base.reminders[k], s.reminders[k]);
@@ -633,6 +752,8 @@
     ageGroupOf, fatigueOf,
     planBedtime, cycleOptions, computeDebt,
     usualBedtimeMin, nextOccurrence, lastOccurrence,
+    WEEKDAYS, scheduleFor, sleepTargetDate, wakeTimeFor, bedtimeMinFor,
+    setOverride, pruneOverrides, effectiveAlarmTime,
     shouldAskToLog, dueReminders, markFired,
     defaults, migrate,
   };

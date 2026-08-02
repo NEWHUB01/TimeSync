@@ -12,6 +12,8 @@ const {
   planBedtime, cycleOptions, computeDebt,
   usualBedtimeMin, nextOccurrence, shouldAskToLog, dueReminders, markFired,
   ALARM_SOUNDS, RAMP_OPTIONS, SNOOZE_OPTIONS, alarmSoundOf, alarmStatus, snoozeUntil,
+  WEEKDAYS, scheduleFor, sleepTargetDate, wakeTimeFor, bedtimeMinFor,
+  setOverride, pruneOverrides, effectiveAlarmTime,
 } = C;
 const { Alarm, Uploads } = window.TimeSyncAlarm;
 
@@ -75,7 +77,7 @@ function tickClock() {
   $('#clockTime').textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
   $('#clockDate').textContent = `วัน${TH_DAY[d.getDay()]} ${d.getDate()} ${TH_MON[d.getMonth()]} ${d.getFullYear() + 543}`;
   $('#clockAlarm').classList.toggle('hidden', !S.alarm.on);
-  $('#clockAlarmTime').textContent = S.alarm.time;
+  $('#clockAlarmTime').textContent = effectiveAlarmTime(S, d);
 }
 
 function goTab(name) {
@@ -107,7 +109,9 @@ function renderEmojiRow() {
 function selectFatigue(lvl, silent) {
   $$('.emoji-btn').forEach(b => b.classList.toggle('sel', Number(b.dataset.lvl) === lvl));
   const f = FATIGUE.find(x => x.lvl === lvl);
-  const plan = planBedtime(f, S, new Date());
+  const now = new Date();
+  // เวลาตื่นอิงตารางของ "คืนที่กำลังจะถึง" ไม่ใช่ค่าคงที่ค่าเดียว
+  const plan = planBedtime(f, { ...S, usualWake: wakeTimeFor(S, now) }, now);
 
   $('#fatigueResult').classList.remove('hidden');
   $('#rEmoji').textContent = f.emoji;
@@ -179,7 +183,10 @@ function syncCalcInput() {
   wrap.classList.remove('hidden');
   const isBed = calcMode === 'bed';
   $('#calcInputLabel').textContent = isBed ? 'เวลาที่คุณจะเข้านอน' : 'เวลาที่คุณต้องตื่น';
-  $('#calcTime').value = isBed ? '23:00' : S.usualWake;
+  // ค่าเริ่มต้นดึงจากตารางของคืนนี้ ผู้ใช้จึงมักไม่ต้องแก้อะไรเลย
+  $('#calcTime').value = isBed
+    ? minToHM(bedtimeMinFor(S, new Date()))
+    : wakeTimeFor(S, new Date());
   $('#quickTimes').innerHTML = (isBed ? QUICK_BED : QUICK_WAKE)
     .map(t => `<button class="chip" data-t="${t}">${t}</button>`).join('');
 }
@@ -875,10 +882,13 @@ function setAlarm(time, on) {
 
 function renderAlarm() {
   const on = S.alarm.on;
-  const st = alarmStatus(S.alarm, new Date());
+  const now = new Date();
+  const eff = activeAlarm(now);
+  const st = alarmStatus(eff, now);
   $('#alarmCard').classList.toggle('on', on);
   $('#alarmOn').checked = on;
-  $('#alarmTime').value = S.alarm.time;
+  $('#alarmTime').value = eff.time;
+  $('#alarmTime').disabled = !!S.alarm.followSchedule;
   $('#audioWarn').classList.toggle('hidden', !on || Alarm.ready);
 
   if (!on) {
@@ -888,8 +898,9 @@ function renderAlarm() {
     $('#alarmSub').textContent = `เลื่อนปลุกอยู่ — จะดังอีกครั้งเวลา ${minToHM(st.nextAt.getHours() * 60 + st.nextAt.getMinutes())}`;
     $('#alarmCount').textContent = `อีก ${durText(st.leftMin)} จากนี้`;
   } else {
-    const tomorrow = st.nextAt.getDate() !== new Date().getDate();
-    $('#alarmSub').textContent = `ตั้งปลุกไว้แล้ว — จะปลุก${tomorrow ? 'พรุ่งนี้' : 'วันนี้'} เวลา ${S.alarm.time}`;
+    const tomorrow = st.nextAt.getDate() !== now.getDate();
+    const src = S.alarm.followSchedule ? ' (ตามตาราง)' : '';
+    $('#alarmSub').textContent = `ตั้งปลุกไว้แล้ว — จะปลุก${tomorrow ? 'พรุ่งนี้' : 'วันนี้'} เวลา ${eff.time}${src}`;
     $('#alarmCount').textContent = `อีก ${durText(st.leftMin)} จากนี้`;
   }
 
@@ -1046,13 +1057,22 @@ $('#uploadList').addEventListener('click', async e => {
 });
 
 /* ---------- ปลุกจริง ---------- */
+
+/** นาฬิกาปลุกที่มีผลจริง — เวลาอาจมาจากตารางของวันนั้นถ้าเปิด followSchedule */
+function activeAlarm(now) {
+  const time = effectiveAlarmTime(S, now || new Date());
+  return time === S.alarm.time ? S.alarm : Object.assign({}, S.alarm, { time });
+}
+
 function checkAlarm() {
-  const st = alarmStatus(S.alarm, new Date());
+  const now = new Date();
+  const st = alarmStatus(activeAlarm(now), now);
   if (!st.due || Alarm.ringing) return;
   ringAlarm(st);
 }
 
 function ringAlarm(st) {
+  const shownTime = effectiveAlarmTime(S, new Date());
   // จำไว้ว่าปลุกรอบนี้แล้ว เพื่อไม่ให้ดังซ้ำถ้ารีโหลดหน้า
   if (st.rungKey) S.alarm.lastRung = st.rungKey;
   S.alarm.snoozedUntil = null;
@@ -1067,7 +1087,7 @@ function ringAlarm(st) {
 
   // แจ้งเตือนคู่กันเสมอ — ถ้าเสียงถูกบล็อก อย่างน้อยยังมีการแจ้งเตือน
   Notify.send({
-    title: `TimeSync — ⏰ ${S.alarm.time}`,
+    title: `TimeSync — ⏰ ${shownTime}`,
     body: Alarm.ready ? 'ได้เวลาตื่นแล้ว!' : 'ได้เวลาตื่นแล้ว! (เบราว์เซอร์บล็อกเสียง เปิดหน้า TimeSync เพื่อปิดปลุก)',
     tag: 'timesync-alarm',
     tab: 'alarm',
@@ -1083,7 +1103,7 @@ function ringAlarm(st) {
 }
 
 function showRingModal() {
-  $('#ringTime').textContent = S.alarm.time;
+  $('#ringTime').textContent = effectiveAlarmTime(S, new Date());
   $('#ringLabel').textContent = S.alarm.snoozeCount
     ? `ได้เวลาตื่นแล้ว! (เลื่อนมา ${S.alarm.snoozeCount} ครั้ง)`
     : 'ได้เวลาตื่นแล้ว!';
@@ -1123,6 +1143,140 @@ $('#ringStop').addEventListener('click', () => {
 });
 
 /* =========================================================
+   Phase 3: ตารางที่ไม่คงที่ — โหมดง่าย / รายวัน / เฉพาะวันเดียว
+   ========================================================= */
+$('#schedMode').addEventListener('click', e => {
+  const b = e.target.closest('.seg-btn');
+  if (!b) return;
+  S.schedule.mode = b.dataset.mode;
+  save();
+  renderSchedule();
+  refreshScheduleDependents();
+  toast(b.dataset.mode === 'weekly' ? 'ใช้ตารางแยกรายวันแล้ว' : 'กลับมาใช้โหมดง่ายแล้ว');
+});
+
+function renderSchedule() {
+  const weekly = S.schedule.mode === 'weekly';
+  $$('#schedMode .seg-btn').forEach(b => b.classList.toggle('active', (b.dataset.mode === 'weekly') === weekly));
+  $('#schedSimple').classList.toggle('hidden', weekly);
+  $('#schedWeekly').classList.toggle('hidden', !weekly);
+
+  $('#usualWake').value = S.schedule.simple.wake;
+  $('#simpleBedNote').innerHTML =
+    `ตื่น ${S.schedule.simple.wake} → ควรเข้านอนราว <b>${minToHM(usualBedtimeMin({
+      usualWake: S.schedule.simple.wake, cycleLen: S.cycleLen, latency: S.latency }))}</b> ` +
+    `(5 รอบการนอน + เผื่อเวลาหลับ ${S.latency} นาที)`;
+
+  // ตารางรายวัน
+  const todayDow = new Date().getDay();
+  $('#weekGrid').innerHTML = WEEKDAYS.map(d => {
+    const rec = S.schedule.weekly[d.i] || {};
+    const wake = rec.wake || S.schedule.simple.wake;
+    const derivedBed = minToHM(usualBedtimeMin({ usualWake: wake, cycleLen: S.cycleLen, latency: S.latency }));
+    return `<div class="week-row ${d.i === todayDow ? 'today' : ''}">
+      <div class="week-day">${d.label}${d.i === todayDow ? '<em>วันนี้</em>' : ''}</div>
+      <div class="week-cell">
+        <label>ตื่น</label>
+        <input type="time" data-dow="${d.i}" data-k="wake" value="${wake}" class="${rec.wake ? '' : 'derived'}">
+      </div>
+      <div class="week-cell">
+        <label>เข้านอน${rec.bed ? '' : ' (คำนวณให้)'}</label>
+        <input type="time" data-dow="${d.i}" data-k="bed" value="${rec.bed || derivedBed}" class="${rec.bed ? '' : 'derived'}">
+      </div>
+    </div>`;
+  }).join('');
+
+  renderOverrides();
+  $('#alarmFollow').checked = !!S.alarm.followSchedule;
+  $('#followNote').textContent = S.alarm.followSchedule
+    ? `— วันนี้คือ ${effectiveAlarmTime(S, new Date())}`
+    : '';
+}
+
+$('#weekGrid').addEventListener('change', e => {
+  const inp = e.target.closest('input[data-dow]');
+  if (!inp) return;
+  const dow = Number(inp.dataset.dow);
+  const rec = S.schedule.weekly[dow] || (S.schedule.weekly[dow] = { bed: '', wake: '' });
+  rec[inp.dataset.k] = inp.value;
+  if (!rec.wake) rec.wake = S.schedule.simple.wake;
+  save();
+  renderSchedule();
+  refreshScheduleDependents();
+});
+
+$('#weekFill').addEventListener('click', () => {
+  const wake = S.schedule.simple.wake;
+  WEEKDAYS.forEach(d => { S.schedule.weekly[d.i] = { bed: '', wake }; });
+  save(); renderSchedule(); refreshScheduleDependents();
+  toast(`ตั้งทุกวันเป็นตื่น ${wake} แล้ว — แก้เฉพาะวันที่ต่างได้เลย`);
+});
+
+$('#usualWake').addEventListener('change', e => {
+  S.schedule.simple.wake = e.target.value;
+  S.usualWake = e.target.value;            // คงไว้ให้โค้ดเดิมที่อ่านค่านี้
+  save(); renderSchedule(); refreshScheduleDependents();
+});
+
+/* ---------- override เฉพาะวันเดียว ---------- */
+$('#ovSave').addEventListener('click', () => {
+  const date = $('#ovDate').value;
+  if (!date) { toast('กรุณาเลือกวันที่'); return; }
+  setOverride(S, date, { wake: $('#ovWake').value, note: $('#ovNote').value.trim() });
+  save();
+  $('#ovNote').value = '';
+  renderOverrides(); refreshScheduleDependents();
+  toast(`ตั้งเวลาพิเศษให้วันที่ ${date} แล้ว — ตารางประจำไม่เปลี่ยน`);
+});
+
+$('#overrideList').addEventListener('click', e => {
+  const b = e.target.closest('.ov-del');
+  if (!b) return;
+  setOverride(S, b.dataset.k, null);
+  save(); renderOverrides(); refreshScheduleDependents();
+  toast('ยกเลิกเวลาพิเศษของวันนั้นแล้ว');
+});
+
+function renderOverrides() {
+  const ovs = S.schedule.overrides || {};
+  const keys = Object.keys(ovs).sort();
+  const box = $('#overrideList');
+  if (!keys.length) {
+    box.innerHTML = '<p class="empty">ยังไม่มีเวลาพิเศษที่ตั้งไว้</p>';
+    return;
+  }
+  const todayKey = dateKey(new Date());
+  box.innerHTML = keys.map(k => {
+    const o = ovs[k], d = keyToDate(k);
+    const when = k === todayKey ? 'วันนี้'
+      : k === dateKey(addDays(new Date(), 1)) ? 'พรุ่งนี้'
+      : `${TH_DAY[d.getDay()]} ${d.getDate()} ${TH_MON[d.getMonth()]}`;
+    return `<div class="override-item">
+      <span class="ov-date">${when}</span>
+      <span class="ov-wake">⏰ ${o.wake}</span>
+      <span class="ov-note">${o.note ? escapeHTML(o.note) : 'ไม่ได้ระบุเหตุผล'}</span>
+      <button class="ov-del" data-k="${k}" title="ยกเลิก">×</button>
+    </div>`;
+  }).join('');
+}
+
+$('#alarmFollow').addEventListener('change', e => {
+  S.alarm.followSchedule = e.target.checked;
+  if (e.target.checked) S.alarm.time = effectiveAlarmTime(S, new Date());
+  save(); renderSchedule(); renderAlarm(); tickClock();
+  toast(e.target.checked ? 'ปลุกตามตารางของแต่ละวันแล้ว' : 'กลับไปใช้เวลาปลุกตายตัว');
+});
+
+/** อัปเดตทุกส่วนที่พึ่งตาราง หลังแก้ตาราง/override */
+function refreshScheduleDependents() {
+  renderCycles();
+  refreshFatigueIfShown();
+  renderAlarm();
+  tickClock();
+  $('#remBedAt').textContent = `เวลานอนของคุณคืนนี้คือ ${minToHM(bedtimeMinFor(S, new Date()))}`;
+}
+
+/* =========================================================
    ตั้งค่า
    ========================================================= */
 function renderSettings() {
@@ -1139,23 +1293,19 @@ function renderSettings() {
   $('#remBedOn').checked = S.reminders.bedtime.on;
   $('#remBedLead').value = String(S.reminders.bedtime.leadMin);
   $('#remAlarmOn').checked = S.reminders.alarmMissing.on;
-  $('#remBedAt').textContent = `เวลานอนของคุณคือ ${minToHM(usualBedtimeMin(S))}`;
+  $('#remBedAt').textContent = `เวลานอนของคุณคืนนี้คือ ${minToHM(bedtimeMinFor(S, new Date()))}`;
 }
 
 $('#ageGroup').addEventListener('change', e => {
   S.ageGroup = e.target.value; save(); renderDebt(); renderSleepChartTable();
 });
-$('#usualWake').addEventListener('change', e => {
-  S.usualWake = e.target.value; save(); refreshFatigueIfShown();
-  $('#remBedAt').textContent = `เวลานอนของคุณคือ ${minToHM(usualBedtimeMin(S))}`;
-});
 $('#latency').addEventListener('input', e => {
   S.latency = Number(e.target.value); $('#latencyLabel').textContent = S.latency;
-  save(); renderCycles(); refreshFatigueIfShown();
+  save(); renderSchedule(); refreshScheduleDependents();
 });
 $('#cycleLen').addEventListener('input', e => {
   S.cycleLen = Number(e.target.value); $('#cycleLabel').textContent = S.cycleLen;
-  save(); renderCycles(); refreshFatigueIfShown();
+  save(); renderSchedule(); refreshScheduleDependents();
 });
 $('#debtWindow').addEventListener('input', e => {
   S.debtWindow = Number(e.target.value); $('#windowLabel').textContent = S.debtWindow;
@@ -1188,7 +1338,11 @@ $('#resetData').addEventListener('click', () => {
    เริ่มทำงาน
    ========================================================= */
 function boot(isReset) {
+  pruneOverrides(S, new Date());
   renderSettings();
+  renderSchedule();
+  $('#ovDate').value = dateKey(addDays(new Date(), 1));   // ค่าเริ่มต้น = พรุ่งนี้
+  $('#ovWake').value = S.schedule.simple.wake;
   renderFatigueHistory();
   syncCalcInput();
   renderCycles();
