@@ -49,7 +49,10 @@ jobs:
           git diff --exit-code -- icons/ \
             || (echo "::error::icons/ ไม่ตรงกับผลลัพธ์ของ tools/make-icons.js — รัน npm run icons แล้ว commit ใหม่" && exit 1)
 
+      # enablement: true = เปิด GitHub Pages ให้เองถ้ายังไม่ได้เปิด
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: อัปโหลดไฟล์เว็บ (ไม่รวม tools/ tests/ และไฟล์ dev)
         run: |
