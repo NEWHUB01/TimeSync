@@ -4,9 +4,9 @@
   "private": true,
   "description": "TimeSync — แอปจัดการเวลานอน ประเมินความล้า หนี้การนอน เสียงผ่อนคลาย และนาฬิกาปลุก",
   "scripts": {
-    "test": "node --test tests/**/*.test.js",
-    "test:watch": "node --test --watch tests/**/*.test.js",
-    "test:tz": "node tools/test-tz.js",
+    "test": "node tools/run-tests.js",
+    "test:watch": "node tools/run-tests.js --watch",
+    "test:tz": "node tools/tz-matrix.js",
     "icons": "node tools/make-icons.js",
     "start": "node tools/serve.js"
   },
