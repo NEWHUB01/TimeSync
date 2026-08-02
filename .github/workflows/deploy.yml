@@ -54,10 +54,10 @@ jobs:
           fi
           git checkout -- icons/
 
-      # enablement: true = เปิด GitHub Pages ให้เองถ้ายังไม่ได้เปิด
+      # ต้องเปิด Pages ไว้ก่อนหนึ่งครั้งที่
+      # Settings → Pages → Build and deployment → Source: GitHub Actions
+      # (เคยลอง enablement:true ให้เปิดอัตโนมัติ แต่ GITHUB_TOKEN ไม่มีสิทธิ์พอ)
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: อัปโหลดไฟล์เว็บ (ไม่รวม tools/ tests/ และไฟล์ dev)
         run: |
