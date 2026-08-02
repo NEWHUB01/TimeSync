@@ -14,6 +14,7 @@ const {
   ALARM_SOUNDS, RAMP_OPTIONS, SNOOZE_OPTIONS, alarmSoundOf, alarmStatus, snoozeUntil,
   WEEKDAYS, scheduleFor, sleepTargetDate, wakeTimeFor, bedtimeMinFor,
   setOverride, pruneOverrides, effectiveAlarmTime,
+  GENDERS, genderOf, ageGroupFromAge, bmi, bmiBand, displayName, numOrNull,
 } = C;
 const { Alarm, Uploads } = window.TimeSyncAlarm;
 
@@ -669,58 +670,6 @@ function renderSounds() {
   $('#volume').addEventListener('input', e => Sound.setVolume(Number(e.target.value)));
 }
 
-/* ---------- ฝึกหายใจ 4-7-8 ---------- */
-const Breathe = {
-  running: false, timer: null, round: 0,
-  steps: [
-    { t: 'หายใจเข้าทางจมูก', s: 4, scale: 1.55 },
-    { t: 'กลั้นไว้',           s: 7, scale: 1.55 },
-    { t: 'ผ่อนออกทางปาก',    s: 8, scale: 1 },
-  ],
-  start() {
-    if (this.running) return this.stop();
-    this.running = true; this.round = 0;
-    $('#breatheBtn').textContent = 'หยุด';
-    this.step(0);
-  },
-  step(i) {
-    if (!this.running) return;
-    if (i === 0) {
-      this.round++;
-      if (this.round > 4) { this.finish(); return; }
-    }
-    const st = this.steps[i];
-    const c = $('#breatheCircle');
-    c.style.transitionDuration = st.s + 's';
-    c.style.transform = `scale(${st.scale})`;
-    $('#breatheText').textContent = st.t;
-
-    let left = st.s;
-    $('#breatheCount').textContent = `${left} · รอบที่ ${this.round}/4`;
-    clearInterval(this._c);
-    this._c = setInterval(() => {
-      left--;
-      if (left >= 0) $('#breatheCount').textContent = `${left} · รอบที่ ${this.round}/4`;
-    }, 1000);
-    this.timer = setTimeout(() => { clearInterval(this._c); this.step((i + 1) % 3); }, st.s * 1000);
-  },
-  finish() {
-    this.reset();
-    $('#breatheText').textContent = 'ครบแล้ว 🌙';
-    $('#breatheCount').textContent = 'หลับฝันดีนะ';
-  },
-  stop() { this.reset(); $('#breatheText').textContent = 'พร้อม'; $('#breatheCount').textContent = ''; },
-  reset() {
-    this.running = false;
-    clearTimeout(this.timer); clearInterval(this._c);
-    const c = $('#breatheCircle');
-    c.style.transitionDuration = '1s';
-    c.style.transform = 'scale(1)';
-    $('#breatheBtn').textContent = 'เริ่มฝึกหายใจ';
-  },
-};
-$('#breatheBtn').addEventListener('click', () => Breathe.start());
-
 /* =========================================================
    5) ฟังก์ชันเสริม: งานสำคัญของวันพรุ่งนี้ + เตือนตอนเช้า
    ========================================================= */
@@ -853,6 +802,8 @@ const Notify = {
 };
 
 function showMorningModal(pending) {
+  const name = displayName(S);
+  $('#morningModal h2').textContent = name ? `อรุณสวัสดิ์ คุณ${name}!` : 'อรุณสวัสดิ์!';
   $('#morningSub').textContent = pending.length
     ? `วันนี้คุณมี ${pending.length} สิ่งสำคัญที่ตั้งใจไว้เมื่อคืน`
     : 'เมื่อคืนคุณไม่ได้ฝากอะไรไว้ — วันนี้เริ่มต้นแบบสบาย ๆ ได้เลย';
@@ -1154,9 +1105,10 @@ function ringAlarm(st) {
 
 function showRingModal() {
   $('#ringTime').textContent = effectiveAlarmTime(S, new Date());
+  const who = displayName(S);
   $('#ringLabel').textContent = S.alarm.snoozeCount
     ? `ได้เวลาตื่นแล้ว! (เลื่อนมา ${S.alarm.snoozeCount} ครั้ง)`
-    : 'ได้เวลาตื่นแล้ว!';
+    : who ? `ตื่นได้แล้ว คุณ${who}!` : 'ได้เวลาตื่นแล้ว!';
 
   const pending = S.tasks.filter(t => !t.done);
   $('#ringTasks').innerHTML = pending.length
@@ -1191,6 +1143,123 @@ $('#ringStop').addEventListener('click', () => {
   const pending = S.tasks.filter(t => !t.done);
   if (pending.length) showMorningModal(pending);
 });
+
+/* =========================================================
+   โปรไฟล์ผู้ใช้
+   ทุกช่องไม่บังคับ บันทึกอัตโนมัติทันทีที่แก้
+   อายุที่กรอกจะไปเลือกช่วงวัยในชาร์ตเวลานอนสากลให้เอง
+   ========================================================= */
+const PF_FIELDS = {
+  '#pfName':   'name',
+  '#pfAge':    'age',
+  '#pfGender': 'gender',
+  '#pfHeight': 'height',
+  '#pfWeight': 'weight',
+};
+
+function initProfile() {
+  $('#pfGender').innerHTML = '<option value="">ไม่ระบุ</option>' +
+    GENDERS.filter(g => g.id !== 'undisclosed')
+      .map(g => `<option value="${g.id}">${g.label}</option>`).join('');
+
+  Object.entries(PF_FIELDS).forEach(([sel, key]) => {
+    const el = $(sel);
+    const ev = el.tagName === 'SELECT' ? 'change' : 'input';
+    el.addEventListener(ev, () => {
+      S.profile[key] = key === 'name' || key === 'gender'
+        ? el.value
+        : numOrNull(el.value, ...PF_RANGE[key]);
+      applyAgeGroup();
+      save();
+      renderProfile();
+      flashSaved();
+    });
+  });
+
+  $('#pfClear').addEventListener('click', () => {
+    if (!confirm('ล้างข้อมูลโปรไฟล์ทั้งหมด (ชื่อ อายุ ส่วนสูง น้ำหนัก เพศ) ใช่หรือไม่?')) return;
+    S.profile = C.defaults().profile;
+    save();
+    fillProfileForm();
+    renderProfile();
+    toast('ล้างข้อมูลโปรไฟล์แล้ว');
+  });
+}
+
+const PF_RANGE = { age: [0, 120], height: [30, 260], weight: [2, 400] };
+
+/** อายุที่กรอก → เลือกช่วงวัยในชาร์ตสากลให้อัตโนมัติ (ยังแก้เองได้ในหน้าตั้งค่า) */
+function applyAgeGroup() {
+  const g = ageGroupFromAge(S.profile.age);
+  if (g && g !== S.ageGroup) {
+    S.ageGroup = g;
+    renderSettings();
+    renderDebt();
+    renderSleepChartTable();
+  }
+}
+
+function fillProfileForm() {
+  const p = S.profile;
+  $('#pfName').value = p.name || '';
+  $('#pfAge').value = p.age ?? '';
+  $('#pfGender').value = p.gender || '';
+  $('#pfHeight').value = p.height ?? '';
+  $('#pfWeight').value = p.weight ?? '';
+}
+
+function flashSaved() {
+  const el = $('#profileSaved');
+  el.textContent = '✓ บันทึกแล้ว';
+  el.classList.add('flash');
+  clearTimeout(flashSaved._t);
+  flashSaved._t = setTimeout(() => {
+    el.textContent = 'บันทึกอัตโนมัติทุกครั้งที่แก้';
+    el.classList.remove('flash');
+  }, 1600);
+}
+
+function renderProfile() {
+  const p = S.profile;
+  const name = displayName(S);
+
+  $('#profileAvatar').textContent = name ? name.trim()[0].toUpperCase() : '👤';
+  $('#profileGreeting').textContent = name ? `สวัสดี คุณ${name}` : 'ยังไม่ได้กรอกชื่อ';
+
+  const bits = [];
+  if (p.age !== null) bits.push(`${p.age} ปี`);
+  const g = genderOf(p.gender);
+  if (g) bits.push(g.label);
+  if (p.height !== null) bits.push(`${p.height} ซม.`);
+  if (p.weight !== null) bits.push(`${p.weight} กก.`);
+  $('#profileMeta').textContent = bits.length
+    ? bits.join(' · ')
+    : 'กรอกอายุแล้ว TimeSync จะเลือกเกณฑ์ชั่วโมงนอนที่เหมาะกับคุณให้เอง';
+
+  // ช่วงวัย
+  const grp = ageGroupOf(S.ageGroup);
+  const auto = ageGroupFromAge(p.age);
+  $('#dvAgeGroup').textContent = p.age === null ? '—' : grp.label.replace(/\s*\(.*\)/, '');
+  $('#dvAgeBox').className = 'derived' + (p.age === null ? '' : ' accent');
+  $('#dvAgeNote').textContent = p.age === null
+    ? 'กรอกอายุเพื่อให้ระบบเลือกให้'
+    : `ควรนอน ${grp.min}–${grp.max} ชม./คืน — ใช้เป็นเกณฑ์คำนวณหนี้การนอน` +
+      (auto !== S.ageGroup ? ' (คุณตั้งค่าเองไว้ในหน้าตั้งค่า)' : '');
+
+  // BMI
+  const v = bmi(p.weight, p.height);
+  const band = bmiBand(v);
+  $('#dvBmi').textContent = v === null ? '—' : v.toFixed(1);
+  $('#dvBmiBox').className = 'derived' + (band ? ' ' + band.tone : '');
+  $('#dvBmiNote').textContent = v === null
+    ? 'กรอกส่วนสูงและน้ำหนักเพื่อคำนวณ'
+    : band.label;
+  $('#bmiFine').textContent = v === null
+    ? ''
+    : 'BMI ใช้เกณฑ์สำหรับประชากรเอเชีย (WHO Asia-Pacific) ซึ่งมีจุดตัดต่ำกว่าเกณฑ์สากล — ' +
+      'ค่านี้เป็นเพียงตัวเลขคร่าว ๆ ไม่ได้บอกสุขภาพทั้งหมด และ TimeSync ไม่ใช้ค่านี้ตัดสินใจอะไรแทนคุณ ' +
+      'ถ้ากรนเสียงดัง หยุดหายใจขณะหลับ หรือนอนครบแล้วยังง่วงทั้งวัน ควรปรึกษาแพทย์';
+}
 
 /* =========================================================
    Phase 3: ตารางที่ไม่คงที่ — โหมดง่าย / รายวัน / เฉพาะวันเดียว
@@ -1443,6 +1512,8 @@ function boot(isReset) {
   renderDebt();
   renderSleepChartTable();
   renderTasks();
+  fillProfileForm();
+  renderProfile();
   renderConfirmBar();
   $('#remindTime').value = S.remindTime;
   $('#remindOn').checked = S.remindOn;
@@ -1479,6 +1550,7 @@ setInterval(() => { tickClock(); renderAlarm(); }, 1000 * 20);
 renderEmojiRow();
 renderSounds();
 renderAlarmSounds();
+initProfile();
 boot(false);
 renderUploads();
 installAudioUnlock();

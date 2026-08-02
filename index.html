@@ -52,6 +52,7 @@
   <button class="tab" data-tab="relax"><span>🎵</span>ผ่อนคลาย</button>
   <button class="tab" data-tab="alarm"><span>⏰</span>ปลุก</button>
   <button class="tab" data-tab="tasks"><span>📝</span>งานพรุ่งนี้</button>
+  <button class="tab" data-tab="profile"><span>👤</span>โปรไฟล์</button>
   <button class="tab" data-tab="settings"><span>⚙️</span>ตั้งค่า</button>
 </nav>
 
@@ -275,17 +276,6 @@
       </div>
     </div>
 
-    <div class="card breathe-card">
-      <h3>ฝึกหายใจ 4-7-8 ก่อนนอน</h3>
-      <p class="sub">หายใจเข้า 4 วิ → กลั้น 7 วิ → ผ่อนออก 8 วิ ทำ 4 รอบ ช่วยลดอัตราการเต้นหัวใจและทำให้หลับง่ายขึ้น</p>
-      <div class="breathe-stage">
-        <div class="breathe-circle" id="breatheCircle">
-          <span id="breatheText">พร้อม</span>
-          <small id="breatheCount"></small>
-        </div>
-      </div>
-      <button class="btn" id="breatheBtn">เริ่มฝึกหายใจ</button>
-    </div>
   </section>
 
   <!-- ============ 5. งานพรุ่งนี้ ============ -->
@@ -353,6 +343,71 @@
     </div>
   </section>
 
+  <!-- ============ โปรไฟล์ ============ -->
+  <section class="panel" id="panel-profile">
+    <div class="card">
+      <h2>ข้อมูลผู้ใช้</h2>
+      <p class="sub">กรอกเท่าที่อยากกรอก ไม่มีช่องไหนบังคับ — ข้อมูลอยู่ในเครื่องคุณเท่านั้น ไม่ถูกส่งออกไปที่ไหน</p>
+
+      <div class="profile-head">
+        <div class="avatar" id="profileAvatar">👤</div>
+        <div class="profile-hi">
+          <div class="profile-name" id="profileGreeting">ยังไม่ได้กรอกชื่อ</div>
+          <div class="profile-meta" id="profileMeta">กรอกอายุแล้ว TimeSync จะเลือกเกณฑ์ชั่วโมงนอนที่เหมาะกับคุณให้เอง</div>
+        </div>
+      </div>
+
+      <div class="profile-form">
+        <div class="field grow">
+          <label for="pfName">ชื่อ / ชื่อเล่น</label>
+          <input type="text" id="pfName" placeholder="เช่น มายด์" maxlength="40" autocomplete="nickname">
+        </div>
+        <div class="field">
+          <label for="pfAge">อายุ (ปี)</label>
+          <input type="number" id="pfAge" min="0" max="120" step="1" inputmode="numeric" placeholder="—">
+        </div>
+        <div class="field">
+          <label for="pfGender">เพศ</label>
+          <select id="pfGender"></select>
+        </div>
+        <div class="field">
+          <label for="pfHeight">ส่วนสูง (ซม.)</label>
+          <input type="number" id="pfHeight" min="30" max="260" step="0.5" inputmode="decimal" placeholder="—">
+        </div>
+        <div class="field">
+          <label for="pfWeight">น้ำหนัก (กก.)</label>
+          <input type="number" id="pfWeight" min="2" max="400" step="0.1" inputmode="decimal" placeholder="—">
+        </div>
+      </div>
+
+      <div class="profile-saved" id="profileSaved">บันทึกอัตโนมัติทุกครั้งที่แก้</div>
+    </div>
+
+    <div class="card" id="profileDerivedCard">
+      <h3>สิ่งที่ TimeSync คำนวณให้จากข้อมูลนี้</h3>
+      <div class="derived-grid">
+        <div class="derived" id="dvAgeBox">
+          <span class="derived-key">ช่วงวัยตามชาร์ตสากล</span>
+          <span class="derived-val" id="dvAgeGroup">—</span>
+          <span class="derived-note" id="dvAgeNote">กรอกอายุเพื่อให้ระบบเลือกให้</span>
+        </div>
+        <div class="derived" id="dvBmiBox">
+          <span class="derived-key">ดัชนีมวลกาย (BMI)</span>
+          <span class="derived-val" id="dvBmi">—</span>
+          <span class="derived-note" id="dvBmiNote">กรอกส่วนสูงและน้ำหนักเพื่อคำนวณ</span>
+        </div>
+      </div>
+      <p class="fineprint" id="bmiFine"></p>
+    </div>
+
+    <div class="card slim">
+      <h3>ความเป็นส่วนตัว</h3>
+      <p class="sub">TimeSync ไม่มีเซิร์ฟเวอร์ ไม่มีบัญชีผู้ใช้ และไม่ส่งข้อมูลออกจากเครื่อง
+        ข้อมูลโปรไฟล์เก็บใน localStorage ของเบราว์เซอร์เท่านั้น ลบได้ทุกเมื่อ</p>
+      <button class="btn danger" id="pfClear">ล้างข้อมูลโปรไฟล์</button>
+    </div>
+  </section>
+
   <!-- ============ ตั้งค่า ============ -->
   <section class="panel" id="panel-settings">
     <div class="card">
@@ -381,11 +436,11 @@
 
       <div class="override-box">
         <h3>เฉพาะวันเดียว</h3>
-        <p class="sub">ตั้งเวลาพิเศษให้วันใดวันหนึ่ง โดยไม่กระทบตารางประจำ เช่น วันที่ต้องบินเช้าหรือเข้ากะดึก</p>
+        <p class="sub">ตั้งเวลาพิเศษให้วันใดวันหนึ่ง โดยไม่กระทบตารางประจำ เช่น วันที่ต้องเข้ากะเช้าหรือเข้ากะดึก</p>
         <div class="override-form">
           <div class="field"><label>วันที่</label><input type="date" id="ovDate"></div>
           <div class="field"><label>ตื่น</label><input type="time" id="ovWake" value="06:00"></div>
-          <div class="field grow"><label>เหตุผล (ไม่บังคับ)</label><input type="text" id="ovNote" placeholder="เช่น บินเช้า" maxlength="40"></div>
+          <div class="field grow"><label>เหตุผล (ไม่บังคับ)</label><input type="text" id="ovNote" placeholder="เช่น เข้ากะเช้า" maxlength="40"></div>
           <div class="field"><label>&nbsp;</label><button class="btn" id="ovSave">ตั้ง</button></div>
         </div>
         <div class="override-list" id="overrideList"></div>

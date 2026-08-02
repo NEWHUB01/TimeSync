@@ -13,7 +13,7 @@
 
   /* ---------- ค่าคงที่ ---------- */
   const MIN_PER_DAY = 1440;
-  const STATE_VERSION = 5;
+  const STATE_VERSION = 6;
 
   const TH_DAY = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
   const TH_MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
@@ -22,6 +22,14 @@
   /* ---------- helpers ทั่วไป ---------- */
   const pad = n => String(n).padStart(2, '0');
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  /** ตัวเลขที่กรอกหรือไม่กรอกก็ได้ — คืน null ถ้าว่าง/ไม่ใช่ตัวเลข/นอกช่วง */
+  function numOrNull(v, min, max) {
+    if (v === '' || v === null || v === undefined) return null;
+    const n = Number(v);
+    if (!Number.isFinite(n)) return null;
+    return clamp(Math.round(n * 10) / 10, min, max);
+  }
 
   /** "23:30" → 1410 นาทีจากเที่ยงคืน */
   function parseHM(s) {
@@ -98,6 +106,66 @@
   ];
   const ageGroupOf = id => AGE_GROUPS.find(g => g.id === id) || AGE_GROUPS[6];
 
+  /* =========================================================
+     โปรไฟล์ผู้ใช้
+     ========================================================= */
+  const GENDERS = [
+    { id: 'female',    label: 'หญิง' },
+    { id: 'male',      label: 'ชาย' },
+    { id: 'other',     label: 'อื่น ๆ' },
+    { id: 'undisclosed', label: 'ไม่ระบุ' },
+  ];
+  const genderOf = id => GENDERS.find(g => g.id === id) || null;
+
+  /** ช่วงอายุตามชาร์ตเวลานอนสากล คำนวณจากอายุเป็นปี */
+  function ageGroupFromAge(age) {
+    // ระวัง: Number(null) และ Number('') คืน 0 — ต้องกันช่องว่างก่อน
+    // ไม่งั้น "ยังไม่ได้กรอกอายุ" จะกลายเป็นทารกแรกเกิด
+    if (age === null || age === undefined || age === '') return null;
+    const a = Number(age);
+    if (!Number.isFinite(a) || a < 0) return null;
+    if (a < 1) return 'infant';        // 0–11 เดือน (แอปนี้กรอกเป็นปี จึงเริ่มที่กลุ่มทารก)
+    if (a <= 2) return 'toddler';
+    if (a <= 5) return 'preschool';
+    if (a <= 13) return 'school';
+    if (a <= 17) return 'teen';
+    if (a <= 25) return 'young';
+    if (a <= 64) return 'adult';
+    return 'senior';
+  }
+
+  /** ดัชนีมวลกาย — คืน null ถ้าข้อมูลไม่ครบหรือไม่สมเหตุสมผล */
+  function bmi(weightKg, heightCm) {
+    const w = Number(weightKg), h = Number(heightCm);
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return null;
+    const m = h / 100;
+    const v = w / (m * m);
+    if (!Number.isFinite(v) || v <= 0) return null;
+    return Math.round(v * 10) / 10;
+  }
+
+  /**
+   * เกณฑ์ BMI สำหรับประชากรเอเชีย (WHO Asia-Pacific)
+   * ซึ่งใช้จุดตัดต่ำกว่าเกณฑ์สากลทั่วไป
+   */
+  const BMI_BANDS = [
+    { max: 18.5, id: 'under',  label: 'น้ำหนักน้อยกว่าเกณฑ์', tone: 'warn' },
+    { max: 23,   id: 'normal', label: 'อยู่ในเกณฑ์ปกติ',      tone: 'good' },
+    { max: 25,   id: 'over',   label: 'น้ำหนักเกิน',          tone: 'warn' },
+    { max: 30,   id: 'obese1', label: 'อ้วนระดับ 1',          tone: 'bad'  },
+    { max: Infinity, id: 'obese2', label: 'อ้วนระดับ 2',      tone: 'bad'  },
+  ];
+  function bmiBand(value) {
+    if (value === null || value === undefined) return null;
+    return BMI_BANDS.find(b => value < b.max) || BMI_BANDS[BMI_BANDS.length - 1];
+  }
+
+  /** ชื่อที่ใช้ทักทาย — คืนค่าว่างถ้าผู้ใช้ไม่ได้กรอก */
+  function displayName(state) {
+    const n = ((state.profile || {}).name || '').trim();
+    return n ? n.slice(0, 40) : '';
+  }
+
   /* ---------- ระดับความล้า ---------- */
   const FATIGUE = [
     {
@@ -144,7 +212,7 @@
       cycles: 6, earlier: 90, maxWait: 30, color: '#ff7d8a',
       tips: [
         'เข้านอนทันทีที่ทำได้ อย่าฝืนต่ออีกแม้แต่รอบเดียว',
-        'ปิดจอทั้งหมดเดี๋ยวนี้ แล้วใช้การหายใจ 4-7-8 ในแท็บ "ผ่อนคลาย" ช่วยให้หลับเร็ว',
+        'ปิดจอทั้งหมดเดี๋ยวนี้ แล้วเปิดเสียงผ่อนคลายในแท็บ "ผ่อนคลาย" ช่วยให้หลับเร็วขึ้น',
         'ถ้าอ่อนล้าระดับนี้ติดต่อกันหลายวัน ควรปรึกษาแพทย์เรื่องคุณภาพการนอน',
       ],
     },
@@ -583,6 +651,16 @@
   function defaults() {
     return {
       version: STATE_VERSION,
+
+      // --- โปรไฟล์ผู้ใช้ ---
+      profile: {
+        name: '',
+        age: null,        // ปี
+        height: null,     // ซม.
+        weight: null,     // กก.
+        gender: '',       // id จาก GENDERS
+      },
+
       ageGroup: 'young',
       usualWake: '07:00',        // คงไว้เพื่อความเข้ากันได้ — ค่าจริงอยู่ใน schedule.simple.wake
       latency: 15,
@@ -691,6 +769,13 @@
       s.version = 5;
       return s;
     },
+
+    // v5 → v6 : เพิ่มโปรไฟล์ผู้ใช้ (ค่าว่างทั้งหมด — ไม่บังคับกรอก)
+    function v5_to_v6(s) {
+      s.profile = Object.assign({}, defaults().profile, s.profile);
+      s.version = 6;
+      return s;
+    },
   ];
 
   function migrate(raw) {
@@ -718,6 +803,15 @@
     if (!s.fatigueLogs || typeof s.fatigueLogs !== 'object') s.fatigueLogs = {};
     if (!s.fired || typeof s.fired !== 'object') s.fired = {};
     if (!s.drafts || typeof s.drafts !== 'object') s.drafts = {};
+
+    // โปรไฟล์: ทุกช่องกรอกหรือไม่กรอกก็ได้ แต่ถ้ากรอกต้องอยู่ในช่วงที่เป็นไปได้
+    if (!s.profile || typeof s.profile !== 'object') s.profile = base.profile;
+    else s.profile = Object.assign({}, base.profile, s.profile);
+    s.profile.name = String(s.profile.name || '').slice(0, 40);
+    s.profile.age = numOrNull(s.profile.age, 0, 120);
+    s.profile.height = numOrNull(s.profile.height, 30, 260);
+    s.profile.weight = numOrNull(s.profile.weight, 2, 400);
+    if (!genderOf(s.profile.gender)) s.profile.gender = '';
     if (!s.alarm || typeof s.alarm !== 'object') s.alarm = base.alarm;
     else s.alarm = Object.assign({}, base.alarm, s.alarm);
     s.alarm.volume = clamp(Math.round(Number(s.alarm.volume)) || 0, 0, 100);
@@ -752,9 +846,10 @@
     AGE_GROUPS, FATIGUE, CYCLE_DESC,
     ALARM_SOUNDS, ALARM_GRACE, RAMP_OPTIONS, SNOOZE_OPTIONS,
     alarmSoundOf, alarmStatus, alarmRampGain, snoozeUntil,
-    pad, clamp, parseHM, minToHM, dateKey, keyToDate, addDays, todayAt, daysBetween,
+    pad, clamp, numOrNull, parseHM, minToHM, dateKey, keyToDate, addDays, todayAt, daysBetween,
     durText, hoursText, hoursBetween,
     ageGroupOf, fatigueOf,
+    GENDERS, BMI_BANDS, genderOf, ageGroupFromAge, bmi, bmiBand, displayName,
     planBedtime, cycleOptions, computeDebt,
     usualBedtimeMin, nextOccurrence, lastOccurrence,
     WEEKDAYS, scheduleFor, sleepTargetDate, wakeTimeFor, bedtimeMinFor,
