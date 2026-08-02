@@ -1,0 +1,66 @@
+name: ทดสอบและ deploy ขึ้น GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# ให้ GITHUB_TOKEN มีสิทธิ์พอสำหรับ deploy Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# ปล่อยให้ deploy ทีละครั้ง ไม่ยกเลิกงานที่กำลังรันอยู่
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: รัน unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: รันเทสต์ทั้งหมด
+        run: npm test
+
+      - name: รันเทสต์ซ้ำในหลาย timezone
+        run: npm run test:tz
+
+  deploy:
+    name: Deploy
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ตรวจว่าไอคอนตรงกับสคริปต์ที่ใช้สร้าง
+        run: |
+          node tools/make-icons.js
+          git diff --exit-code -- icons/ \
+            || (echo "::error::icons/ ไม่ตรงกับผลลัพธ์ของ tools/make-icons.js — รัน npm run icons แล้ว commit ใหม่" && exit 1)
+
+      - uses: actions/configure-pages@v5
+
+      - name: อัปโหลดไฟล์เว็บ (ไม่รวม tools/ tests/ และไฟล์ dev)
+        run: |
+          mkdir -p _site
+          cp -r index.html styles.css core.js alarm.js app.js sw.js \
+                manifest.webmanifest icons README.md _site/
+          touch _site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
