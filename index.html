@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TimeSync — นาฬิกาชีวิตของคุณ</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">🌙</div>
+    <div>
+      <h1>TimeSync</h1>
+      <p class="tagline">ปรับจังหวะการนอนให้ตรงกับร่างกายคุณ</p>
+    </div>
+  </div>
+  <div class="clock">
+    <div class="clock-time" id="clockTime">--:--</div>
+    <div class="clock-date" id="clockDate">&nbsp;</div>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab active" data-tab="fatigue"><span>😴</span>ความล้า</button>
+  <button class="tab" data-tab="calc"><span>⏰</span>คำนวณเวลานอน</button>
+  <button class="tab" data-tab="debt"><span>📊</span>หนี้การนอน</button>
+  <button class="tab" data-tab="relax"><span>🎵</span>ผ่อนคลาย</button>
+  <button class="tab" data-tab="tasks"><span>📝</span>งานพรุ่งนี้</button>
+  <button class="tab" data-tab="settings"><span>⚙️</span>ตั้งค่า</button>
+</nav>
+
+<main>
+
+  <!-- ============ 1. ความล้า ============ -->
+  <section class="panel active" id="panel-fatigue">
+    <div class="card">
+      <h2>ตอนนี้คุณเหนื่อยแค่ไหน?</h2>
+      <p class="sub">แตะอิโมจิที่ตรงกับความรู้สึกของคุณมากที่สุด TimeSync จะประเมินว่าคุณควรเข้านอนตอนไหนเพื่อขจัดความล้า</p>
+
+      <div class="emoji-row" id="emojiRow"></div>
+
+      <div class="fatigue-result hidden" id="fatigueResult">
+        <div class="result-head">
+          <div class="result-emoji" id="rEmoji">😐</div>
+          <div>
+            <div class="result-label" id="rLabel"></div>
+            <div class="result-desc" id="rDesc"></div>
+          </div>
+        </div>
+
+        <div class="meter"><div class="meter-fill" id="rMeter"></div></div>
+
+        <div class="big-grid">
+          <div class="big-stat">
+            <span class="big-key">ควรเข้านอนภายใน</span>
+            <span class="big-val" id="rBedtime">--:--</span>
+            <span class="big-note" id="rBedNote"></span>
+          </div>
+          <div class="big-stat accent">
+            <span class="big-key">แล้วตื่นเวลา</span>
+            <span class="big-val" id="rWake">--:--</span>
+            <span class="big-note" id="rWakeNote"></span>
+          </div>
+        </div>
+
+        <ul class="tips" id="rTips"></ul>
+
+        <div class="row-actions">
+          <button class="btn ghost" id="fatigueToCalc">ดูตัวเลือกเวลาตื่นทั้งหมด →</button>
+          <button class="btn ghost" id="fatigueToRelax">เปิดเสียงผ่อนคลาย 🎵</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card slim" id="fatigueHistoryCard">
+      <h3>บันทึกความล้า 7 วันล่าสุด</h3>
+      <div class="fatigue-history" id="fatigueHistory"><p class="empty">ยังไม่มีบันทึก</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 2. คำนวณเวลานอน ============ -->
+  <section class="panel" id="panel-calc">
+    <div class="card">
+      <h2>คำนวณเวลานอนที่เหมาะสม</h2>
+      <p class="sub">ร่างกายนอนเป็นรอบ ๆ รอบละประมาณ 90 นาที การตื่นตอนจบรอบจะสดชื่นกว่าการตื่นกลางรอบ</p>
+
+      <div class="seg" id="calcMode">
+        <button class="seg-btn active" data-mode="now">นอนตอนนี้</button>
+        <button class="seg-btn" data-mode="bed">ระบุเวลาเข้านอน</button>
+        <button class="seg-btn" data-mode="wake">ระบุเวลาตื่น</button>
+      </div>
+
+      <div class="calc-input hidden" id="calcInputWrap">
+        <label id="calcInputLabel">เวลาเข้านอน</label>
+        <div class="time-row">
+          <input type="time" id="calcTime" value="23:00">
+          <div class="quick-times" id="quickTimes"></div>
+        </div>
+      </div>
+
+      <div class="note-line" id="calcNote"></div>
+
+      <div class="cycle-list" id="cycleList"></div>
+    </div>
+  </section>
+
+  <!-- ============ 3. หนี้การนอน ============ -->
+  <section class="panel" id="panel-debt">
+    <div class="card debt-hero">
+      <div>
+        <h2>หนี้การนอนสะสม</h2>
+        <p class="sub">รวมชั่วโมงนอนที่ขาดไปเทียบกับชาร์ตเวลานอนสากล (National Sleep Foundation) ในช่วง <span id="debtWindowLabel">14</span> วันล่าสุด</p>
+      </div>
+      <div class="debt-badge" id="debtBadge">
+        <span class="debt-num" id="debtNum">0.0</span>
+        <span class="debt-unit">ชั่วโมง</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="mini-grid">
+        <div class="mini"><span class="mini-key">ช่วงวัยของคุณ</span><span class="mini-val" id="ageLabel">-</span></div>
+        <div class="mini"><span class="mini-key">ควรนอน / คืน</span><span class="mini-val" id="recLabel">-</span></div>
+        <div class="mini"><span class="mini-key">ค่าเฉลี่ยจริง</span><span class="mini-val" id="avgLabel">-</span></div>
+        <div class="mini"><span class="mini-key">สถานะ</span><span class="mini-val" id="statusLabel">-</span></div>
+      </div>
+      <div class="plan" id="debtPlan"></div>
+    </div>
+
+    <div class="card">
+      <h3>บันทึกการนอน</h3>
+      <div class="log-form">
+        <div class="field"><label>วันที่ตื่น</label><input type="date" id="logDate"></div>
+        <div class="field"><label>เข้านอน</label><input type="time" id="logBed" value="23:30"></div>
+        <div class="field"><label>ตื่นนอน</label><input type="time" id="logWake" value="07:00"></div>
+        <div class="field"><label>&nbsp;</label><button class="btn" id="logSave">บันทึก</button></div>
+      </div>
+      <div class="log-hint" id="logHint"></div>
+
+      <div class="chart" id="debtChart"></div>
+
+      <div class="log-list" id="logList"></div>
+    </div>
+
+    <div class="card slim">
+      <h3>ชาร์ตเวลานอนสากล</h3>
+      <table class="chart-table" id="sleepChartTable"></table>
+    </div>
+  </section>
+
+  <!-- ============ 4. ผ่อนคลาย ============ -->
+  <section class="panel" id="panel-relax">
+    <div class="card">
+      <h2>เสียงผ่อนคลายก่อนนอน</h2>
+      <p class="sub">เสียงทั้งหมดสังเคราะห์ขึ้นสด ๆ ในเครื่องของคุณ ไม่ต้องต่ออินเทอร์เน็ต ไม่มีโฆษณาคั่น</p>
+
+      <div class="sound-grid" id="soundGrid"></div>
+
+      <div class="player">
+        <div class="player-info">
+          <div class="now-playing" id="nowPlaying">ยังไม่ได้เล่นเสียง</div>
+          <div class="player-sub" id="playerSub">เลือกเสียงด้านบนเพื่อเริ่ม</div>
+        </div>
+        <button class="btn stop" id="stopSound" disabled>หยุด</button>
+      </div>
+
+      <div class="field">
+        <label>ระดับเสียง <span id="volLabel">60%</span></label>
+        <input type="range" id="volume" min="0" max="100" value="60">
+      </div>
+
+      <div class="field">
+        <label>ตั้งเวลาปิดอัตโนมัติ (Sleep Timer)</label>
+        <div class="timer-row" id="timerRow"></div>
+        <div class="timer-status" id="timerStatus"></div>
+      </div>
+    </div>
+
+    <div class="card breathe-card">
+      <h3>ฝึกหายใจ 4-7-8 ก่อนนอน</h3>
+      <p class="sub">หายใจเข้า 4 วิ → กลั้น 7 วิ → ผ่อนออก 8 วิ ทำ 4 รอบ ช่วยลดอัตราการเต้นหัวใจและทำให้หลับง่ายขึ้น</p>
+      <div class="breathe-stage">
+        <div class="breathe-circle" id="breatheCircle">
+          <span id="breatheText">พร้อม</span>
+          <small id="breatheCount"></small>
+        </div>
+      </div>
+      <button class="btn" id="breatheBtn">เริ่มฝึกหายใจ</button>
+    </div>
+  </section>
+
+  <!-- ============ 5. งานพรุ่งนี้ ============ -->
+  <section class="panel" id="panel-tasks">
+    <div class="card">
+      <h2>สิ่งสำคัญที่ต้องทำพรุ่งนี้</h2>
+      <p class="sub">จดไว้ก่อนนอน สมองจะได้ไม่ต้องคิดวนตอนหลับ แล้ว TimeSync จะเตือนคุณตอนเช้า</p>
+
+      <div class="task-add">
+        <input type="text" id="taskInput" placeholder="เช่น ส่งรายงานให้หัวหน้าก่อน 10 โมง" maxlength="120">
+        <select id="taskPriority">
+          <option value="high">สำคัญมาก</option>
+          <option value="normal" selected>ปกติ</option>
+          <option value="low">ถ้ามีเวลา</option>
+        </select>
+        <button class="btn" id="taskAdd">เพิ่ม</button>
+      </div>
+
+      <ul class="task-list" id="taskList"></ul>
+    </div>
+
+    <div class="card">
+      <h3>การเตือนตอนเช้า</h3>
+      <div class="remind-row">
+        <div class="field">
+          <label>เตือนเวลา</label>
+          <input type="time" id="remindTime" value="07:00">
+        </div>
+        <div class="field grow">
+          <label>สถานะการแจ้งเตือน</label>
+          <div class="notif-status" id="notifStatus">กำลังตรวจสอบ…</div>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="btn ghost" id="notifEnable">เปิดการแจ้งเตือน</button>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="remindOn"> เปิดการเตือนตอนเช้า</label>
+      <p class="fineprint">ℹ️ การแจ้งเตือนจะทำงานเมื่อเปิดหน้า TimeSync ค้างไว้ (แนะนำให้เปิดแท็บนี้ทิ้งไว้ตอนนอน) ถ้าปิดแท็บ ระบบจะแสดงสรุปงานให้ทันทีที่คุณกลับมาเปิดในตอนเช้าแทน</p>
+    </div>
+  </section>
+
+  <!-- ============ ตั้งค่า ============ -->
+  <section class="panel" id="panel-settings">
+    <div class="card">
+      <h2>ตั้งค่า</h2>
+
+      <div class="field">
+        <label>ช่วงอายุ (ใช้กับชาร์ตเวลานอนสากล)</label>
+        <select id="ageGroup"></select>
+      </div>
+
+      <div class="field">
+        <label>เวลาตื่นประจำ</label>
+        <input type="time" id="usualWake" value="07:00">
+      </div>
+
+      <div class="field">
+        <label>ใช้เวลากว่าจะหลับ (นาที): <span id="latencyLabel">15</span></label>
+        <input type="range" id="latency" min="0" max="45" step="5" value="15">
+      </div>
+
+      <div class="field">
+        <label>ความยาว 1 รอบการนอน (นาที): <span id="cycleLabel">90</span></label>
+        <input type="range" id="cycleLen" min="80" max="110" step="5" value="90">
+      </div>
+
+      <div class="field">
+        <label>ช่วงคำนวณหนี้การนอน (วัน): <span id="windowLabel">14</span></label>
+        <input type="range" id="debtWindow" min="7" max="30" step="1" value="14">
+      </div>
+
+      <div class="row-actions">
+        <button class="btn ghost" id="exportData">ส่งออกข้อมูล (JSON)</button>
+        <button class="btn danger" id="resetData">ล้างข้อมูลทั้งหมด</button>
+      </div>
+      <p class="fineprint">ข้อมูลทั้งหมดถูกเก็บไว้ในเครื่องของคุณเท่านั้น (localStorage) ไม่มีการส่งออกไปที่ไหน</p>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal hidden" id="morningModal">
+  <div class="modal-box">
+    <div class="modal-emoji">☀️</div>
+    <h2>อรุณสวัสดิ์!</h2>
+    <p class="sub" id="morningSub"></p>
+    <ul class="task-list compact" id="morningList"></ul>
+    <button class="btn" id="morningClose">เริ่มวันใหม่</button>
+  </div>
+</div>
+
+<script src="core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

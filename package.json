@@ -1,0 +1,14 @@
+{
+  "name": "timesync",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TimeSync — แอปจัดการเวลานอน ประเมินความล้า หนี้การนอน เสียงผ่อนคลาย และนาฬิกาปลุก",
+  "scripts": {
+    "test": "node --test tests/core.test.js",
+    "test:watch": "node --test --watch tests/core.test.js",
+    "start": "node tools/serve.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
