@@ -6,6 +6,8 @@
   "scripts": {
     "test": "node --test tests/**/*.test.js",
     "test:watch": "node --test --watch tests/**/*.test.js",
+    "test:tz": "node tools/test-tz.js",
+    "icons": "node tools/make-icons.js",
     "start": "node tools/serve.js"
   },
   "engines": {

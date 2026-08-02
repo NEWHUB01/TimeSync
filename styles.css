@@ -419,6 +419,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   .week-row{grid-template-columns:56px 1fr 1fr;gap:8px;padding:10px}
 }
 
+/* ---- PWA (Phase 4) ---- */
+.install-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.install-note{font-size:12.5px;color:var(--muted)}
+.limit-box{padding:16px 18px;border-radius:14px;font-size:12.5px;line-height:1.75;
+  background:rgba(255,255,255,.04);border:1px solid var(--card-line);color:var(--muted)}
+.limit-box b{color:var(--text)}
+.limit-box p{margin-top:9px}
+
 /* ---- toast & modal ---- */
 .toast{position:fixed;left:50%;bottom:34px;transform:translate(-50%,120%);z-index:50;
   background:#1c2350;border:1px solid var(--card-line);color:var(--text);padding:13px 22px;

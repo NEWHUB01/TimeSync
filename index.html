@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TimeSync — นาฬิกาชีวิตของคุณ</title>
+<meta name="description" content="จัดการเวลานอน ประเมินความล้า ติดตามหนี้การนอน เสียงผ่อนคลาย และนาฬิกาปลุก">
+<meta name="theme-color" content="#0e1330">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TimeSync">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -410,7 +419,25 @@
         <button class="btn ghost" id="exportData">ส่งออกข้อมูล (JSON)</button>
         <button class="btn danger" id="resetData">ล้างข้อมูลทั้งหมด</button>
       </div>
-      <p class="fineprint">ข้อมูลทั้งหมดถูกเก็บไว้ในเครื่องของคุณเท่านั้น (localStorage) ไม่มีการส่งออกไปที่ไหน</p>
+      <p class="fineprint">ข้อมูลทั้งหมดถูกเก็บไว้ในเครื่องของคุณเท่านั้น (localStorage + IndexedDB) ไม่มีการส่งออกไปที่ไหน</p>
+    </div>
+
+    <div class="card">
+      <h3>ติดตั้งเป็นแอป</h3>
+      <p class="sub">ติดตั้ง TimeSync เป็นแอปบนเครื่อง จะเปิดเป็นหน้าต่างของตัวเอง ใช้งานได้แม้ออฟไลน์ และย่อทิ้งไว้ตอนนอนเพื่อให้ปลุกได้</p>
+      <div class="install-row">
+        <button class="btn" id="installBtn" disabled>ติดตั้ง TimeSync</button>
+        <span class="install-note" id="installNote">กำลังตรวจสอบ…</span>
+      </div>
+
+      <div class="limit-box">
+        <b>ข้อจำกัดที่ควรรู้เรื่องการปลุก</b>
+        <p>เว็บแอปไม่สามารถปลุกตรงเวลาได้ถ้าปิดหน้าต่างไปแล้ว — ไม่ใช่ข้อจำกัดของ TimeSync
+        แต่เป็นข้อจำกัดของทุกเบราว์เซอร์ (API ที่ทำได้ถูกทดลองแล้วไม่ปล่อยใช้จริง)</p>
+        <p>วิธีที่ได้ผลจริง: <b>ติดตั้งเป็นแอปแล้วย่อหน้าต่างทิ้งไว้ตอนนอน</b> หรือเปิดแท็บ TimeSync ค้างไว้
+        TimeSync ตั้งเสียงปลุกไว้บนนาฬิกาของระบบเสียงซึ่งไม่ถูกเบราว์เซอร์หน่วง จึงปลุกตรงเวลาแม้อยู่เบื้องหลัง</p>
+        <p>ถ้าเผลอปิดไป เมื่อเปิดกลับมาภายใน 30 นาที TimeSync จะยังปลุกให้</p>
+      </div>
     </div>
   </section>
 

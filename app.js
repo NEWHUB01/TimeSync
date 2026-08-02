@@ -54,6 +54,52 @@ function save() {
   catch { toast('บันทึกข้อมูลไม่สำเร็จ (พื้นที่เก็บข้อมูลเต็ม)'); }
 }
 
+/* ---------- Phase 4: กู้สิ่งที่กรอกค้างไว้ ----------
+   ข้อมูลที่กด "บันทึก" แล้วลง localStorage ทันทีอยู่แล้ว
+   สิ่งที่หายจริงตอนเผลอปิดหน้าต่างคือ "ที่พิมพ์ค้างไว้แต่ยังไม่ได้กด" */
+const DRAFT_FIELDS = ['#logDate', '#logBed', '#logWake', '#taskInput', '#ovDate', '#ovWake', '#ovNote'];
+let draftTimer = null;
+
+function installDrafts() {
+  DRAFT_FIELDS.forEach(sel => {
+    const el = $(sel);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      S.drafts[sel] = el.value;
+      clearTimeout(draftTimer);
+      draftTimer = setTimeout(save, 400);      // หน่วงเล็กน้อย ไม่ให้เขียนทุกตัวอักษร
+    });
+  });
+
+  // เผื่อกรณีปิดแท็บก่อน debounce ทำงาน
+  window.addEventListener('pagehide', flushDrafts);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flushDrafts(); });
+}
+
+function flushDrafts() {
+  clearTimeout(draftTimer);
+  DRAFT_FIELDS.forEach(sel => { const el = $(sel); if (el) S.drafts[sel] = el.value; });
+  S.lastTab = ($('.tab.active') || {}).dataset ? $('.tab.active').dataset.tab : S.lastTab;
+  save();
+}
+
+function restoreDrafts() {
+  let restored = 0;
+  for (const [sel, val] of Object.entries(S.drafts || {})) {
+    const el = $(sel);
+    if (!el || !val) continue;
+    // ไม่กู้ของวันเก่า — วันที่ในฟอร์มบันทึกจะถูกตั้งใหม่เป็นวันนี้เสมอ
+    if (sel === '#logDate' && val < dateKey(addDays(new Date(), -14))) continue;
+    if (el.value !== val) { el.value = val; restored++; }
+  }
+  return restored;
+}
+
+function clearDrafts(fields) {
+  fields.forEach(sel => delete S.drafts[sel]);
+  save();
+}
+
 /* =========================================================
    ฉากหลัง + นาฬิกา + แท็บ
    ========================================================= */
@@ -84,6 +130,8 @@ function goTab(name) {
   $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   $$('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  S.lastTab = name;
+  save();
 }
 $('#tabs').addEventListener('click', e => {
   const b = e.target.closest('.tab');
@@ -683,8 +731,9 @@ function addTask() {
   const text = inp.value.trim();
   if (!text) { inp.focus(); return; }
   S.tasks.push({ id: Date.now(), text, pri: $('#taskPriority').value, done: false });
-  save();
   inp.value = '';
+  clearDrafts(['#taskInput']);
+  save();
   renderTasks();
   toast('เพิ่มลงรายการพรุ่งนี้แล้ว');
 }
@@ -857,6 +906,7 @@ function logSleep(date, bed, wake) {
   S.sleepLogs[date] = { bed, wake, hours };
   S.lastBed = bed;
   S.lastWake = wake;
+  clearDrafts(['#logDate', '#logBed', '#logWake']);   // กรอกเสร็จแล้ว ไม่ต้องกู้อีก
   save();
   renderDebt();
   renderConfirmBar();
@@ -1223,8 +1273,9 @@ $('#ovSave').addEventListener('click', () => {
   const date = $('#ovDate').value;
   if (!date) { toast('กรุณาเลือกวันที่'); return; }
   setOverride(S, date, { wake: $('#ovWake').value, note: $('#ovNote').value.trim() });
-  save();
   $('#ovNote').value = '';
+  clearDrafts(['#ovDate', '#ovWake', '#ovNote']);
+  save();
   renderOverrides(); refreshScheduleDependents();
   toast(`ตั้งเวลาพิเศษให้วันที่ ${date} แล้ว — ตารางประจำไม่เปลี่ยน`);
 });
@@ -1326,6 +1377,44 @@ $('#exportData').addEventListener('click', () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 3000);
 });
 
+/* ---------- Phase 4: ติดตั้งเป็นแอป (PWA) ---------- */
+let installPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  installPrompt = e;
+  $('#installBtn').disabled = false;
+  $('#installNote').textContent = 'พร้อมติดตั้งแล้ว';
+});
+
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  $('#installBtn').disabled = true;
+  $('#installNote').textContent = '✅ ติดตั้งแล้ว';
+  toast('ติดตั้ง TimeSync เรียบร้อย 🌙');
+});
+
+$('#installBtn').addEventListener('click', async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  const { outcome } = await installPrompt.userChoice;
+  if (outcome !== 'accepted') $('#installNote').textContent = 'ยังไม่ได้ติดตั้ง — กดใหม่ได้ทุกเมื่อ';
+  installPrompt = null;
+});
+
+function refreshInstallStatus() {
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (standalone) {
+    $('#installBtn').disabled = true;
+    $('#installNote').textContent = '✅ กำลังใช้งานในโหมดแอปอยู่แล้ว';
+  } else if (!installPrompt) {
+    $('#installBtn').disabled = true;
+    $('#installNote').textContent = location.protocol === 'file:'
+      ? 'ต้องเปิดผ่าน http:// หรือ https:// จึงจะติดตั้งได้ (ดู README)'
+      : 'เบราว์เซอร์นี้ยังไม่เสนอให้ติดตั้ง — ลองใช้เมนู "ติดตั้งแอป" ของเบราว์เซอร์';
+  }
+}
+
 $('#resetData').addEventListener('click', () => {
   if (!confirm('ล้างข้อมูล TimeSync ทั้งหมด (บันทึกการนอน ความล้า และรายการงาน) ใช่หรือไม่?\nการกระทำนี้ย้อนกลับไม่ได้')) return;
   [KEY, ...LEGACY_KEYS].forEach(k => localStorage.removeItem(k));
@@ -1400,9 +1489,19 @@ Alarm.onStateChange = () => renderAlarm();
 const todayFatigue = S.fatigueLogs[dateKey(new Date())];
 if (todayFatigue) selectFatigue(todayFatigue.lvl, true);
 
-// เปิดแท็บตามที่ระบุมาจากการคลิก notification
-const wantTab = new URLSearchParams(location.search).get('tab');
+// เปิดแท็บตามที่ระบุมาจาก URL (คลิก notification / shortcut ของ PWA)
+// ถ้าไม่มี ให้กลับไปที่แท็บเดิมที่ค้างไว้ตอนปิดหน้าต่าง
+const wantTab = new URLSearchParams(location.search).get('tab') || S.lastTab;
 if (wantTab && $(`#panel-${wantTab}`)) goTab(wantTab);
+
+// กู้สิ่งที่กรอกค้างไว้ก่อนปิดหน้าต่าง
+installDrafts();
+const restoredCount = restoreDrafts();
+if (restoredCount) {
+  toast('กู้ข้อมูลที่กรอกค้างไว้กลับมาให้แล้ว');
+  renderCycles();
+}
+refreshInstallStatus();
 
 /* ตรวจการเตือนทุก 20 วินาที และทุกครั้งที่กลับมาโฟกัสหน้าจอ
    (เบราว์เซอร์หน่วง timer ของแท็บเบื้องหลัง การเช็คตอนกลับมาจึงจำเป็นเพื่อ "ตามเก็บ") */

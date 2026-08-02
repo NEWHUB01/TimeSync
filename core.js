@@ -610,6 +610,10 @@
       askDismissed: '',       // dateKey ของวันที่ผู้ใช้ปิดการ์ดยืนยัน
       fired: {},              // กันการเตือนซ้ำ: { 'log:2026-08-02': timestamp }
 
+      // --- Phase 4: กู้สิ่งที่กรอกค้างไว้เมื่อปิดหน้าต่างกะทันหัน ---
+      drafts: {},             // { fieldId: value } ของฟอร์มที่ยังกรอกไม่เสร็จ
+      lastTab: '',            // แท็บที่เปิดค้างไว้ล่าสุด
+
       // --- Phase 2: นาฬิกาปลุก ---
       alarm: {
         on: false,
@@ -713,6 +717,7 @@
     if (!s.sleepLogs || typeof s.sleepLogs !== 'object') s.sleepLogs = {};
     if (!s.fatigueLogs || typeof s.fatigueLogs !== 'object') s.fatigueLogs = {};
     if (!s.fired || typeof s.fired !== 'object') s.fired = {};
+    if (!s.drafts || typeof s.drafts !== 'object') s.drafts = {};
     if (!s.alarm || typeof s.alarm !== 'object') s.alarm = base.alarm;
     else s.alarm = Object.assign({}, base.alarm, s.alarm);
     s.alarm.volume = clamp(Math.round(Number(s.alarm.volume)) || 0, 0, 100);
