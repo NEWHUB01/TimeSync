@@ -10,6 +10,7 @@ const {
   durText, hoursText, hoursBetween,
   TH_DAY, TH_MON, AGE_GROUPS, FATIGUE, ageGroupOf,
   planBedtime, cycleOptions, computeDebt,
+  usualBedtimeMin, nextOccurrence, shouldAskToLog, dueReminders, markFired,
 } = C;
 
 /* ---------- helpers ของชั้น UI ---------- */
@@ -71,6 +72,8 @@ function tickClock() {
   const d = new Date();
   $('#clockTime').textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
   $('#clockDate').textContent = `วัน${TH_DAY[d.getDay()]} ${d.getDate()} ${TH_MON[d.getMonth()]} ${d.getFullYear() + 543}`;
+  $('#clockAlarm').classList.toggle('hidden', !S.alarm.on);
+  $('#clockAlarmTime').textContent = S.alarm.time;
 }
 
 function goTab(name) {
@@ -202,9 +205,18 @@ function renderCycles() {
     note.innerHTML = `${head} และใช้เวลาราว ${S.latency} นาทีกว่าจะหลับ ควรตั้งนาฬิกาปลุกไว้ที่:`;
   }
 
+  const wakeRow = calcMode !== 'wake';    // โหมดนี้เท่านั้นที่แถวคือ "เวลาตื่น" → ตั้งปลุกได้
   $('#cycleList').innerHTML = cycleOptions(calcMode, timeMin, S)
-    .map(o => cycleRow(o, verb)).join('');
+    .map(o => cycleRow(o, verb, wakeRow)).join('');
 }
+
+// ตั้งปลุกจากเวลาตื่นที่แนะนำ — คลิกเดียวจากหน้าที่ผู้ใช้ดูอยู่แล้ว ไม่ต้องเปิดหน้าใหม่
+$('#cycleList').addEventListener('click', e => {
+  const b = e.target.closest('.cycle-alarm');
+  if (!b) return;
+  setAlarm(b.dataset.time, true);
+  toast(`ตั้งปลุกไว้ที่ ${b.dataset.time} ⏰`);
+});
 
 const RANK_TAG = {
   best: '<span class="cycle-tag tag-best">แนะนำ</span>',
@@ -212,13 +224,18 @@ const RANK_TAG = {
   min:  '<span class="cycle-tag tag-min">ขั้นต่ำ</span>',
 };
 
-function cycleRow(o, verb) {
+function cycleRow(o, verb, canSetAlarm) {
+  const isSet = S.alarm.on && S.alarm.time === o.time;
+  const alarmBtn = canSetAlarm
+    ? `<button class="cycle-alarm ${isSet ? 'set' : ''}" data-time="${o.time}"
+         title="${isSet ? 'ตั้งปลุกเวลานี้ไว้แล้ว' : 'ตั้งปลุกเวลานี้'}">⏰</button>`
+    : '';
   return `<div class="cycle-row ${o.rank === 'best' ? 'best' : ''}">
     <div class="cycle-time">${o.time}</div>
     <div class="cycle-meta">
       <div class="cycle-main">${verb} หลังนอน ${o.cycles} รอบ · ${o.totalText}</div>
       <div class="cycle-sub">${o.desc}</div>
-    </div>${RANK_TAG[o.rank]}
+    </div>${RANK_TAG[o.rank]}${alarmBtn}
   </div>`;
 }
 
@@ -228,14 +245,16 @@ function cycleRow(o, verb) {
 $('#logSave').addEventListener('click', () => {
   const date = $('#logDate').value;
   if (!date) { toast('กรุณาเลือกวันที่'); return; }
-  const bed = $('#logBed').value, wake = $('#logWake').value;
-  const hours = hoursBetween(bed, wake);
-  if (hours > 16) { toast('ระยะเวลานอนดูจะยาวผิดปกติ ลองตรวจสอบเวลาอีกครั้ง'); return; }
-  S.sleepLogs[date] = { bed, wake, hours };
-  save();
-  renderDebt();
-  toast(`บันทึกแล้ว: นอน ${hoursText(hours)}`);
+  logSleep(date, $('#logBed').value, $('#logWake').value);
 });
+
+// อัปเดตตัวอย่างจำนวนชั่วโมงทันทีที่ผู้ใช้เปลี่ยนเวลา
+['#logBed', '#logWake'].forEach(sel => $(sel).addEventListener('input', () => {
+  const h = hoursBetween($('#logBed').value, $('#logWake').value);
+  $('#logHint').textContent = h <= 16
+    ? `= นอน ${hoursText(h)}`
+    : 'ระยะเวลานอนดูจะยาวผิดปกติ ลองตรวจสอบเวลาอีกครั้ง';
+}));
 
 $('#logList').addEventListener('click', e => {
   const b = e.target.closest('.log-del');
@@ -718,27 +737,62 @@ $('#remindOn').addEventListener('change', e => {
   toast(e.target.checked ? `จะเตือนคุณเวลา ${S.remindTime} ✅` : 'ปิดการเตือนตอนเช้าแล้ว');
 });
 
-function checkMorningReminder() {
-  if (!S.remindOn) return;
-  const now = new Date();
-  const key = dateKey(now);
-  if (S.lastRemind === key) return;
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const target = parseHM(S.remindTime);
-  // เตือนเมื่อถึงเวลาแล้ว และยังไม่เกิน 6 ชั่วโมง (กันเด้งตอนดึก)
-  if (nowMin < target || nowMin > target + 360) return;
+/* ---------- ตัวเตือนอัตโนมัติรายวัน (Phase 1) ---------- */
+$('#remLogOn').addEventListener('change', e => { S.reminders.log.on = e.target.checked; save(); });
+$('#remLogTime').addEventListener('change', e => { S.reminders.log.time = e.target.value; save(); });
+$('#remBedOn').addEventListener('change', e => { S.reminders.bedtime.on = e.target.checked; save(); });
+$('#remBedLead').addEventListener('change', e => { S.reminders.bedtime.leadMin = Number(e.target.value); save(); });
+$('#remAlarmOn').addEventListener('change', e => { S.reminders.alarmMissing.on = e.target.checked; save(); });
 
-  S.lastRemind = key; save();
-  const pending = S.tasks.filter(t => !t.done);
-  const body = pending.length
-    ? pending.slice(0, 3).map(t => '• ' + t.text).join('\n') + (pending.length > 3 ? `\n…และอีก ${pending.length - 3} รายการ` : '')
-    : 'วันนี้ยังไม่มีรายการที่ต้องทำ ขอให้เป็นวันที่ดีนะ';
+/**
+ * ตรวจว่ามีอะไรถึงกำหนดเตือนบ้าง แล้วยิงออกไป
+ * เรียกทุก 20 วินาที และทุกครั้งที่ผู้ใช้กลับมาโฟกัสหน้าจอ (เผื่อ timer ถูก throttle)
+ */
+function checkReminders() {
+  const due = dueReminders(S, new Date());
+  if (!due.length) return;
 
-  if ('Notification' in window && Notification.permission === 'granted') {
-    try { new Notification('TimeSync — อรุณสวัสดิ์ ☀️', { body, tag: 'timesync-morning' }); } catch {}
+  for (const r of due) {
+    markFired(S, r.key);
+    Notify.send(r);
+    if (r.id === 'morning') showMorningModal(r.pending);
   }
-  showMorningModal(pending);
+  save();
+  renderConfirmBar();
 }
+
+/* ---------- ชั้นส่งการแจ้งเตือน ----------
+   ใช้ service worker ถ้ามี (แจ้งเตือนจะค้างใน tray และคลิกแล้วโฟกัสกลับมาได้)
+   ถ้าไม่มีให้ถอยไปใช้ Notification ตรง ๆ และถ้าถูกบล็อกก็แสดง toast ในหน้าแทน */
+const Notify = {
+  swReg: null,
+
+  async register() {
+    if (!('serviceWorker' in navigator)) return;           // file:// จะไม่มี
+    try {
+      this.swReg = await navigator.serviceWorker.register('sw.js');
+      navigator.serviceWorker.addEventListener('message', e => {
+        if (e.data && e.data.type === 'openTab') goTab(e.data.tab);
+      });
+    } catch { /* ใช้ fallback แทน */ }
+  },
+
+  get allowed() {
+    return 'Notification' in window && Notification.permission === 'granted';
+  },
+
+  send({ title, body, tag, tab, sticky }) {
+    if (this.allowed) {
+      if (this.swReg && this.swReg.active) {
+        this.swReg.active.postMessage({ type: 'notify', title, body, tag: tag || 'timesync', tab, sticky });
+        return true;
+      }
+      try { new Notification(title, { body, tag: tag || 'timesync' }); return true; } catch { /* ตกไป fallback */ }
+    }
+    toast(title.replace(/^TimeSync — /, ''));   // สำรอง: แสดงในหน้าแทน
+    return false;
+  },
+};
 
 function showMorningModal(pending) {
   $('#morningSub').textContent = pending.length
@@ -750,6 +804,95 @@ function showMorningModal(pending) {
 $('#morningClose').addEventListener('click', () => $('#morningModal').classList.add('hidden'));
 
 /* =========================================================
+   Phase 1: การ์ดยืนยันการนอนแบบคลิกเดียว
+   "ควรป้อนข้อมูลเพียงครั้งเดียว นอกจากมีการแก้ไข"
+   ========================================================= */
+function renderConfirmBar() {
+  const r = shouldAskToLog(S, new Date());
+  const bar = $('#confirmBar');
+  bar.classList.toggle('hidden', !r.ask);
+  if (!r.ask) return;
+  bar.dataset.date = r.date;
+  bar.dataset.bed = r.bed;
+  bar.dataset.wake = r.wake;
+  $('#cbTitle').textContent = `เมื่อคืนนอน ${r.bed} – ${r.wake} ใช่ไหม?`;
+  $('#cbSub').textContent = `รวม ${hoursText(r.hours)} · กดยืนยันครั้งเดียวจบ ไม่ต้องกรอกใหม่`;
+}
+
+$('#cbConfirm').addEventListener('click', () => {
+  const b = $('#confirmBar').dataset;
+  logSleep(b.date, b.bed, b.wake);
+  $('#confirmBar').classList.add('hidden');
+});
+
+$('#cbEdit').addEventListener('click', () => {
+  const b = $('#confirmBar').dataset;
+  $('#logDate').value = b.date;
+  $('#logBed').value = b.bed;
+  $('#logWake').value = b.wake;
+  $('#confirmBar').classList.add('hidden');
+  goTab('debt');
+  $('#logBed').focus();
+});
+
+$('#cbDismiss').addEventListener('click', () => {
+  S.askDismissed = dateKey(new Date());
+  save();
+  $('#confirmBar').classList.add('hidden');
+});
+
+/** บันทึกการนอน 1 คืน + จำค่าไว้เป็น default ของครั้งถัดไป */
+function logSleep(date, bed, wake) {
+  const hours = hoursBetween(bed, wake);
+  if (hours > 16) { toast('ระยะเวลานอนดูจะยาวผิดปกติ ลองตรวจสอบเวลาอีกครั้ง'); return false; }
+  S.sleepLogs[date] = { bed, wake, hours };
+  S.lastBed = bed;
+  S.lastWake = wake;
+  save();
+  renderDebt();
+  renderConfirmBar();
+  toast(`บันทึกแล้ว: นอน ${hoursText(hours)}`);
+  return true;
+}
+
+/* =========================================================
+   Phase 1: นาฬิกาปลุก (สถานะ + การตั้งค่า)
+   เสียงและการปลุกจริงจะมาใน Phase 2
+   ========================================================= */
+function setAlarm(time, on) {
+  S.alarm.time = time;
+  S.alarm.on = on !== undefined ? on : true;
+  save();
+  renderAlarm();
+  tickClock();
+  renderCycles();          // อัปเดตปุ่ม ⏰ บนแถวรอบการนอน
+}
+
+function renderAlarm() {
+  const on = S.alarm.on;
+  $('#alarmCard').classList.toggle('on', on);
+  $('#alarmOn').checked = on;
+  $('#alarmTime').value = S.alarm.time;
+
+  if (!on) {
+    $('#alarmSub').textContent = 'ยังไม่ได้ตั้งปลุก — กดปุ่ม ⏰ ที่เวลาตื่นด้านบนเพื่อตั้งได้เลย';
+    $('#alarmCount').textContent = '';
+    return;
+  }
+  const next = nextOccurrence(parseHM(S.alarm.time), new Date());
+  const left = (next - new Date()) / 60000;
+  $('#alarmSub').textContent = `ตั้งปลุกไว้แล้ว — จะปลุกครั้งถัดไป${next.getDate() !== new Date().getDate() ? 'พรุ่งนี้' : 'วันนี้'}`;
+  $('#alarmCount').textContent = `อีก ${durText(left)} จากนี้`;
+}
+
+$('#alarmOn').addEventListener('change', e => {
+  S.alarm.on = e.target.checked;
+  save(); renderAlarm(); tickClock(); renderCycles();
+  toast(e.target.checked ? `ตั้งปลุกไว้ที่ ${S.alarm.time} ⏰` : 'ปิดนาฬิกาปลุกแล้ว');
+});
+$('#alarmTime').addEventListener('change', e => setAlarm(e.target.value, true));
+
+/* =========================================================
    ตั้งค่า
    ========================================================= */
 function renderSettings() {
@@ -759,6 +902,14 @@ function renderSettings() {
   $('#latency').value = S.latency;   $('#latencyLabel').textContent = S.latency;
   $('#cycleLen').value = S.cycleLen; $('#cycleLabel').textContent = S.cycleLen;
   $('#debtWindow').value = S.debtWindow; $('#windowLabel').textContent = S.debtWindow;
+
+  // ตัวเตือนอัตโนมัติ
+  $('#remLogOn').checked = S.reminders.log.on;
+  $('#remLogTime').value = S.reminders.log.time;
+  $('#remBedOn').checked = S.reminders.bedtime.on;
+  $('#remBedLead').value = String(S.reminders.bedtime.leadMin);
+  $('#remAlarmOn').checked = S.reminders.alarmMissing.on;
+  $('#remBedAt').textContent = `เวลานอนของคุณคือ ${minToHM(usualBedtimeMin(S))}`;
 }
 
 $('#ageGroup').addEventListener('change', e => {
@@ -766,6 +917,7 @@ $('#ageGroup').addEventListener('change', e => {
 });
 $('#usualWake').addEventListener('change', e => {
   S.usualWake = e.target.value; save(); refreshFatigueIfShown();
+  $('#remBedAt').textContent = `เวลานอนของคุณคือ ${minToHM(usualBedtimeMin(S))}`;
 });
 $('#latency').addEventListener('input', e => {
   S.latency = Number(e.target.value); $('#latencyLabel').textContent = S.latency;
@@ -810,10 +962,15 @@ function boot(isReset) {
   renderFatigueHistory();
   syncCalcInput();
   renderCycles();
+  renderAlarm();
+  // ค่า default ของฟอร์มบันทึก = ครั้งล่าสุดที่ผู้ใช้กรอก (ตั้งครั้งเดียว ใช้ตลอด)
   $('#logDate').value = dateKey(new Date());
+  if (S.lastBed) $('#logBed').value = S.lastBed;
+  if (S.lastWake) $('#logWake').value = S.lastWake;
   renderDebt();
   renderSleepChartTable();
   renderTasks();
+  renderConfirmBar();
   $('#remindTime').value = S.remindTime;
   $('#remindOn').checked = S.remindOn;
   refreshNotifStatus();
@@ -829,16 +986,27 @@ function boot(isReset) {
 
 makeStars();
 tickClock();
-setInterval(tickClock, 1000 * 20);
+setInterval(() => { tickClock(); renderAlarm(); }, 1000 * 20);
 renderEmojiRow();
 renderSounds();
 boot(false);
+Notify.register();
 
 // แสดงผลความล้าของวันนี้ถ้าเคยกดไว้แล้ว
 const todayFatigue = S.fatigueLogs[dateKey(new Date())];
 if (todayFatigue) selectFatigue(todayFatigue.lvl, true);
 
-// ตรวจการเตือนตอนเช้าทุก 20 วินาที และตอนกลับมาโฟกัสหน้าจอ
-checkMorningReminder();
-setInterval(checkMorningReminder, 20000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) checkMorningReminder(); });
+// เปิดแท็บตามที่ระบุมาจากการคลิก notification
+const wantTab = new URLSearchParams(location.search).get('tab');
+if (wantTab && $(`#panel-${wantTab}`)) goTab(wantTab);
+
+/* ตรวจการเตือนทุก 20 วินาที และทุกครั้งที่กลับมาโฟกัสหน้าจอ
+   (เบราว์เซอร์หน่วง timer ของแท็บเบื้องหลัง การเช็คตอนกลับมาจึงจำเป็นเพื่อ "ตามเก็บ") */
+checkReminders();
+setInterval(checkReminders, 20000);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  checkReminders();
+  renderConfirmBar();
+  renderAlarm();
+});

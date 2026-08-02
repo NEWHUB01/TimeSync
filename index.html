@@ -10,6 +10,17 @@
 
 <div class="stars" id="stars"></div>
 
+<div class="confirm-bar hidden" id="confirmBar">
+  <div class="cb-icon">🌙</div>
+  <div class="cb-text">
+    <div class="cb-title" id="cbTitle">เมื่อคืนนอน 23:30 – 07:00 ใช่ไหม?</div>
+    <div class="cb-sub" id="cbSub">กดยืนยันครั้งเดียว ไม่ต้องกรอกใหม่</div>
+  </div>
+  <button class="btn cb-ok" id="cbConfirm">ยืนยัน</button>
+  <button class="btn ghost cb-edit" id="cbEdit">แก้ไข</button>
+  <button class="cb-close" id="cbDismiss" title="ไว้ทีหลัง">×</button>
+</div>
+
 <header class="topbar">
   <div class="brand">
     <div class="logo">🌙</div>
@@ -21,6 +32,7 @@
   <div class="clock">
     <div class="clock-time" id="clockTime">--:--</div>
     <div class="clock-date" id="clockDate">&nbsp;</div>
+    <div class="clock-alarm hidden" id="clockAlarm">⏰ <span id="clockAlarmTime"></span></div>
   </div>
 </header>
 
@@ -105,6 +117,23 @@
       <div class="note-line" id="calcNote"></div>
 
       <div class="cycle-list" id="cycleList"></div>
+    </div>
+
+    <div class="card alarm-card" id="alarmCard">
+      <div class="alarm-head">
+        <div>
+          <h3>นาฬิกาปลุก</h3>
+          <p class="sub" id="alarmSub">ยังไม่ได้ตั้งปลุก — กดปุ่ม ⏰ ที่เวลาตื่นด้านบนเพื่อตั้งได้เลย</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="alarmOn">
+          <span class="switch-track"><span class="switch-knob"></span></span>
+        </label>
+      </div>
+      <div class="alarm-body">
+        <input type="time" id="alarmTime" value="07:00">
+        <div class="alarm-count" id="alarmCount"></div>
+      </div>
     </div>
   </section>
 
@@ -210,6 +239,31 @@
       </div>
 
       <ul class="task-list" id="taskList"></ul>
+    </div>
+
+    <div class="card">
+      <h3>การเตือนอัตโนมัติ</h3>
+      <p class="sub">TimeSync จะเตือนให้เอง คุณไม่ต้องจำ — ปิดเป็นรายตัวได้ทุกอัน</p>
+
+      <div class="remind-item">
+        <label class="check"><input type="checkbox" id="remLogOn"> เตือนให้บันทึกการนอนเมื่อคืน</label>
+        <input type="time" id="remLogTime" value="10:00">
+      </div>
+
+      <div class="remind-item">
+        <label class="check"><input type="checkbox" id="remBedOn"> เตือนก่อนถึงเวลาเข้านอน</label>
+        <select id="remBedLead">
+          <option value="0">ตรงเวลา</option>
+          <option value="15">ล่วงหน้า 15 นาที</option>
+          <option value="30">ล่วงหน้า 30 นาที</option>
+          <option value="60">ล่วงหน้า 1 ชม.</option>
+        </select>
+      </div>
+
+      <div class="remind-item">
+        <label class="check"><input type="checkbox" id="remAlarmOn"> เตือนถ้าถึงเวลานอนแล้วยังไม่ได้ตั้งปลุก</label>
+        <span class="remind-at" id="remBedAt"></span>
+      </div>
     </div>
 
     <div class="card">

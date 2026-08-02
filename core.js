@@ -13,7 +13,7 @@
 
   /* ---------- ค่าคงที่ ---------- */
   const MIN_PER_DAY = 1440;
-  const STATE_VERSION = 2;
+  const STATE_VERSION = 3;
 
   const TH_DAY = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
   const TH_MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
@@ -287,6 +287,145 @@
   }
 
   /* =========================================================
+     เวลาเข้านอนประจำ + การเตือน
+     ========================================================= */
+
+  /** เวลาเข้านอนปกติ (นาทีจากเที่ยงคืน) — อิงเวลาตื่นประจำ ถอยหลัง 5 รอบ + เวลาที่ใช้กว่าจะหลับ */
+  function usualBedtimeMin(cfg) {
+    const base = parseHM(cfg.usualWake) - DEFAULT_CYCLES * cfg.cycleLen - cfg.latency;
+    return ((base % MIN_PER_DAY) + MIN_PER_DAY) % MIN_PER_DAY;
+  }
+  const DEFAULT_CYCLES = 5;
+
+  /**
+   * หา Date ของ "ครั้งถัดไป" ที่นาฬิกาจะชี้ไปที่ targetMin
+   * ถ้าเวลานั้นของวันนี้ผ่านไปแล้ว จะได้ของวันพรุ่งนี้
+   */
+  function nextOccurrence(targetMin, now) {
+    const cand = todayAt(targetMin, now);
+    return cand > now ? cand : addDays(cand, 1);
+  }
+
+  /**
+   * หา Date ของครั้งล่าสุดที่ผ่านมา (หรือตอนนี้พอดี)
+   */
+  function lastOccurrence(targetMin, now) {
+    const cand = todayAt(targetMin, now);
+    return cand <= now ? cand : addDays(cand, -1);
+  }
+
+  /**
+   * ควรถามผู้ใช้ให้ยืนยันการนอนเมื่อคืนไหม (ฟีเจอร์ "กดยืนยันครั้งเดียว")
+   * เงื่อนไข: เป็นช่วงกลางวัน + ยังไม่ได้บันทึกของวันนี้ + เคยบันทึกมาก่อน + ยังไม่ได้ปิดการ์ดวันนี้
+   */
+  function shouldAskToLog(state, now) {
+    now = now || new Date();
+    const key = dateKey(now);
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const inAskWindow = nowMin >= 5 * 60 && nowMin < 20 * 60;
+
+    if (!inAskWindow) return { ask: false, reason: 'นอกช่วงเวลาถาม' };
+    if (state.sleepLogs[key]) return { ask: false, reason: 'บันทึกวันนี้แล้ว' };
+    if (state.askDismissed === key) return { ask: false, reason: 'ผู้ใช้ปิดการ์ดไปแล้ว' };
+    if (!state.lastBed || !state.lastWake) return { ask: false, reason: 'ยังไม่เคยบันทึก' };
+
+    return {
+      ask: true,
+      date: key,
+      bed: state.lastBed,
+      wake: state.lastWake,
+      hours: hoursBetween(state.lastBed, state.lastWake),
+    };
+  }
+
+  /* ---------- ตัวเตือนรายวัน ----------
+     grace = ยอมให้ "ตามเก็บ" ได้กี่นาทีหลังเลยเวลา (เผื่อผู้ใช้ปิดแอปอยู่)
+     แต่ละตัวยิงได้วันละครั้ง โดยจำไว้ใน state.fired ด้วยคีย์ `id:YYYY-MM-DD` */
+  const REMINDER_GRACE = { log: 360, bedtime: 45, alarmMissing: 60, morning: 360 };
+
+  /**
+   * คืนรายการเตือนที่ถึงกำหนดและยังไม่เคยยิง
+   * ไม่แตะ state — ผู้เรียกเป็นคนบันทึกว่ายิงแล้ว (markFired)
+   */
+  function dueReminders(state, now) {
+    now = now || new Date();
+    const out = [];
+    const fired = state.fired || {};
+    const push = (id, dueDate, payload) => {
+      const late = (now - dueDate) / 60000;
+      if (late < 0 || late > REMINDER_GRACE[id]) return;
+      const key = `${id}:${dateKey(dueDate)}`;
+      if (fired[key]) return;
+      out.push(Object.assign({ id, key, dueAt: dueDate, lateMin: Math.round(late) }, payload));
+    };
+
+    const R = state.reminders || {};
+
+    // 1) เตือนให้เข้ามาบันทึกการนอนเมื่อคืน
+    if (R.log && R.log.on && !state.sleepLogs[dateKey(now)]) {
+      push('log', lastOccurrence(parseHM(R.log.time), now), {
+        title: 'TimeSync — บันทึกการนอนเมื่อคืน',
+        body: state.lastBed
+          ? `เมื่อคืนนอน ${state.lastBed}–${state.lastWake} เหมือนเดิมไหม? กดยืนยันครั้งเดียวจบ`
+          : 'ใช้เวลาไม่ถึง 10 วินาที เพื่อให้หนี้การนอนของคุณแม่นยำ',
+        tab: 'debt',
+      });
+    }
+
+    // 2) เตือนก่อนถึงเวลาเข้านอน
+    const bedMin = usualBedtimeMin(state);
+    if (R.bedtime && R.bedtime.on) {
+      const lead = R.bedtime.leadMin || 0;
+      push('bedtime', lastOccurrence(bedMin - lead, now), {
+        title: 'TimeSync — ใกล้ถึงเวลานอนแล้ว',
+        body: lead > 0
+          ? `อีก ${durText(lead)} ถึงเวลาเข้านอน (${minToHM(bedMin)}) เริ่มหรี่ไฟและวางจอได้แล้ว`
+          : `ถึงเวลาเข้านอน (${minToHM(bedMin)}) แล้ว`,
+        tab: 'relax',
+      });
+    }
+
+    // 3) ถึงเวลานอนแล้วแต่ยังไม่ได้ตั้งปลุก
+    if (R.alarmMissing && R.alarmMissing.on && !(state.alarm && state.alarm.on)) {
+      push('alarmMissing', lastOccurrence(bedMin, now), {
+        title: 'TimeSync — ยังไม่ได้ตั้งปลุก',
+        body: 'ถึงเวลานอนแล้วแต่ยังไม่มีนาฬิกาปลุกสำหรับพรุ่งนี้ กดเพื่อตั้งเลย',
+        tab: 'calc',
+      });
+    }
+
+    // 4) เตือนงานสำคัญตอนเช้า (ของเดิม)
+    if (state.remindOn) {
+      const pending = (state.tasks || []).filter(t => !t.done);
+      push('morning', lastOccurrence(parseHM(state.remindTime), now), {
+        title: 'TimeSync — อรุณสวัสดิ์ ☀️',
+        body: pending.length
+          ? pending.slice(0, 3).map(t => '• ' + t.text).join('\n') +
+            (pending.length > 3 ? `\n…และอีก ${pending.length - 3} รายการ` : '')
+          : 'วันนี้ยังไม่มีรายการที่ต้องทำ ขอให้เป็นวันที่ดีนะ',
+        tab: 'tasks',
+        pending,
+      });
+    }
+
+    return out;
+  }
+
+  /** บันทึกว่าเตือนไปแล้ว + ตัดประวัติเก่าทิ้งไม่ให้ state บวม */
+  function markFired(state, key, keep) {
+    const fired = state.fired || (state.fired = {});
+    fired[key] = Date.now();
+    const max = keep || 60;
+    const keys = Object.keys(fired);
+    if (keys.length > max) {
+      keys.sort((a, b) => fired[a] - fired[b])
+          .slice(0, keys.length - max)
+          .forEach(k => delete fired[k]);
+    }
+    return state;
+  }
+
+  /* =========================================================
      state เริ่มต้น + การอัปเกรดโครงสร้างข้อมูล
      ========================================================= */
   function defaults() {
@@ -304,6 +443,18 @@
       remindOn: false,
       lastRemind: '',
       volume: 60,
+
+      // --- Phase 1: แก้ปัญหา "ลืม" ---
+      lastBed: '',            // เวลาเข้านอนที่บันทึกล่าสุด → ใช้เป็นค่า default
+      lastWake: '',
+      askDismissed: '',       // dateKey ของวันที่ผู้ใช้ปิดการ์ดยืนยัน
+      fired: {},              // กันการเตือนซ้ำ: { 'log:2026-08-02': timestamp }
+      alarm: { on: false, time: '07:00' },
+      reminders: {
+        log:          { on: true, time: '10:00' },
+        bedtime:      { on: true, leadMin: 30 },
+        alarmMissing: { on: true },
+      },
     };
   }
 
@@ -315,6 +466,28 @@
     // v1 → v2 : เพิ่มเลขเวอร์ชันและกันค่าที่หายไปด้วยค่าเริ่มต้น
     function v1_to_v2(s) {
       s.version = 2;
+      return s;
+    },
+
+    // v2 → v3 : เพิ่มระบบเตือน/ปลุก และเดาค่า default จากบันทึกล่าสุดที่มีอยู่
+    function v2_to_v3(s) {
+      const d = defaults();
+      s.alarm = Object.assign({}, d.alarm, s.alarm);
+      s.reminders = Object.assign({}, d.reminders, s.reminders);
+      s.fired = s.fired || {};
+      s.askDismissed = s.askDismissed || '';
+
+      // ผู้ใช้เดิมที่เคยบันทึกไว้แล้ว ให้หยิบคืนล่าสุดมาเป็นค่า default ทันที
+      if (!s.lastBed || !s.lastWake) {
+        const keys = Object.keys(s.sleepLogs || {}).sort();
+        const last = keys.length ? s.sleepLogs[keys[keys.length - 1]] : null;
+        s.lastBed = (last && last.bed) || '';
+        s.lastWake = (last && last.wake) || '';
+      }
+      // เวลาปลุกเริ่มต้น = เวลาตื่นประจำที่ตั้งไว้อยู่แล้ว
+      if (s.alarm.time === d.alarm.time && s.usualWake) s.alarm.time = s.usualWake;
+
+      s.version = 3;
       return s;
     },
   ];
@@ -342,17 +515,25 @@
     if (!Array.isArray(s.tasks)) s.tasks = [];
     if (!s.sleepLogs || typeof s.sleepLogs !== 'object') s.sleepLogs = {};
     if (!s.fatigueLogs || typeof s.fatigueLogs !== 'object') s.fatigueLogs = {};
+    if (!s.fired || typeof s.fired !== 'object') s.fired = {};
+    if (!s.alarm || typeof s.alarm !== 'object') s.alarm = base.alarm;
+    if (!s.reminders || typeof s.reminders !== 'object') s.reminders = base.reminders;
+    for (const k of Object.keys(base.reminders)) {
+      s.reminders[k] = Object.assign({}, base.reminders[k], s.reminders[k]);
+    }
     return s;
   }
 
   /* ---------- export ---------- */
   return {
-    MIN_PER_DAY, STATE_VERSION, SURPLUS_CAP, TH_DAY, TH_MON,
+    MIN_PER_DAY, STATE_VERSION, SURPLUS_CAP, DEFAULT_CYCLES, REMINDER_GRACE, TH_DAY, TH_MON,
     AGE_GROUPS, FATIGUE, CYCLE_DESC,
     pad, clamp, parseHM, minToHM, dateKey, keyToDate, addDays, todayAt, daysBetween,
     durText, hoursText, hoursBetween,
     ageGroupOf, fatigueOf,
     planBedtime, cycleOptions, computeDebt,
+    usualBedtimeMin, nextOccurrence, lastOccurrence,
+    shouldAskToLog, dueReminders, markFired,
     defaults, migrate,
   };
 });
