@@ -1,0 +1,37 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "headers": [
+    {
+      "comment": "service worker ห้ามถูก cache ค้าง ไม่งั้นผู้ใช้จะติดเวอร์ชันเก่าและไม่ได้อัปเดต",
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "Service-Worker-Allowed", "value": "/" }
+      ]
+    },
+    {
+      "comment": "ไฟล์แอปไม่มี hash ในชื่อ จึงต้องให้เบราว์เซอร์ถามเซิร์ฟเวอร์ทุกครั้ง",
+      "source": "/(index.html|manifest.webmanifest|core.js|alarm.js|app.js|styles.css)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "comment": "ไอคอนแทบไม่เปลี่ยน cache ยาวได้",
+      "source": "/icons/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=604800" }
+      ]
+    },
+    {
+      "comment": "แอปเก็บข้อมูลไว้ในเครื่องล้วน ไม่ต้องให้ใครฝังเป็น iframe หรือดมชนิดไฟล์เอง",
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy", "value": "no-referrer" }
+      ]
+    }
+  ]
+}

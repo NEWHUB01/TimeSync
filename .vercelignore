@@ -1,0 +1,6 @@
+# ไฟล์สำหรับพัฒนา/ทดสอบ ไม่ต้องขึ้นเว็บ
+tests/
+tools/
+.github/
+.gitattributes
+package.json
