@@ -77,10 +77,19 @@ function installDrafts() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) flushDrafts(); });
 }
 
+/**
+ * บันทึกค่าล่าสุดของช่องที่ "ผู้ใช้แตะแล้วเท่านั้น"
+ * ห้ามกวาดทุกช่อง เพราะช่องที่แอปเติมค่า default ให้เอง (เช่นเวลานอนล่าสุด
+ * หรือวันที่พรุ่งนี้) จะกลายเป็น draft ค้าง แล้วเด้งข้อความกู้ข้อมูลทุกครั้งที่เปิดแอป
+ */
 function flushDrafts() {
   clearTimeout(draftTimer);
-  DRAFT_FIELDS.forEach(sel => { const el = $(sel); if (el) S.drafts[sel] = el.value; });
-  S.lastTab = ($('.tab.active') || {}).dataset ? $('.tab.active').dataset.tab : S.lastTab;
+  Object.keys(S.drafts).forEach(sel => {
+    const el = $(sel);
+    if (el) S.drafts[sel] = el.value;
+  });
+  const activeTab = $('.tab.active');
+  if (activeTab) S.lastTab = activeTab.dataset.tab;
   save();
 }
 
@@ -88,10 +97,14 @@ function restoreDrafts() {
   let restored = 0;
   for (const [sel, val] of Object.entries(S.drafts || {})) {
     const el = $(sel);
-    if (!el || !val) continue;
+    if (!el || !val) { delete S.drafts[sel]; continue; }
     // ไม่กู้ของวันเก่า — วันที่ในฟอร์มบันทึกจะถูกตั้งใหม่เป็นวันนี้เสมอ
-    if (sel === '#logDate' && val < dateKey(addDays(new Date(), -14))) continue;
-    if (el.value !== val) { el.value = val; restored++; }
+    if (sel === '#logDate' && val < dateKey(addDays(new Date(), -14))) { delete S.drafts[sel]; continue; }
+    // ตรงกับค่าที่ boot เติมให้อยู่แล้ว = ไม่ใช่ของที่ค้างจริง ทิ้งไปเลย
+    // (ช่วยล้าง draft ขยะที่เวอร์ชันก่อนหน้าเผลอบันทึกไว้ด้วย)
+    if (el.value === val) { delete S.drafts[sel]; continue; }
+    el.value = val;
+    restored++;
   }
   return restored;
 }
@@ -1563,12 +1576,15 @@ if (todayFatigue) selectFatigue(todayFatigue.lvl, true);
 
 // เปิดแท็บตามที่ระบุมาจาก URL (คลิก notification / shortcut ของ PWA)
 // ถ้าไม่มี ให้กลับไปที่แท็บเดิมที่ค้างไว้ตอนปิดหน้าต่าง
-const wantTab = new URLSearchParams(location.search).get('tab') || S.lastTab;
+const RENAMED_TABS = { profile: 'settings' };   // โปรไฟล์ถูกย้ายเข้าไปอยู่ในหน้าตั้งค่า
+const rawTab = new URLSearchParams(location.search).get('tab') || S.lastTab;
+const wantTab = RENAMED_TABS[rawTab] || rawTab;
 if (wantTab && $(`#panel-${wantTab}`)) goTab(wantTab);
 
 // กู้สิ่งที่กรอกค้างไว้ก่อนปิดหน้าต่าง
 installDrafts();
 const restoredCount = restoreDrafts();
+save();                      // เก็บผลการล้าง draft ที่ไม่ใช่ของค้างจริง
 if (restoredCount) {
   toast('กู้ข้อมูลที่กรอกค้างไว้กลับมาให้แล้ว');
   renderCycles();

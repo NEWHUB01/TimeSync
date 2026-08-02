@@ -52,7 +52,6 @@
   <button class="tab" data-tab="relax"><span>🎵</span>ผ่อนคลาย</button>
   <button class="tab" data-tab="alarm"><span>⏰</span>ปลุก</button>
   <button class="tab" data-tab="tasks"><span>📝</span>งานพรุ่งนี้</button>
-  <button class="tab" data-tab="profile"><span>👤</span>โปรไฟล์</button>
   <button class="tab" data-tab="settings"><span>⚙️</span>ตั้งค่า</button>
 </nav>
 
@@ -343,8 +342,9 @@
     </div>
   </section>
 
-  <!-- ============ โปรไฟล์ ============ -->
-  <section class="panel" id="panel-profile">
+  <!-- ============ ตั้งค่า ============ -->
+  <section class="panel" id="panel-settings">
+
     <div class="card">
       <h2>ข้อมูลผู้ใช้</h2>
       <p class="sub">กรอกเท่าที่อยากกรอก ไม่มีช่องไหนบังคับ — ข้อมูลอยู่ในเครื่องคุณเท่านั้น ไม่ถูกส่งออกไปที่ไหน</p>
@@ -401,15 +401,12 @@
     </div>
 
     <div class="card slim">
-      <h3>ความเป็นส่วนตัว</h3>
+      <h3>ความเป็นส่วนตัวของข้อมูลผู้ใช้</h3>
       <p class="sub">TimeSync ไม่มีเซิร์ฟเวอร์ ไม่มีบัญชีผู้ใช้ และไม่ส่งข้อมูลออกจากเครื่อง
         ข้อมูลโปรไฟล์เก็บใน localStorage ของเบราว์เซอร์เท่านั้น ลบได้ทุกเมื่อ</p>
       <button class="btn danger" id="pfClear">ล้างข้อมูลโปรไฟล์</button>
     </div>
-  </section>
 
-  <!-- ============ ตั้งค่า ============ -->
-  <section class="panel" id="panel-settings">
     <div class="card">
       <h2>ตารางเวลานอน–ตื่น</h2>
       <p class="sub">ถ้าเวลาทำงานแต่ละวันไม่เหมือนกัน ตั้งแยกรายวันได้ — หรือใช้โหมดง่ายเหมือนเดิมก็ได้</p>

@@ -454,10 +454,23 @@ input[type=number]:focus{border-color:var(--accent);background:rgba(255,255,255,
 .limit-box p{margin-top:9px}
 
 /* ---- toast & modal ---- */
-.toast{position:fixed;left:50%;bottom:34px;transform:translate(-50%,120%);z-index:50;
+/* สถานะซ่อนต้องถูกต้องด้วยตัวเอง ไม่พึ่ง transition
+   (ถ้า transition ไม่ทำงาน เช่นหน้าต่างไม่ได้เรนเดอร์ หรือผู้ใช้ปิด animation
+   toast ต้องยังหายสนิทอยู่ดี)
+
+   bottom:34px ดันตัวเองขึ้นมา 34px การเลื่อนลงจึงต้องชดเชยระยะนี้ด้วย
+   ไม่งั้นจะค้างโผล่อยู่ที่ขอบล่างจอ */
+.toast{position:fixed;left:50%;bottom:34px;z-index:50;
+  transform:translate(-50%,calc(100% + 34px));opacity:0;pointer-events:none;
+  max-width:calc(100vw - 40px);text-align:center;
   background:#1c2350;border:1px solid var(--card-line);color:var(--text);padding:13px 22px;
-  border-radius:14px;font-size:14px;box-shadow:0 14px 40px rgba(0,0,0,.5);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
-.toast.show{transform:translate(-50%,0)}
+  border-radius:14px;font-size:14px;line-height:1.5;box-shadow:0 14px 40px rgba(0,0,0,.5);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
+.toast.show{transform:translate(-50%,0);opacity:1}
+
+@media(prefers-reduced-motion:reduce){
+  .toast{transition:none}
+}
 
 .modal{position:fixed;inset:0;z-index:60;background:rgba(5,8,22,.8);backdrop-filter:blur(8px);
   display:flex;align-items:center;justify-content:center;padding:20px}
