@@ -13,7 +13,7 @@
 
   /* ---------- ค่าคงที่ ---------- */
   const MIN_PER_DAY = 1440;
-  const STATE_VERSION = 3;
+  const STATE_VERSION = 4;
 
   const TH_DAY = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
   const TH_MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
@@ -426,6 +426,73 @@
   }
 
   /* =========================================================
+     นาฬิกาปลุก (Phase 2)
+     ========================================================= */
+
+  /** เสียงปลุกสังเคราะห์ — ทุกตัวออกแบบให้ "ปลุกให้ตื่น" ไม่ใช่กล่อมให้หลับต่อ */
+  const ALARM_SOUNDS = [
+    { id: 'classic', icon: '🔔', name: 'บี๊บคลาสสิก', desc: 'เสียงนาฬิกาปลุกมาตรฐาน ตื่นแน่' },
+    { id: 'siren',   icon: '🚨', name: 'ไซเรนไต่',    desc: 'เสียงกวาดขึ้น-ลง เร่งเร้าที่สุด' },
+    { id: 'bells',   icon: '⛑️', name: 'ระฆังเร่ง',    desc: 'ระฆังโลหะ ถี่ขึ้นเรื่อย ๆ' },
+    { id: 'digital', icon: '📟', name: 'ดิจิทัล',      desc: 'บี๊บสั้นถี่แบบนาฬิกาข้อมือ' },
+    { id: 'rise',    icon: '🌅', name: 'ค่อย ๆ ปลุก',  desc: 'คอร์ดไต่ระดับ นุ่มแต่ดังขึ้นจนตื่น' },
+  ];
+  const alarmSoundOf = id => ALARM_SOUNDS.find(s => s.id === id) || ALARM_SOUNDS[0];
+
+  const ALARM_GRACE = 30;        // ถ้าเปิดแอปช้ากว่านี้ (นาที) ถือว่าพลาดไปแล้ว ไม่ปลุกย้อนหลัง
+  const RAMP_OPTIONS = [0, 10, 30, 60];
+  const SNOOZE_OPTIONS = [5, 9, 10, 15];
+
+  /**
+   * สถานะปัจจุบันของนาฬิกาปลุก
+   * คืน due=true เมื่อถึงเวลาต้องดังแล้วและยังไม่ได้ปลุกไปในรอบนั้น
+   */
+  function alarmStatus(alarm, now) {
+    now = now || new Date();
+    if (!alarm || !alarm.on) return { armed: false, due: false, nextAt: null, snoozed: false };
+
+    // กำลังอยู่ในช่วงเลื่อนปลุก — ใช้เวลาเลื่อนแทนเวลาปกติ
+    if (alarm.snoozedUntil) {
+      const t = new Date(alarm.snoozedUntil);
+      return {
+        armed: true, snoozed: true, nextAt: t,
+        due: now >= t,
+        leftMin: Math.max(0, (t - now) / 60000),
+      };
+    }
+
+    const targetMin = parseHM(alarm.time);
+    const last = lastOccurrence(targetMin, now);
+    const lateMin = (now - last) / 60000;
+    const rungKey = dateKey(last);
+    const alreadyRung = alarm.lastRung === rungKey;
+    const due = !alreadyRung && lateMin >= 0 && lateMin <= ALARM_GRACE;
+
+    return {
+      armed: true, snoozed: false, due, lateMin, rungKey, alreadyRung,
+      nextAt: due ? last : nextOccurrence(targetMin, now),
+      leftMin: due ? 0 : (nextOccurrence(targetMin, now) - now) / 60000,
+    };
+  }
+
+  /**
+   * ระดับเสียงขณะไต่ขึ้น (volume ramp-up) — 0..1
+   * rampSec = 0 หมายถึงดังเต็มทันที
+   */
+  function alarmRampGain(elapsedSec, rampSec, startGain) {
+    if (!rampSec || rampSec <= 0) return 1;
+    const start = startGain === undefined ? 0.08 : startGain;
+    const t = clamp(elapsedSec / rampSec, 0, 1);
+    // ไต่แบบ ease-in — ช่วงแรกค่อยเป็นค่อยไป ท้าย ๆ ดังเร็วขึ้น เพื่อไม่ให้หลับต่อ
+    return clamp(start + (1 - start) * (t * t), 0, 1);
+  }
+
+  /** เวลาที่จะปลุกอีกครั้งหลังกดเลื่อน */
+  function snoozeUntil(now, snoozeMin) {
+    return new Date((now || new Date()).getTime() + (snoozeMin || 9) * 60000);
+  }
+
+  /* =========================================================
      state เริ่มต้น + การอัปเกรดโครงสร้างข้อมูล
      ========================================================= */
   function defaults() {
@@ -449,7 +516,22 @@
       lastWake: '',
       askDismissed: '',       // dateKey ของวันที่ผู้ใช้ปิดการ์ดยืนยัน
       fired: {},              // กันการเตือนซ้ำ: { 'log:2026-08-02': timestamp }
-      alarm: { on: false, time: '07:00' },
+
+      // --- Phase 2: นาฬิกาปลุก ---
+      alarm: {
+        on: false,
+        time: '07:00',
+        sound: 'classic',     // id จาก ALARM_SOUNDS หรือ 'custom'
+        customId: null,       // id ของไฟล์เสียงใน IndexedDB เมื่อ sound === 'custom'
+        volume: 100,          // ดังเต็มโดยค่าเริ่มต้น (ผลสำรวจ: เสียงเดิมเบาเกินไป)
+        rampSec: 30,          // ค่อย ๆ ดังขึ้นใน 30 วินาที
+        snoozeMin: 9,
+        maxSnooze: 3,
+        vibrate: true,
+        snoozedUntil: null,
+        snoozeCount: 0,
+        lastRung: '',
+      },
       reminders: {
         log:          { on: true, time: '10:00' },
         bedtime:      { on: true, leadMin: 30 },
@@ -490,6 +572,13 @@
       s.version = 3;
       return s;
     },
+
+    // v3 → v4 : ขยายนาฬิกาปลุกให้มีเสียง/ความดัง/ramp-up/เลื่อนปลุก
+    function v3_to_v4(s) {
+      s.alarm = Object.assign({}, defaults().alarm, s.alarm);
+      s.version = 4;
+      return s;
+    },
   ];
 
   function migrate(raw) {
@@ -517,6 +606,15 @@
     if (!s.fatigueLogs || typeof s.fatigueLogs !== 'object') s.fatigueLogs = {};
     if (!s.fired || typeof s.fired !== 'object') s.fired = {};
     if (!s.alarm || typeof s.alarm !== 'object') s.alarm = base.alarm;
+    else s.alarm = Object.assign({}, base.alarm, s.alarm);
+    s.alarm.volume = clamp(Math.round(Number(s.alarm.volume)) || 0, 0, 100);
+    s.alarm.rampSec = RAMP_OPTIONS.includes(Number(s.alarm.rampSec)) ? Number(s.alarm.rampSec) : base.alarm.rampSec;
+    s.alarm.snoozeMin = clamp(Math.round(Number(s.alarm.snoozeMin)) || base.alarm.snoozeMin, 1, 60);
+    if (s.alarm.sound !== 'custom' && !ALARM_SOUNDS.some(x => x.id === s.alarm.sound)) {
+      s.alarm.sound = base.alarm.sound;
+    }
+    // เสียงที่ผู้ใช้อัปโหลดหายไป (ล้าง IndexedDB) → ถอยกลับไปใช้เสียงมาตรฐาน
+    if (s.alarm.sound === 'custom' && !s.alarm.customId) s.alarm.sound = base.alarm.sound;
     if (!s.reminders || typeof s.reminders !== 'object') s.reminders = base.reminders;
     for (const k of Object.keys(base.reminders)) {
       s.reminders[k] = Object.assign({}, base.reminders[k], s.reminders[k]);
@@ -528,6 +626,8 @@
   return {
     MIN_PER_DAY, STATE_VERSION, SURPLUS_CAP, DEFAULT_CYCLES, REMINDER_GRACE, TH_DAY, TH_MON,
     AGE_GROUPS, FATIGUE, CYCLE_DESC,
+    ALARM_SOUNDS, ALARM_GRACE, RAMP_OPTIONS, SNOOZE_OPTIONS,
+    alarmSoundOf, alarmStatus, alarmRampGain, snoozeUntil,
     pad, clamp, parseHM, minToHM, dateKey, keyToDate, addDays, todayAt, daysBetween,
     durText, hoursText, hoursBetween,
     ageGroupOf, fatigueOf,

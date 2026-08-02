@@ -11,7 +11,9 @@ const {
   TH_DAY, TH_MON, AGE_GROUPS, FATIGUE, ageGroupOf,
   planBedtime, cycleOptions, computeDebt,
   usualBedtimeMin, nextOccurrence, shouldAskToLog, dueReminders, markFired,
+  ALARM_SOUNDS, RAMP_OPTIONS, SNOOZE_OPTIONS, alarmSoundOf, alarmStatus, snoozeUntil,
 } = C;
+const { Alarm, Uploads } = window.TimeSyncAlarm;
 
 /* ---------- helpers ของชั้น UI ---------- */
 const $  = (s, r = document) => r.querySelector(s);
@@ -856,41 +858,269 @@ function logSleep(date, bed, wake) {
 }
 
 /* =========================================================
-   Phase 1: นาฬิกาปลุก (สถานะ + การตั้งค่า)
-   เสียงและการปลุกจริงจะมาใน Phase 2
+   Phase 2: นาฬิกาปลุก
    ========================================================= */
 function setAlarm(time, on) {
   S.alarm.time = time;
   S.alarm.on = on !== undefined ? on : true;
+  S.alarm.snoozedUntil = null;
+  S.alarm.snoozeCount = 0;
+  S.alarm.lastRung = '';           // ตั้งใหม่ = ปลุกได้อีกแม้เพิ่งดังไป
   save();
+  syncAlarmEngine();
   renderAlarm();
   tickClock();
-  renderCycles();          // อัปเดตปุ่ม ⏰ บนแถวรอบการนอน
+  renderCycles();                  // อัปเดตปุ่ม ⏰ บนแถวรอบการนอน
 }
 
 function renderAlarm() {
   const on = S.alarm.on;
+  const st = alarmStatus(S.alarm, new Date());
   $('#alarmCard').classList.toggle('on', on);
   $('#alarmOn').checked = on;
   $('#alarmTime').value = S.alarm.time;
+  $('#audioWarn').classList.toggle('hidden', !on || Alarm.ready);
 
   if (!on) {
-    $('#alarmSub').textContent = 'ยังไม่ได้ตั้งปลุก — กดปุ่ม ⏰ ที่เวลาตื่นด้านบนเพื่อตั้งได้เลย';
+    $('#alarmSub').textContent = 'ยังไม่ได้ตั้งปลุก';
     $('#alarmCount').textContent = '';
-    return;
+  } else if (st.snoozed) {
+    $('#alarmSub').textContent = `เลื่อนปลุกอยู่ — จะดังอีกครั้งเวลา ${minToHM(st.nextAt.getHours() * 60 + st.nextAt.getMinutes())}`;
+    $('#alarmCount').textContent = `อีก ${durText(st.leftMin)} จากนี้`;
+  } else {
+    const tomorrow = st.nextAt.getDate() !== new Date().getDate();
+    $('#alarmSub').textContent = `ตั้งปลุกไว้แล้ว — จะปลุก${tomorrow ? 'พรุ่งนี้' : 'วันนี้'} เวลา ${S.alarm.time}`;
+    $('#alarmCount').textContent = `อีก ${durText(st.leftMin)} จากนี้`;
   }
-  const next = nextOccurrence(parseHM(S.alarm.time), new Date());
-  const left = (next - new Date()) / 60000;
-  $('#alarmSub').textContent = `ตั้งปลุกไว้แล้ว — จะปลุกครั้งถัดไป${next.getDate() !== new Date().getDate() ? 'พรุ่งนี้' : 'วันนี้'}`;
-  $('#alarmCount').textContent = `อีก ${durText(left)} จากนี้`;
+
+  // เสียงที่เลือกอยู่
+  $$('#alarmSoundGrid .sound-btn').forEach(b => {
+    b.classList.toggle('playing', b.dataset.id === S.alarm.sound);
+  });
+  $$('#rampRow .chip').forEach(c => c.classList.toggle('on', Number(c.dataset.v) === S.alarm.rampSec));
+  $$('#snoozeRow .chip').forEach(c => c.classList.toggle('on', Number(c.dataset.v) === S.alarm.snoozeMin));
+  $('#alarmVolume').value = S.alarm.volume;
+  $('#alarmVolLabel').textContent = S.alarm.volume + '%';
+  $('#alarmVibrate').checked = S.alarm.vibrate;
+  $('#ringSnooze').textContent = `เลื่อน ${S.alarm.snoozeMin} นาที`;
+}
+
+/** เปิด/ปิด keep-alive ของ AudioContext ตามสถานะการตั้งปลุก */
+function syncAlarmEngine() {
+  if (S.alarm.on && Alarm.ctx) Alarm.startKeepAlive();
+  else Alarm.stopKeepAlive();
 }
 
 $('#alarmOn').addEventListener('change', e => {
+  Alarm.unlock();                  // เป็น user gesture — ใช้ปลดล็อกเสียงไปด้วยเลย
   S.alarm.on = e.target.checked;
-  save(); renderAlarm(); tickClock(); renderCycles();
+  if (!e.target.checked) { S.alarm.snoozedUntil = null; S.alarm.snoozeCount = 0; }
+  save(); syncAlarmEngine(); renderAlarm(); tickClock(); renderCycles();
   toast(e.target.checked ? `ตั้งปลุกไว้ที่ ${S.alarm.time} ⏰` : 'ปิดนาฬิกาปลุกแล้ว');
 });
 $('#alarmTime').addEventListener('change', e => setAlarm(e.target.value, true));
+
+/* ---------- เลือกเสียงปลุก ---------- */
+function renderAlarmSounds() {
+  $('#alarmSoundGrid').innerHTML = ALARM_SOUNDS.map(s =>
+    `<button class="sound-btn" data-id="${s.id}">
+       <span class="si">${s.icon}</span><span class="sn">${s.name}</span><span class="sd">${s.desc}</span>
+     </button>`).join('');
+
+  $('#rampRow').innerHTML = RAMP_OPTIONS.map(v =>
+    `<button class="chip" data-v="${v}">${v === 0 ? 'ดังเต็มทันที' : v + ' วินาที'}</button>`).join('');
+
+  $('#snoozeRow').innerHTML = SNOOZE_OPTIONS.map(v =>
+    `<button class="chip" data-v="${v}">${v} นาที</button>`).join('');
+}
+
+$('#alarmSoundGrid').addEventListener('click', e => {
+  const b = e.target.closest('.sound-btn');
+  if (!b) return;
+  Alarm.unlock();
+  S.alarm.sound = b.dataset.id;
+  save(); renderAlarm(); renderUploads();
+  Alarm.start(S.alarm, true);        // ให้ฟังตัวอย่างทันทีที่เลือก
+});
+
+$('#rampRow').addEventListener('click', e => {
+  const c = e.target.closest('.chip');
+  if (!c) return;
+  S.alarm.rampSec = Number(c.dataset.v); save(); renderAlarm();
+});
+
+$('#snoozeRow').addEventListener('click', e => {
+  const c = e.target.closest('.chip');
+  if (!c) return;
+  S.alarm.snoozeMin = Number(c.dataset.v); save(); renderAlarm();
+});
+
+$('#alarmVolume').addEventListener('input', e => {
+  S.alarm.volume = Number(e.target.value);
+  $('#alarmVolLabel').textContent = S.alarm.volume + '%';
+  save();
+});
+
+$('#alarmVibrate').addEventListener('change', e => { S.alarm.vibrate = e.target.checked; save(); });
+
+$('#alarmPreview').addEventListener('click', () => {
+  Alarm.unlock();
+  if (!Alarm.ready) {
+    $('#previewNote').textContent = 'เบราว์เซอร์ยังบล็อกเสียงอยู่ ลองคลิกที่หน้าเว็บก่อนแล้วกดใหม่';
+    return;
+  }
+  Alarm.start(S.alarm, true);
+  $('#previewNote').textContent = 'กำลังเล่นตัวอย่าง 4 วินาที (ไม่ใช้ ramp-up)';
+  setTimeout(() => { $('#previewNote').textContent = ''; renderAlarm(); }, 4200);
+  renderAlarm();
+});
+
+/* ---------- ไฟล์เสียงของผู้ใช้ (IndexedDB) ---------- */
+$('#soundPick').addEventListener('click', () => $('#soundFile').click());
+
+$('#soundFile').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+
+  const err = Uploads.validate(file);
+  if (err) { toast(err); return; }
+  if (file.size > Uploads.WARN) toast('ไฟล์ค่อนข้างใหญ่ อาจใช้เวลาบันทึกสักครู่');
+
+  try {
+    const rec = await Uploads.save(file);
+    S.alarm.sound = 'custom';
+    S.alarm.customId = rec.id;
+    save();
+    await renderUploads();
+    renderAlarm();
+    toast(`เพิ่ม "${rec.name}" เป็นเสียงปลุกแล้ว`);
+  } catch {
+    toast('บันทึกไฟล์ไม่สำเร็จ — พื้นที่เก็บข้อมูลอาจเต็ม');
+  }
+});
+
+async function renderUploads() {
+  const box = $('#uploadList');
+  let list = [];
+  try { list = await Uploads.list(); } catch { box.innerHTML = '<p class="empty">เบราว์เซอร์นี้ไม่รองรับการเก็บไฟล์เสียง</p>'; return; }
+
+  if (!list.length) {
+    box.innerHTML = '<p class="empty">ยังไม่มีเสียงที่อัปโหลด</p>';
+    return;
+  }
+  box.innerHTML = list.sort((a, b) => b.addedAt - a.addedAt).map(r => {
+    const sel = S.alarm.sound === 'custom' && S.alarm.customId === r.id;
+    return `<div class="upload-item ${sel ? 'sel' : ''}">
+      <span class="up-name">${sel ? '✓ ' : ''}${escapeHTML(r.name)}</span>
+      <span class="up-size">${(r.size / 1048576).toFixed(1)} MB</span>
+      <button class="up-btn use" data-id="${r.id}">${sel ? 'ใช้อยู่' : 'ใช้เสียงนี้'}</button>
+      <button class="up-btn del" data-id="${r.id}">ลบ</button>
+    </div>`;
+  }).join('');
+}
+
+$('#uploadList').addEventListener('click', async e => {
+  const use = e.target.closest('.up-btn.use');
+  const del = e.target.closest('.up-btn.del');
+
+  if (use) {
+    Alarm.unlock();
+    S.alarm.sound = 'custom';
+    S.alarm.customId = use.dataset.id;
+    save(); await renderUploads(); renderAlarm();
+    Alarm.start(S.alarm, true);
+    return;
+  }
+  if (del) {
+    if (!confirm('ลบไฟล์เสียงนี้ออกจากเครื่องใช่หรือไม่?')) return;
+    await Uploads.remove(del.dataset.id);
+    if (S.alarm.customId === del.dataset.id) {
+      S.alarm.sound = 'classic';
+      S.alarm.customId = null;
+      save();
+    }
+    await renderUploads(); renderAlarm();
+    toast('ลบไฟล์เสียงแล้ว');
+  }
+});
+
+/* ---------- ปลุกจริง ---------- */
+function checkAlarm() {
+  const st = alarmStatus(S.alarm, new Date());
+  if (!st.due || Alarm.ringing) return;
+  ringAlarm(st);
+}
+
+function ringAlarm(st) {
+  // จำไว้ว่าปลุกรอบนี้แล้ว เพื่อไม่ให้ดังซ้ำถ้ารีโหลดหน้า
+  if (st.rungKey) S.alarm.lastRung = st.rungKey;
+  S.alarm.snoozedUntil = null;
+  save();
+
+  Sound.stop(0.3);   // ถ้าเสียงผ่อนคลายยังเล่นค้างจากเมื่อคืน ให้หยุดก่อน เสียงปลุกจะได้ไม่ถูกกลบ
+
+  const played = Alarm.start(S.alarm, false);
+  if (S.alarm.vibrate && navigator.vibrate) {
+    try { navigator.vibrate([600, 300, 600, 300, 600]); } catch {}
+  }
+
+  // แจ้งเตือนคู่กันเสมอ — ถ้าเสียงถูกบล็อก อย่างน้อยยังมีการแจ้งเตือน
+  Notify.send({
+    title: `TimeSync — ⏰ ${S.alarm.time}`,
+    body: Alarm.ready ? 'ได้เวลาตื่นแล้ว!' : 'ได้เวลาตื่นแล้ว! (เบราว์เซอร์บล็อกเสียง เปิดหน้า TimeSync เพื่อปิดปลุก)',
+    tag: 'timesync-alarm',
+    tab: 'alarm',
+    sticky: true,
+  });
+
+  showRingModal();
+  Promise.resolve(played).then(ok => {
+    $('#ringNote').textContent = (ok && Alarm.ready)
+      ? ''
+      : '🔇 เบราว์เซอร์บล็อกการเล่นเสียงไว้ — คราวหน้ากด "ทดสอบเสียง" ในแท็บปลุกก่อนเข้านอนหนึ่งครั้ง';
+  });
+}
+
+function showRingModal() {
+  $('#ringTime').textContent = S.alarm.time;
+  $('#ringLabel').textContent = S.alarm.snoozeCount
+    ? `ได้เวลาตื่นแล้ว! (เลื่อนมา ${S.alarm.snoozeCount} ครั้ง)`
+    : 'ได้เวลาตื่นแล้ว!';
+
+  const pending = S.tasks.filter(t => !t.done);
+  $('#ringTasks').innerHTML = pending.length
+    ? pending.slice(0, 4).map(t => taskHTML(t, true)).join('')
+    : '';
+
+  const maxed = S.alarm.snoozeCount >= S.alarm.maxSnooze;
+  $('#ringSnooze').disabled = maxed;
+  $('#ringSnooze').textContent = maxed ? 'เลื่อนครบแล้ว' : `เลื่อน ${S.alarm.snoozeMin} นาที`;
+  $('#ringModal').classList.remove('hidden');
+}
+
+$('#ringSnooze').addEventListener('click', () => {
+  Alarm.stop();
+  S.alarm.snoozeCount++;
+  S.alarm.snoozedUntil = snoozeUntil(new Date(), S.alarm.snoozeMin).getTime();
+  save();
+  $('#ringModal').classList.add('hidden');
+  renderAlarm();
+  toast(`เลื่อนปลุกไป ${S.alarm.snoozeMin} นาที`);
+});
+
+$('#ringStop').addEventListener('click', () => {
+  Alarm.stop();
+  S.alarm.snoozedUntil = null;
+  S.alarm.snoozeCount = 0;
+  save();
+  $('#ringModal').classList.add('hidden');
+  renderAlarm();
+
+  // ต่อยอดไปยังงานที่ต้องทำวันนี้ทันที (ฟีเจอร์เสริมเดิม)
+  const pending = S.tasks.filter(t => !t.done);
+  if (pending.length) showMorningModal(pending);
+});
 
 /* =========================================================
    ตั้งค่า
@@ -984,13 +1214,33 @@ function boot(isReset) {
   }
 }
 
+/* Autoplay policy: เบราว์เซอร์ห้ามเล่นเสียงจนกว่าผู้ใช้จะมี interaction
+   จึงปลดล็อก AudioContext ที่การคลิก/กดปุ่มครั้งแรกของหน้านี้ */
+function installAudioUnlock() {
+  const once = () => {
+    Alarm.unlock();
+    syncAlarmEngine();
+    renderAlarm();
+    if (Alarm.ready) {
+      ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+        document.removeEventListener(ev, once, true));
+    }
+  };
+  ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+    document.addEventListener(ev, once, true));
+}
+
 makeStars();
 tickClock();
 setInterval(() => { tickClock(); renderAlarm(); }, 1000 * 20);
 renderEmojiRow();
 renderSounds();
+renderAlarmSounds();
 boot(false);
+renderUploads();
+installAudioUnlock();
 Notify.register();
+Alarm.onStateChange = () => renderAlarm();
 
 // แสดงผลความล้าของวันนี้ถ้าเคยกดไว้แล้ว
 const todayFatigue = S.fatigueLogs[dateKey(new Date())];
@@ -1002,11 +1252,15 @@ if (wantTab && $(`#panel-${wantTab}`)) goTab(wantTab);
 
 /* ตรวจการเตือนทุก 20 วินาที และทุกครั้งที่กลับมาโฟกัสหน้าจอ
    (เบราว์เซอร์หน่วง timer ของแท็บเบื้องหลัง การเช็คตอนกลับมาจึงจำเป็นเพื่อ "ตามเก็บ") */
-checkReminders();
-setInterval(checkReminders, 20000);
+function tick() {
+  checkAlarm();          // ปลุกก่อน — สำคัญที่สุดและต้องไวที่สุด
+  checkReminders();
+}
+tick();
+setInterval(tick, 10000);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) return;
-  checkReminders();
+  tick();
   renderConfirmBar();
   renderAlarm();
 });

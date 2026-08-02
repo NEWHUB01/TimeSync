@@ -41,6 +41,7 @@
   <button class="tab" data-tab="calc"><span>⏰</span>คำนวณเวลานอน</button>
   <button class="tab" data-tab="debt"><span>📊</span>หนี้การนอน</button>
   <button class="tab" data-tab="relax"><span>🎵</span>ผ่อนคลาย</button>
+  <button class="tab" data-tab="alarm"><span>⏰</span>ปลุก</button>
   <button class="tab" data-tab="tasks"><span>📝</span>งานพรุ่งนี้</button>
   <button class="tab" data-tab="settings"><span>⚙️</span>ตั้งค่า</button>
 </nav>
@@ -119,11 +120,15 @@
       <div class="cycle-list" id="cycleList"></div>
     </div>
 
+  </section>
+
+  <!-- ============ ปลุก ============ -->
+  <section class="panel" id="panel-alarm">
     <div class="card alarm-card" id="alarmCard">
       <div class="alarm-head">
         <div>
           <h3>นาฬิกาปลุก</h3>
-          <p class="sub" id="alarmSub">ยังไม่ได้ตั้งปลุก — กดปุ่ม ⏰ ที่เวลาตื่นด้านบนเพื่อตั้งได้เลย</p>
+          <p class="sub" id="alarmSub">ยังไม่ได้ตั้งปลุก</p>
         </div>
         <label class="switch">
           <input type="checkbox" id="alarmOn">
@@ -134,6 +139,55 @@
         <input type="time" id="alarmTime" value="07:00">
         <div class="alarm-count" id="alarmCount"></div>
       </div>
+      <div class="audio-warn hidden" id="audioWarn">
+        🔇 เบราว์เซอร์ยังไม่อนุญาตให้เล่นเสียง — กด "ทดสอบเสียง" หนึ่งครั้งเพื่อปลดล็อก
+        ไม่งั้นถึงเวลาปลุกจะได้แค่การแจ้งเตือน ไม่มีเสียง
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>เสียงปลุก</h3>
+      <p class="sub">เสียงชุดนี้ออกแบบมาให้ปลุกให้ตื่นโดยเฉพาะ — เสียงธรรมชาติผ่อนคลายย้ายไปอยู่แท็บ 🎵 ผ่อนคลาย สำหรับใช้ก่อนนอนแล้ว</p>
+
+      <div class="sound-grid" id="alarmSoundGrid"></div>
+
+      <div class="preview-row">
+        <button class="btn ghost" id="alarmPreview">▶ ทดสอบเสียง</button>
+        <span class="preview-note" id="previewNote"></span>
+      </div>
+
+      <div class="field">
+        <label>ความดังเสียงปลุก <span id="alarmVolLabel">100%</span> <em class="hint-inline">(แยกจากเสียงผ่อนคลาย)</em></label>
+        <input type="range" id="alarmVolume" min="10" max="100" value="100">
+      </div>
+
+      <div class="field">
+        <label>ค่อย ๆ ดังขึ้นภายใน</label>
+        <div class="chip-row" id="rampRow"></div>
+        <p class="fineprint">เริ่มจากเสียงเบาแล้วไต่ขึ้นจนดังเต็ม ช่วยให้ตื่นแบบไม่ตกใจ แต่ยังการันตีว่าตื่นแน่</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>เสียงของคุณเอง</h3>
+      <p class="sub">อัปโหลดเพลงหรือเสียงที่ปลุกคุณได้จริง ไฟล์จะถูกเก็บไว้ในเครื่องของคุณเท่านั้น (IndexedDB) ไม่ถูกอัปโหลดไปที่ไหน</p>
+
+      <div class="upload-row">
+        <input type="file" id="soundFile" accept="audio/*" hidden>
+        <button class="btn ghost" id="soundPick">📁 เลือกไฟล์เสียง</button>
+        <span class="upload-note" id="uploadNote">รองรับ mp3, wav, ogg, m4a — ไม่เกิน 50 MB</span>
+      </div>
+
+      <div class="upload-list" id="uploadList"></div>
+    </div>
+
+    <div class="card">
+      <h3>การเลื่อนปลุก (Snooze)</h3>
+      <div class="field">
+        <label>เลื่อนครั้งละ</label>
+        <div class="chip-row" id="snoozeRow"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="alarmVibrate"> สั่นด้วย (ถ้าอุปกรณ์รองรับ)</label>
     </div>
   </section>
 
@@ -185,7 +239,8 @@
   <section class="panel" id="panel-relax">
     <div class="card">
       <h2>เสียงผ่อนคลายก่อนนอน</h2>
-      <p class="sub">เสียงทั้งหมดสังเคราะห์ขึ้นสด ๆ ในเครื่องของคุณ ไม่ต้องต่ออินเทอร์เน็ต ไม่มีโฆษณาคั่น</p>
+      <p class="sub">เสียงชุดนี้สำหรับ<b>ก่อนนอน</b>เท่านั้น ไม่ใช่เสียงปลุก — ถ้าต้องการเสียงปลุกไปที่แท็บ ⏰ ปลุก<br>
+        ทั้งหมดสังเคราะห์ขึ้นสด ๆ ในเครื่องของคุณ ไม่ต้องต่ออินเทอร์เน็ต ไม่มีโฆษณาคั่น</p>
 
       <div class="sound-grid" id="soundGrid"></div>
 
@@ -339,7 +394,22 @@
   </div>
 </div>
 
+<div class="modal ringing hidden" id="ringModal">
+  <div class="ring-box">
+    <div class="ring-bell">⏰</div>
+    <div class="ring-time" id="ringTime">07:00</div>
+    <div class="ring-label" id="ringLabel">ได้เวลาตื่นแล้ว!</div>
+    <ul class="task-list compact" id="ringTasks"></ul>
+    <div class="ring-actions">
+      <button class="btn ghost ring-snooze" id="ringSnooze">เลื่อน 9 นาที</button>
+      <button class="btn ring-stop" id="ringStop">ปิดเสียงปลุก</button>
+    </div>
+    <div class="ring-note" id="ringNote"></div>
+  </div>
+</div>
+
 <script src="core.js"></script>
+<script src="alarm.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

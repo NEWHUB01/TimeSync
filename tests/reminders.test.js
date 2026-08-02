@@ -297,7 +297,7 @@ describe('migrate v2 → v3', () => {
       tasks: [{ id: 1, text: 'งานเดิม', pri: 'high', done: false }],
     };
     const s = C.migrate(v2);
-    assert.equal(s.version, 3);
+    assert.equal(s.version, C.STATE_VERSION);
     assert.deepEqual(s.sleepLogs, v2.sleepLogs);
     assert.deepEqual(s.tasks, v2.tasks);
     assert.equal(s.reminders.log.on, true);
@@ -328,9 +328,9 @@ describe('migrate v2 → v3', () => {
     assert.equal(s.lastWake, '');
   });
 
-  test('อัปเกรดข้ามจาก v1 ตรงถึง v3 ได้', () => {
+  test('อัปเกรดข้ามจาก v1 ตรงถึงเวอร์ชันล่าสุดได้', () => {
     const s = C.migrate({ ageGroup: 'teen', usualWake: '06:00', volume: 80 });   // ไม่มี version = v1
-    assert.equal(s.version, 3);
+    assert.equal(s.version, C.STATE_VERSION);
     assert.equal(s.ageGroup, 'teen');
     assert.equal(s.volume, 80);
     assert.equal(s.alarm.time, '06:00');
