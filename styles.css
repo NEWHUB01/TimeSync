@@ -108,7 +108,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .fineprint{color:var(--muted);font-size:12px;line-height:1.6;margin-top:14px}
 
 /* ---- 1. fatigue ---- */
-.emoji-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.emoji-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .emoji-btn{background:rgba(255,255,255,.04);border:1px solid var(--card-line);border-radius:16px;
   padding:16px 6px 13px;cursor:pointer;transition:.2s;text-align:center;font-family:inherit}
 .emoji-btn .e{font-size:32px;display:block;transition:.2s;filter:grayscale(.35)}

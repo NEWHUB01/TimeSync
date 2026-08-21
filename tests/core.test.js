@@ -277,8 +277,8 @@ describe('planBedtime', () => {
   const f = lvl => C.fatigueOf(lvl);
 
   test('กลางคืนก่อนถึงเวลานอน → บอกเวลาเป้าหมายและนับถอยหลัง', () => {
-    // lvl2: 5 รอบ = 450 นาที, เข้านอน = 07:00 - 450 - 15 = 23:15
-    const p = C.planBedtime(f(2), cfg, at(2026, 8, 2, 21, 0));
+    // lvl1 (ปกติ): 5 รอบ = 450 นาที, เข้านอน = 07:00 - 450 - 15 = 23:15
+    const p = C.planBedtime(f(1), cfg, at(2026, 8, 2, 21, 0));
     assert.equal(p.bedLabel, '23:15');
     assert.equal(p.bedNote, 'อีก 2 ชม. 15 นาที จากนี้');
     assert.equal(C.minToHM(p.wakeMin), '07:00');
@@ -286,7 +286,7 @@ describe('planBedtime', () => {
   });
 
   test('เลยเวลานอนแล้ว → "ตอนนี้เลย" พร้อมบอกว่าเลยมาเท่าไหร่', () => {
-    const p = C.planBedtime(f(2), cfg, at(2026, 8, 2, 23, 40));
+    const p = C.planBedtime(f(1), cfg, at(2026, 8, 2, 23, 40));
     assert.equal(p.bedLabel, 'ตอนนี้เลย');
     assert.match(p.bedNote, /เลยเวลาที่ควรเข้านอน \(23:15\) มาแล้ว 25 นาที/);
     assert.equal(C.minToHM(p.wakeMin), '07:25');
@@ -295,29 +295,29 @@ describe('planBedtime', () => {
 
   test('ตีสองแล้วยังไม่นอน → ต้องไม่แนะนำให้รอถึงคืนถัดไป', () => {
     // จุดที่เคยพลาด: 23:15 ของ "เมื่อวาน" ต้องถูกมองว่าเลยมาแล้ว ไม่ใช่อีก 21 ชม.
-    const p = C.planBedtime(f(2), cfg, at(2026, 8, 2, 2, 0));
+    const p = C.planBedtime(f(1), cfg, at(2026, 8, 2, 2, 0));
     assert.equal(p.bedLabel, 'ตอนนี้เลย');
     assert.match(p.bedNote, /มาแล้ว 2 ชม. 45 นาที/);
   });
 
-  test('ล้ามากตอนหัวค่ำ → บีบให้เข้านอนภายใน maxWait', () => {
-    // lvl4: 6 รอบ = 540, เข้านอนปกติ = 07:00-540-15 = 21:45, เร็วขึ้น 60 → 20:45
-    // ตอน 18:30 เป้าหมายอยู่อีก 135 นาที > maxWait 90 → บีบเป็น 20:00
-    const p = C.planBedtime(f(4), cfg, at(2026, 8, 2, 18, 30));
-    assert.equal(p.bedLabel, '20:00');
-    assert.match(p.bedNote, /ไม่ควรรอถึง 20:45 — เข้านอนภายใน 1 ชม. 30 นาที/);
+  test('หมดแรงตอนหัวค่ำ → บีบให้เข้านอนภายใน maxWait', () => {
+    // lvl3 (หมดแรง): 6 รอบ = 540, เข้านอนปกติ = 07:00-540-15 = 21:45, เร็วขึ้น 90 → 20:15
+    // ตอน 18:30 เป้าหมายอยู่อีก 105 นาที > maxWait 30 → บีบเป็น 19:00
+    const p = C.planBedtime(f(3), cfg, at(2026, 8, 2, 18, 30));
+    assert.equal(p.bedLabel, '19:00');
+    assert.match(p.bedNote, /ไม่ควรรอถึง 20:15 — เข้านอนภายใน 30 นาที/);
     assert.equal(p.urgent, true);
   });
 
   test('กลางวัน → แนะนำเวลานอนของคืนนี้ ไม่บีบให้นอนตอนบ่าย', () => {
-    const p = C.planBedtime(f(4), cfg, at(2026, 8, 2, 14, 30));
-    assert.equal(p.bedLabel, '20:45');
-    assert.match(p.bedNote, /^คืนนี้ — อีก 6 ชม. 15 นาที จากนี้$/);
+    const p = C.planBedtime(f(3), cfg, at(2026, 8, 2, 14, 30));
+    assert.equal(p.bedLabel, '20:15');
+    assert.match(p.bedNote, /^คืนนี้ — อีก 5 ชม. 45 นาที จากนี้$/);
     assert.equal(p.urgent, false);
   });
 
   test('กลางวันและล้าหนัก → แนะนำให้งีบ', () => {
-    const p = C.planBedtime(f(5), cfg, at(2026, 8, 2, 14, 0));
+    const p = C.planBedtime(f(3), cfg, at(2026, 8, 2, 14, 0));
     assert.ok(p.extraTips.some(t => t.includes('งีบ 20 นาที')));
   });
 
@@ -328,18 +328,18 @@ describe('planBedtime', () => {
 
   test('ยิ่งล้ายิ่งนอนเร็วขึ้นและนอนนานขึ้น', () => {
     const evening = at(2026, 8, 2, 19, 0);
-    const targets = [1, 2, 3, 4, 5].map(l => C.planBedtime(f(l), cfg, evening).targetMin);
+    const targets = C.FATIGUE.map(x => C.planBedtime(f(x.lvl), cfg, evening).targetMin);
     for (let i = 1; i < targets.length; i++) {
       assert.ok(targets[i] <= targets[i - 1], `ระดับ ${i + 1} ต้องไม่นอนช้ากว่าระดับ ${i}`);
     }
     assert.equal(C.planBedtime(f(1), cfg, evening).sleepNeed, 450);
-    assert.equal(C.planBedtime(f(5), cfg, evening).sleepNeed, 540);
+    assert.equal(C.planBedtime(f(3), cfg, evening).sleepNeed, 540);
   });
 
   test('เวลาเข้านอนที่คำนวณได้ต้องข้ามเที่ยงคืนได้ถูกต้อง', () => {
     // ตื่น 04:00, นอน 5 รอบ → เข้านอน 04:00 - 450 - 15 = 20:15 ของวันก่อน
     const late = { usualWake: '04:00', latency: 15, cycleLen: 90 };
-    const p = C.planBedtime(f(2), late, at(2026, 8, 2, 19, 0));
+    const p = C.planBedtime(f(1), late, at(2026, 8, 2, 19, 0));
     assert.equal(p.bedLabel, '20:15');
     assert.equal(C.minToHM(p.wakeMin), '04:00');
   });
@@ -347,7 +347,7 @@ describe('planBedtime', () => {
   test('รองรับ cycleLen / latency ที่ผู้ใช้ปรับเอง', () => {
     const custom = { usualWake: '06:30', latency: 30, cycleLen: 100 };
     // 5 รอบ = 500 นาที → เข้านอน = 06:30 - 500 - 30 = 21:40
-    const p = C.planBedtime(f(2), custom, at(2026, 8, 2, 20, 0));
+    const p = C.planBedtime(f(1), custom, at(2026, 8, 2, 20, 0));
     assert.equal(p.bedLabel, '21:40');
     assert.equal(C.minToHM(p.wakeMin), '06:30');
   });
@@ -417,15 +417,18 @@ describe('migrate', () => {
       tasks: [{ id: 1, text: 'ส่งรายงาน', pri: 'high', done: false }],
       remindTime: '06:30', remindOn: true, volume: 80,
     };
+    const sleepLogsBefore = JSON.parse(JSON.stringify(v1.sleepLogs));
+    const tasksBefore = JSON.parse(JSON.stringify(v1.tasks));
     const s = C.migrate(v1);
     assert.equal(s.version, C.STATE_VERSION);
     assert.equal(s.ageGroup, 'adult');
     assert.equal(s.usualWake, '06:00');
     assert.equal(s.latency, 20);
     assert.equal(s.debtWindow, 21);
-    assert.deepEqual(s.sleepLogs, v1.sleepLogs);
-    assert.deepEqual(s.fatigueLogs, v1.fatigueLogs);
-    assert.deepEqual(s.tasks, v1.tasks);
+    assert.deepEqual(s.sleepLogs, sleepLogsBefore);
+    // ความล้าเดิม lvl3 "เริ่มล้า" ของสเกล 5 ระดับ ต้องกลายเป็น lvl2 "เริ่มล้า" ของสเกล 3 ระดับ
+    assert.deepEqual(s.fatigueLogs, { '2026-08-01': { lvl: 2, at: '21:40' } });
+    assert.deepEqual(s.tasks, tasksBefore);
     assert.equal(s.remindOn, true);
     assert.equal(s.volume, 80);
   });
@@ -486,8 +489,8 @@ describe('ข้อมูลอ้างอิง', () => {
     assert.equal(C.ageGroupOf(undefined).id, 'young');
   });
 
-  test('ระดับความล้าครบ 5 ระดับ เรียงตามความรุนแรง', () => {
-    assert.equal(C.FATIGUE.length, 5);
+  test('ระดับความล้าครบ 3 ระดับ เรียงตามความรุนแรง', () => {
+    assert.equal(C.FATIGUE.length, 3);
     C.FATIGUE.forEach((f, i) => {
       assert.equal(f.lvl, i + 1);
       assert.ok(f.cycles >= 5 && f.cycles <= 6);
@@ -499,5 +502,37 @@ describe('ข้อมูลอ้างอิง', () => {
   test('fatigueOf คืน null เมื่อไม่พบ', () => {
     assert.equal(C.fatigueOf(3).lvl, 3);
     assert.equal(C.fatigueOf(99), null);
+  });
+
+  test('บันทึกความล้าสเกลเก่า 5 ระดับ ถูกยุบเป็น 3 ระดับครบทุกค่า', () => {
+    const s = C.migrate({
+      version: 6,
+      fatigueLogs: {
+        '2026-08-01': { lvl: 1, at: '21:00' },   // สดชื่น  → ปกติ
+        '2026-08-02': { lvl: 2, at: '21:00' },   // พอไหว   → ปกติ
+        '2026-08-03': { lvl: 3, at: '21:00' },   // เริ่มล้า → เริ่มล้า
+        '2026-08-04': { lvl: 4, at: '21:00' },   // ล้ามาก  → หมดแรง
+        '2026-08-05': { lvl: 5, at: '21:00' },   // หมดแรง  → หมดแรง
+      },
+    });
+    assert.deepEqual(
+      Object.keys(s.fatigueLogs).map(k => s.fatigueLogs[k].lvl),
+      [1, 1, 2, 3, 3]
+    );
+    // ทุกระดับที่เหลือต้องหาเจอจริงใน FATIGUE
+    Object.values(s.fatigueLogs).forEach(r => assert.ok(C.fatigueOf(r.lvl)));
+  });
+
+  test('แปลงบันทึกความล้าซ้ำไม่ทำให้ระดับเพี้ยน', () => {
+    // เคยพลาด: ถ้าแปลงทุกครั้งที่โหลด ระดับที่ผู้ใช้เพิ่งเลือกจะถูกลดลงเรื่อย ๆ
+    let s = C.migrate({ version: 6, fatigueLogs: { '2026-08-03': { lvl: 3, at: '21:00' } } });
+    assert.equal(s.fatigueLogs['2026-08-03'].lvl, 2);
+    for (let i = 0; i < 3; i++) s = C.migrate(JSON.parse(JSON.stringify(s)));
+    assert.equal(s.fatigueLogs['2026-08-03'].lvl, 2);
+  });
+
+  test('ทิ้งบันทึกความล้าที่ระดับไม่มีอยู่จริง', () => {
+    const s = C.migrate({ version: C.STATE_VERSION, fatigueLogs: { '2026-08-01': { lvl: 9 }, '2026-08-02': null } });
+    assert.deepEqual(s.fatigueLogs, {});
   });
 });

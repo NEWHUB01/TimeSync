@@ -180,7 +180,7 @@ function selectFatigue(lvl, silent) {
   $('#rLabel').textContent = f.label;
   $('#rDesc').textContent = f.desc;
   const meter = $('#rMeter');
-  meter.style.width = (lvl / 5 * 100) + '%';
+  meter.style.width = (lvl / FATIGUE.length * 100) + '%';
   meter.style.background = `linear-gradient(90deg, ${f.color}88, ${f.color})`;
 
   $('#rBedtime').textContent = plan.bedLabel;
