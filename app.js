@@ -9,6 +9,7 @@ const {
   pad, clamp, parseHM, minToHM, dateKey, keyToDate, addDays,
   durText, hoursText, hoursBetween,
   TH_DAY, TH_MON, AGE_GROUPS, FATIGUE, EVIDENCE, ageGroupOf,
+  RECOVERY, recoveryOf, recoveryPlan, recoveryDay, recoveryOverdue,
   planBedtime, cycleOptions, computeDebt,
   usualBedtimeMin, nextOccurrence, shouldAskToLog, dueReminders, markFired,
   ALARM_SOUNDS, RAMP_OPTIONS, SNOOZE_OPTIONS, alarmSoundOf, alarmStatus, snoozeUntil,
@@ -212,6 +213,76 @@ function renderFatigueHistory() {
   }
   box.innerHTML = Object.keys(S.fatigueLogs).length ? out.join('') : '<p class="empty">ยังไม่มีบันทึก</p>';
 }
+
+/* =========================================================
+   โหมดพักฟื้น (ป่วย / บาดเจ็บ)
+   ========================================================= */
+function renderRecoveryRow() {
+  const row = $('#recoveryRow');
+  if (!row) return;
+  row.innerHTML = RECOVERY.map(r =>
+    `<button class="emoji-btn" data-rec="${r.id}">
+       <span class="e">${r.emoji}</span><span class="n">${r.short}</span>
+     </button>`).join('');
+  row.addEventListener('click', e => {
+    const b = e.target.closest('.emoji-btn');
+    if (!b) return;
+    selectRecovery(b.dataset.rec);
+  });
+}
+
+function selectRecovery(id, silent) {
+  const r = recoveryOf(id);
+  $$('#recoveryRow .emoji-btn').forEach(b => b.classList.toggle('sel', b.dataset.rec === r.id));
+
+  if (!silent) {
+    // เปลี่ยนสถานะ = เริ่มนับวันพักฟื้นใหม่ แต่ถ้าเลือกอันเดิมซ้ำให้คงวันเริ่มไว้
+    const prev = S.recovery || { id: 'none', since: '' };
+    S.recovery = {
+      id: r.id,
+      since: r.id === 'none' ? '' : (prev.id === r.id && prev.since ? prev.since : dateKey(new Date())),
+    };
+    save();
+  }
+
+  const box = $('#recoveryResult');
+  if (r.id === 'none') { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+
+  const now = new Date();
+  const plan = recoveryPlan(r, { ...S, usualWake: wakeTimeFor(S, now) }, now);
+
+  $('#recEmoji').textContent = r.emoji;
+  $('#recLabel').textContent = r.label;
+  $('#recDesc').textContent = r.desc;
+
+  $('#recBed').textContent = minToHM(plan.bedMin);
+  $('#recBedNote').textContent = `ตื่น ${minToHM(plan.wakeMin)} — เร็วกว่าปกติเพื่อให้ได้เวลานอนที่เพิ่มขึ้น`;
+  $('#recTotal').textContent = durText(plan.sleepNeed);
+  $('#recTotalNote').textContent = plan.extraOverBase > 0
+    ? `มากกว่าเกณฑ์ขั้นต่ำของคุณ ${durText(plan.extraOverBase)} (ราว ${plan.cycles} รอบการนอน)`
+    : `เกณฑ์ขั้นต่ำตามช่วงอายุ (ราว ${plan.cycles} รอบการนอน)`;
+
+  // ช่วงเวลาพักฟื้น + เตือนเมื่อเกินระยะที่อาการแบบนั้นมักใช้
+  const since = (S.recovery && S.recovery.since) || '';
+  const day = recoveryDay(since, now);
+  const win = $('#recWindow');
+  const parts = [];
+  if (day) parts.push(`<b>วันที่ ${day}</b> ของการพักฟื้น`);
+  if (r.days) parts.push(`อาการแบบนี้มักใช้เวลาราว <b>${r.days[0]}–${r.days[1]} วัน</b>`);
+  else parts.push('ระยะพักฟื้นให้ยึดตามที่<b>แพทย์กำหนด</b>');
+  win.innerHTML = `<p>${parts.join(' · ')}</p>` + (
+    recoveryOverdue(r, since, now)
+      ? '<p class="rec-overdue">⚠️ เกินระยะที่มักใช้แล้ว — ควรไปพบแพทย์ ไม่ใช่นอนเพิ่มไปเรื่อย ๆ</p>'
+      : ''
+  );
+
+  $('#recTips').innerHTML = r.tips.map(t => `<li>${t}</li>`).join('');
+  $('#recFlags').innerHTML = r.redFlags.length
+    ? '<b>ไปพบแพทย์ถ้ามีอาการเหล่านี้</b>' + r.redFlags.map(f => `<p>• ${f}</p>`).join('')
+    : '';
+}
+
 
 /**
  * รายการแหล่งอ้างอิง — ข้อมูลนิ่ง เรนเดอร์ครั้งเดียวตอนเปิดแอป
@@ -1584,6 +1655,7 @@ makeStars();
 tickClock();
 setInterval(() => { tickClock(); renderAlarm(); }, 1000 * 20);
 renderEmojiRow();
+renderRecoveryRow();
 renderEvidence();
 renderSounds();
 renderAlarmSounds();
@@ -1597,6 +1669,15 @@ Alarm.onStateChange = () => renderAlarm();
 // แสดงผลความล้าของวันนี้ถ้าเคยกดไว้แล้ว
 const todayFatigue = S.fatigueLogs[dateKey(new Date())];
 if (todayFatigue) selectFatigue(todayFatigue.lvl, true);
+
+// สถานะพักฟื้นค้างไว้ข้ามวันได้ จึงเรียกคืนทุกครั้งที่เปิดแอป
+if (S.recovery && S.recovery.id && S.recovery.id !== 'none') selectRecovery(S.recovery.id, true);
+
+$('#recDone').addEventListener('click', () => {
+  selectRecovery('none');
+  $$('#recoveryRow .emoji-btn').forEach(b => b.classList.toggle('sel', b.dataset.rec === 'none'));
+  toast('กลับสู่เกณฑ์การนอนปกติแล้ว');
+});
 
 // เปิดแท็บตามที่ระบุมาจาก URL (คลิก notification / shortcut ของ PWA)
 // ถ้าไม่มี ให้กลับไปที่แท็บเดิมที่ค้างไว้ตอนปิดหน้าต่าง

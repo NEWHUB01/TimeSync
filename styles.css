@@ -500,3 +500,15 @@ input[type=number]:focus{border-color:var(--accent);background:rgba(255,255,255,
 .evi-item::before{content:"•";position:absolute;left:2px;color:var(--card-line)}
 .evi-item a{color:var(--accent);text-decoration:none;white-space:nowrap;margin-left:4px}
 .evi-item a:hover{text-decoration:underline}
+
+/* ---- พักฟื้น ---- */
+.rec-row{grid-template-columns:repeat(3,1fr)}
+.rec-window{margin-top:20px;padding:14px 16px;border-radius:14px;
+  background:rgba(255,255,255,.04);border:1px solid var(--card-line);
+  font-size:13px;line-height:1.7;color:var(--muted)}
+.rec-window b{color:var(--text)}
+.rec-overdue{margin-top:8px;color:var(--warn)}
+.rec-flags{margin-top:18px}
+.rec-flags b{color:var(--bad)}
+.rec-flags p{margin-top:6px}
+@media(max-width:520px){.rec-row{grid-template-columns:repeat(2,1fr)}}

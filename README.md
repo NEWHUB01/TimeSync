@@ -65,6 +65,18 @@ npm start
 - **เวลาตื่นที่เหมาะสม** (ปกติ/เริ่มล้า = 5 รอบ / หมดแรง = 6 รอบ)
 - คำแนะนำเฉพาะระดับนั้น ๆ และบันทึกย้อนหลัง 7 วัน
 
+### 1.5 พักฟื้นตอนป่วยหรือบาดเจ็บ 🩹
+ตอนป่วยหรือบาดเจ็บ ร่างกายต้องการการนอนมากกว่าปกติ เลือกสถานะแล้ว TimeSync คำนวณให้ว่า:
+
+- **ควรนอนเพิ่มเท่าไร** จากเกณฑ์ขั้นต่ำตามช่วงอายุ (หวัด/บาดเจ็บ/ซ้อมหนัก +1 ชม. · ไข้/หลังผ่าตัด +1.5 ชม.)
+- **ควรเข้านอนกี่โมง** เพื่อให้ได้ชั่วโมงนั้นโดยยังตื่นทันเวลาเดิม
+- **วันที่เท่าไรของการพักฟื้น** และช่วงเวลาที่อาการแบบนั้นมักใช้
+  — เกินแล้วจะเตือนให้ไปพบแพทย์ ไม่ใช่ให้นอนเพิ่มไปเรื่อย ๆ
+- **สัญญาณอันตราย** ของแต่ละสถานะที่ควรไปพบแพทย์
+
+> ช่วงพักฟื้นเน้น**ชั่วโมงรวมที่ได้พัก** จึงไม่ปัดให้จบรอบ 90 นาทีเหมือนโหมดปกติ
+> และหลังผ่าตัดจะไม่ทำนายจำนวนวันให้ ต้องยึดตามที่แพทย์กำหนด
+
 ### 2. คำนวณเวลานอนที่เหมาะสม ⏰
 คิดจากรอบการนอน ~90 นาที บวกเวลาที่ใช้กว่าจะหลับ
 
@@ -145,7 +157,7 @@ npm start
 
 ```
 TimeSync/
-├── index.html                 โครงหน้าเว็บ (7 แท็บ)
+├── index.html                 โครงหน้าเว็บ (8 แท็บ)
 ├── styles.css                 ธีมกลางคืน + responsive
 ├── core.js                    ตรรกะการคำนวณล้วน ๆ (pure, ไม่แตะ DOM) ← ที่ที่ test ยิง
 ├── alarm.js                   เครื่องยนต์เสียงปลุก + IndexedDB
@@ -153,7 +165,7 @@ TimeSync/
 ├── sw.js                      service worker (แจ้งเตือน + แคชออฟไลน์)
 ├── manifest.webmanifest       PWA manifest
 ├── icons/                     ไอคอนแอป (สร้างด้วย npm run icons)
-├── tests/                     211 unit tests (node:test ไม่มี dependency)
+├── tests/                     224 unit tests (node:test ไม่มี dependency)
 │   ├── core.test.js           เวลา, หนี้การนอน, รอบการนอน, migration
 │   ├── reminders.test.js      ตัวเตือนอัตโนมัติ
 │   ├── alarm.test.js          นาฬิกาปลุก, ramp-up, snooze
@@ -226,6 +238,17 @@ npm run test:tz
 - ชลธิมา ปิ่นสกุล, ชนกพร จิตปัญญา. ความสัมพันธ์ระหว่างการปฏิบัติตนด้านสุขวิทยาเกี่ยวกับการนอน ความเหนื่อยล้า ความปวด ภาวะซึมเศร้า และคุณภาพการนอนหลับของผู้ป่วยบาดเจ็บสมอง. *วารสารพยาบาลเกื้อการุณย์*. 2558;22(2):154–167.
 
 > สองงานนี้ศึกษาในกลุ่มผู้ป่วย ไม่ใช่คนทั่วไป จึงใช้เป็นแนวทางได้ แต่ไม่ใช่ข้อสรุปที่เหมารวมกับทุกคน
+
+**การนอนช่วงป่วยและบาดเจ็บ** — ที่มาของแท็บพักฟื้น
+- Besedovsky L, Lange T, Haack M. The sleep-immune crosstalk in health and disease. *Physiol Rev*. 2019;99(3):1325–1380.
+- Prather AA, et al. Behaviorally assessed sleep and susceptibility to the common cold. *Sleep*. 2015;38(9):1353–1359.
+- Cohen S, et al. Sleep habits and susceptibility to the common cold. *Arch Intern Med*. 2009;169(1):62–67.
+- Milewski MD, et al. Chronic lack of sleep is associated with increased sports injuries in adolescent athletes. *J Pediatr Orthop*. 2014;34(2):129–133.
+- Mah CD, et al. The effects of sleep extension on the athletic performance of collegiate basketball players. *Sleep*. 2011;34(7):943–950.
+- Vitale KC, et al. Sleep hygiene for optimizing recovery in athletes. *Int J Sports Med*. 2019;40(8):535–543.
+- Van Cauter E, Plat L. Physiology of growth hormone secretion during sleep. *J Pediatr*. 1996;128(5 Pt 2):S32–S37.
+
+> ตัวเลข "นอนเพิ่ม" เป็นแนวทางที่อิงงานวิจัยการยืดเวลานอน ไม่ใช่ขนาดยาหรือคำสั่งแพทย์
 
 **ที่มาของคำแนะนำแต่ละข้อ**
 - แสง/หน้าจอก่อนนอน — Chang AM, et al. *PNAS*. 2015;112(4):1232–1237. · Zeitzer JM, et al. *J Biol Rhythms*. 2014;29(5):370–376.

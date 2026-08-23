@@ -578,3 +578,115 @@ describe('EVIDENCE', () => {
     assert.match(all, /Watson/);
   });
 });
+
+/* ---------------------------------------------------------
+   โหมดพักฟื้น (ป่วย / บาดเจ็บ)
+   --------------------------------------------------------- */
+describe('RECOVERY / recoveryPlan', () => {
+  const cfg = { ageGroup: 'young', usualWake: '07:00', latency: 15, cycleLen: 90 };
+  const r = id => C.recoveryOf(id);
+
+  test('ทุกสถานะมีข้อมูลครบและเรียงจากเบาไปหนักอย่างสมเหตุสมผล', () => {
+    assert.equal(C.RECOVERY[0].id, 'none');
+    assert.equal(C.RECOVERY[0].extraMin, 0);
+    C.RECOVERY.forEach(x => {
+      assert.ok(x.id && x.emoji && x.short && x.label && x.desc);
+      assert.ok(Array.isArray(x.tips) && x.tips.length > 0);
+      assert.ok(Array.isArray(x.redFlags));
+      assert.ok(x.extraMin >= 0 && x.extraMin <= 180, 'นอนเพิ่มต้องอยู่ในช่วงที่สมเหตุสมผล');
+      if (x.days) {
+        assert.ok(x.days[0] <= x.days[1], `ช่วงวันของ ${x.id} ต้องเรียงถูก`);
+      }
+    });
+  });
+
+  test('ทุกสถานะยกเว้น "ปกติดี" ต้องมีสัญญาณอันตรายให้ไปพบแพทย์', () => {
+    C.RECOVERY.filter(x => x.id !== 'none').forEach(x => {
+      assert.ok(x.redFlags.length > 0, `${x.id} ต้องมี redFlags`);
+    });
+  });
+
+  test('หลังผ่าตัดต้องไม่ทำนายจำนวนวัน ให้ยึดคำสั่งแพทย์แทน', () => {
+    assert.equal(r('postop').days, null);
+  });
+
+  test('ปกติดี → ใช้เกณฑ์ขั้นต่ำตามช่วงอายุ ไม่บวกเพิ่ม', () => {
+    const p = C.recoveryPlan(r('none'), cfg);
+    assert.equal(p.baseMin, 7 * 60);           // young = 7 ชม.
+    assert.equal(p.extraMin, 0);
+    assert.equal(p.sleepNeed, 420);
+  });
+
+  test('ป่วยแล้วต้องนอนมากกว่าตอนปกติเสมอ และเข้านอนไม่ช้ากว่าเดิม', () => {
+    const base = C.recoveryPlan(r('none'), cfg);
+    ['cold', 'fever', 'injury', 'postop', 'training'].forEach(id => {
+      const p = C.recoveryPlan(r(id), cfg);
+      assert.ok(p.sleepNeed >= base.sleepNeed, `${id} ต้องนอนไม่น้อยกว่าปกติ`);
+      assert.ok(p.targetMin > base.targetMin, `${id} ต้องมีเป้าหมายสูงกว่าปกติ`);
+    });
+  });
+
+  test('มีไข้ (+90 นาที) → 7 ชม. + 1.5 ชม. = 8.5 ชม. เข้านอน 22:15', () => {
+    const p = C.recoveryPlan(r('fever'), cfg);
+    assert.equal(p.targetMin, 7 * 60 + 90);
+    assert.equal(p.sleepNeed, 510);
+    // 07:00 - 510 - 15 (เวลากว่าจะหลับ) = 22:15
+    assert.equal(C.minToHM(p.bedMin), '22:15');
+    assert.equal(C.minToHM(p.wakeMin), '07:00');
+  });
+
+  test('ความรุนแรงต่างกันต้องได้แผนต่างกัน ไม่ใช่ถูกปัดจนเท่ากันหมด', () => {
+    // เคยพลาด: ปัดขึ้นเป็นรอบเต็มทำให้หวัด (+1 ชม.) กับไข้ (+1.5 ชม.) ได้ 9 ชม. เท่ากัน
+    const cold = C.recoveryPlan(r('cold'), cfg);
+    const fever = C.recoveryPlan(r('fever'), cfg);
+    assert.ok(fever.sleepNeed > cold.sleepNeed, 'ไข้ต้องนอนมากกว่าหวัด');
+    assert.notEqual(C.minToHM(fever.bedMin), C.minToHM(cold.bedMin));
+  });
+
+  test('เวลาเข้านอนข้ามเที่ยงคืนได้ถูกต้อง', () => {
+    const late = { ageGroup: 'young', usualWake: '04:00', latency: 15, cycleLen: 90 };
+    const p = C.recoveryPlan(r('cold'), late);
+    assert.equal(C.minToHM(p.wakeMin), '04:00');
+    assert.ok(p.bedMin >= 0 && p.bedMin < 1440, 'ต้องอยู่ในช่วง 0–1439 นาที');
+  });
+
+  test('recoveryDay นับวันแรกเป็นวันที่ 1', () => {
+    const now = at(2026, 8, 10, 9, 0);
+    assert.equal(C.recoveryDay('2026-08-10', now), 1);
+    assert.equal(C.recoveryDay('2026-08-08', now), 3);
+    assert.equal(C.recoveryDay('', now), null);
+    assert.equal(C.recoveryDay(null, now), null);
+  });
+
+  test('recoveryOverdue เตือนเมื่อเกินระยะที่อาการนั้นมักใช้', () => {
+    const start = '2026-08-01';
+    assert.equal(C.recoveryOverdue(r('cold'), start, at(2026, 8, 5)), false);   // วันที่ 5 จาก 7–10
+    assert.equal(C.recoveryOverdue(r('cold'), start, at(2026, 8, 10)), false);  // วันที่ 10 = ขอบบนพอดี
+    assert.equal(C.recoveryOverdue(r('cold'), start, at(2026, 8, 12)), true);   // วันที่ 12 = เกิน
+    assert.equal(C.recoveryOverdue(r('postop'), start, at(2026, 9, 30)), false); // ไม่มีช่วง จึงไม่เตือนเอง
+  });
+
+  test('สถานะที่ไม่มีอยู่จริงถอยกลับไปเป็นปกติดี', () => {
+    assert.equal(C.recoveryOf('ไม่มีจริง').id, 'none');
+    assert.equal(C.recoveryOf(undefined).id, 'none');
+  });
+
+  test('migrate v7 → v8 เพิ่มโหมดพักฟื้นโดยข้อมูลเดิมไม่หาย', () => {
+    const s = C.migrate({
+      version: 7,
+      fatigueLogs: { '2026-08-03': { lvl: 2, at: '21:00' } },
+      sleepLogs: { '2026-08-03': { bed: '23:00', wake: '07:00', hours: 8 } },
+    });
+    assert.equal(s.version, C.STATE_VERSION);
+    assert.deepEqual(s.recovery, { id: 'none', since: '' });
+    assert.equal(s.fatigueLogs['2026-08-03'].lvl, 2);
+    assert.equal(s.sleepLogs['2026-08-03'].hours, 8);
+  });
+
+  test('สถานะพักฟื้นที่เสียหายถูกซ่อมตอนโหลด', () => {
+    assert.deepEqual(C.migrate({ recovery: { id: 'ไม่มีจริง', since: '2026-08-01' } }).recovery,
+      { id: 'none', since: '' });
+    // "ปกติดี" ต้องไม่ค้างวันเริ่มไว้
+    assert.equal(C.migrate({ recovery: { id: 'none', since: '2026-08-01' } }).recovery.since, '');
+  });
+});

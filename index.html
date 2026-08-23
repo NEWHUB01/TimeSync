@@ -47,6 +47,7 @@
 
 <nav class="tabs" id="tabs">
   <button class="tab active" data-tab="fatigue"><span>😴</span>ความล้า</button>
+  <button class="tab" data-tab="recovery"><span>🩹</span>พักฟื้น</button>
   <button class="tab" data-tab="calc"><span>⏰</span>คำนวณเวลานอน</button>
   <button class="tab" data-tab="debt"><span>📊</span>หนี้การนอน</button>
   <button class="tab" data-tab="relax"><span>🎵</span>ผ่อนคลาย</button>
@@ -117,6 +118,51 @@
       <p class="fineprint">ทั้งสองงานศึกษาในกลุ่มผู้ป่วย (บาดเจ็บสมอง และหัวใจล้มเหลวเรื้อรัง)
         ไม่ใช่คนทั่วไป จึงใช้เป็นแนวทางได้ แต่ไม่ใช่ข้อสรุปที่เหมารวมกับทุกคน
         — ดูรายการอ้างอิงเต็มที่ ⚙️ ตั้งค่า › แหล่งอ้างอิง</p>
+    </div>
+  </section>
+
+  <!-- ============ พักฟื้น (ป่วย / บาดเจ็บ) ============ -->
+  <section class="panel" id="panel-recovery">
+    <div class="card">
+      <h2>กำลังป่วยหรือบาดเจ็บอยู่ไหม?</h2>
+      <p class="sub">ตอนป่วยหรือบาดเจ็บ ร่างกายต้องการการนอนมากกว่าปกติ เพราะการนอนคือช่วงที่
+        ระบบภูมิคุ้มกันและการซ่อมแซมเนื้อเยื่อทำงานหนักที่สุด เลือกสถานะแล้ว TimeSync
+        จะคำนวณให้ว่าควรนอนเพิ่มเท่าไรและควรเข้านอนกี่โมง</p>
+
+      <div class="emoji-row rec-row" id="recoveryRow"></div>
+
+      <div class="fatigue-result hidden" id="recoveryResult">
+        <div class="result-head">
+          <div class="result-emoji" id="recEmoji">🤧</div>
+          <div>
+            <div class="result-label" id="recLabel"></div>
+            <div class="result-desc" id="recDesc"></div>
+          </div>
+        </div>
+
+        <div class="big-grid">
+          <div class="big-stat accent">
+            <span class="big-key">ควรเข้านอน</span>
+            <span class="big-val" id="recBed">--:--</span>
+            <span class="big-note" id="recBedNote"></span>
+          </div>
+          <div class="big-stat">
+            <span class="big-key">รวมเวลานอน</span>
+            <span class="big-val" id="recTotal">--</span>
+            <span class="big-note" id="recTotalNote"></span>
+          </div>
+        </div>
+
+        <div class="rec-window" id="recWindow"></div>
+
+        <ul class="tips" id="recTips"></ul>
+
+        <div class="limit-box rec-flags" id="recFlags"></div>
+
+        <div class="row-actions">
+          <button class="btn ghost" id="recDone">หายแล้ว / กลับสู่ปกติ</button>
+        </div>
+      </div>
     </div>
   </section>
 

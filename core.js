@@ -13,7 +13,7 @@
 
   /* ---------- ค่าคงที่ ---------- */
   const MIN_PER_DAY = 1440;
-  const STATE_VERSION = 7;
+  const STATE_VERSION = 8;
 
   const TH_DAY = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
   const TH_MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
@@ -203,6 +203,126 @@
   const fatigueOf = lvl => FATIGUE.find(f => f.lvl === lvl) || null;
   const MAX_FATIGUE_LVL = FATIGUE[FATIGUE.length - 1].lvl;
 
+  /* ---------- โหมดพักฟื้น (ป่วย / บาดเจ็บ) ----------
+     ตอนป่วยหรือบาดเจ็บ ร่างกายต้องการการนอนมากกว่าปกติ เพราะการนอนคือช่วงที่
+     ระบบภูมิคุ้มกันและการซ่อมแซมเนื้อเยื่อทำงานหนักที่สุด (Besedovsky 2019,
+     Van Cauter 1996) ตัวเลข extraMin เป็น "การนอนเพิ่มจากขั้นต่ำตามช่วงอายุ"
+     ตั้งไว้อย่างระมัดระวังโดยอิงงานวิจัยการยืดเวลานอน (Mah 2011, Vitale 2019)
+
+     days = ช่วงเวลาที่อาการแบบนั้น "มักใช้" ตามแหล่งสาธารณสุข ไม่ใช่การทำนาย
+     ของแต่ละคน — ถ้านานกว่านี้คือสัญญาณให้ไปพบแพทย์ ไม่ใช่ให้นอนเพิ่มไปเรื่อย ๆ
+     ---------------------------------------------------------------- */
+  const RECOVERY = [
+    {
+      id: 'none', emoji: '✅', short: 'ปกติดี', label: 'ไม่ได้ป่วยหรือบาดเจ็บ',
+      desc: 'ใช้เกณฑ์การนอนปกติตามช่วงอายุของคุณ',
+      extraMin: 0, days: null, color: '#5ddba4',
+      tips: ['รักษาเวลานอนให้สม่ำเสมอ คือภูมิคุ้มกันที่ดีที่สุดที่ทำได้เอง'],
+      redFlags: [],
+    },
+    {
+      id: 'cold', emoji: '🤧', short: 'เป็นหวัด', label: 'หวัดหรือติดเชื้อทางเดินหายใจ',
+      desc: 'ช่วงติดเชื้อ ร่างกายจะง่วงมากกว่าปกติเป็นเรื่องธรรมชาติ ไม่ใช่ความขี้เกียจ',
+      extraMin: 60, days: [7, 10], color: '#8ea6ff',
+      tips: [
+        'นอนเพิ่มจากปกติราว 1 ชั่วโมง และงีบกลางวันได้ถ้าง่วง — ช่วงป่วยไม่ต้องคุมการงีบเข้มเท่าปกติ',
+        'คนที่นอนน้อยกว่า 6 ชม. เสี่ยงเป็นหวัดมากกว่าคนที่นอนเกิน 7 ชม. ราว 4 เท่า (Prather 2015)',
+        'ดื่มน้ำให้พอและหลีกเลี่ยงแอลกอฮอล์ เพราะรบกวนช่วงหลับลึกที่ใช้ซ่อมแซมร่างกาย',
+      ],
+      redFlags: ['ไข้สูงต่อเนื่องเกิน 3 วัน', 'หายใจลำบาก แน่นหน้าอก', 'อาการดีขึ้นแล้วกลับแย่ลงอีก'],
+    },
+    {
+      id: 'fever', emoji: '🤒', short: 'มีไข้', label: 'มีไข้ / อาการทั้งตัว',
+      desc: 'ไข้คือช่วงที่ระบบภูมิคุ้มกันทำงานเต็มที่ ความต้องการการนอนจะสูงที่สุด',
+      extraMin: 90, days: [3, 7], color: '#ffc46b',
+      tips: [
+        'นอนเพิ่มราว 1 ชั่วโมงครึ่ง และไม่ต้องฝืนตื่นตามเวลาปกติถ้าไม่จำเป็น',
+        'งดออกกำลังกายหนักจนกว่าไข้จะลงอย่างน้อย 24 ชม.',
+        'ถ้าต้องตื่นเช้าจริง ๆ ให้เลื่อนเวลาเข้านอนขึ้นแทนการตัดชั่วโมงนอน',
+      ],
+      redFlags: ['ไข้เกิน 39°C หรือไม่ลงเลยเกิน 3 วัน', 'ซึม สับสน ปลุกตื่นยาก', 'ขาดน้ำ ปัสสาวะน้อยลงมาก'],
+    },
+    {
+      id: 'injury', emoji: '🩹', short: 'บาดเจ็บ', label: 'บาดเจ็บกล้ามเนื้อหรือข้อ',
+      desc: 'โกรทฮอร์โมนที่ใช้ซ่อมเนื้อเยื่อหลั่งมากที่สุดตอนหลับลึกช่วงต้นคืน',
+      extraMin: 60, days: [14, 42], color: '#ff9d6b',
+      tips: [
+        'เข้านอนให้เร็วขึ้น เพราะช่วงหลับลึกที่ซ่อมเนื้อเยื่อกระจุกอยู่ในครึ่งแรกของคืน (Van Cauter 1996)',
+        'นักกีฬาวัยรุ่นที่นอนน้อยกว่า 8 ชม. บาดเจ็บมากกว่ากลุ่มที่นอนพอราว 1.7 เท่า (Milewski 2014)',
+        'ช่วงพักฟื้นให้ลดปริมาณการฝึกลงก่อน แล้วค่อยเพิ่มกลับทีละน้อย',
+      ],
+      redFlags: ['ปวดมากขึ้นเรื่อย ๆ แทนที่จะดีขึ้น', 'บวมผิดปกติ ลงน้ำหนักไม่ได้', 'ชา อ่อนแรง หรือผิดรูป'],
+    },
+    {
+      id: 'postop', emoji: '🏥', short: 'หลังผ่าตัด', label: 'หลังผ่าตัดหรืออยู่ระหว่างรักษา',
+      desc: 'ช่วงนี้ให้ยึดคำสั่งแพทย์เป็นหลัก TimeSync ช่วยได้แค่เรื่องจัดเวลานอน',
+      extraMin: 90, days: null, color: '#ff7d8a',
+      tips: [
+        'ทำตามแผนการรักษาและข้อห้ามของแพทย์เป็นอันดับแรกเสมอ',
+        'จัดเวลาเข้านอนให้เร็วขึ้นและงีบกลางวันได้ตามที่ร่างกายต้องการ',
+        'ถ้ายาที่ได้รับทำให้ง่วงหรือหลับ ๆ ตื่น ๆ ให้ปรึกษาแพทย์ อย่าปรับยาเอง',
+      ],
+      redFlags: ['แผลบวมแดง มีหนอง หรือมีไข้', 'ปวดมากผิดปกติ', 'อาการใด ๆ ที่แพทย์สั่งให้เฝ้าระวัง'],
+    },
+    {
+      id: 'training', emoji: '💪', short: 'ซ้อมหนัก', label: 'ออกกำลังหนักหรือแข่งขัน',
+      desc: 'ไม่ได้ป่วย แต่ร่างกายอยู่ในภาวะต้องซ่อมแซมกล้ามเนื้อเช่นกัน',
+      extraMin: 60, days: [1, 3], color: '#b388ff',
+      tips: [
+        'การยืดเวลานอนช่วยให้ฟื้นตัวและเล่นได้ดีขึ้นจริงในงานวิจัยนักกีฬา (Mah 2011)',
+        'คืนหลังแข่งหรือซ้อมหนักคือคืนที่ควรนอนยาวที่สุดของสัปดาห์',
+        'งีบสั้น 20–30 นาทีตอนบ่ายช่วยเสริมได้ โดยไม่กระทบการนอนกลางคืน (Vitale 2019)',
+      ],
+      redFlags: ['เหนื่อยล้าไม่หายแม้พักหลายวัน', 'ผลการฝึกตกต่อเนื่อง', 'นอนไม่หลับทั้งที่ล้ามาก'],
+    },
+  ];
+  const recoveryOf = id => RECOVERY.find(r => r.id === id) || RECOVERY[0];
+
+  /* =========================================================
+     แผนการนอนช่วงพักฟื้น
+     r   : รายการจาก RECOVERY
+     cfg : { ageGroup, usualWake, latency, cycleLen }
+     คืนเวลาเข้านอนที่ควร โดยปัดขึ้นเป็นรอบการนอนเต็มรอบ เพื่อไม่ให้ตื่นกลางรอบ
+     ========================================================= */
+  function recoveryPlan(r, cfg, now) {
+    now = now || new Date();
+    const g = ageGroupOf(cfg.ageGroup);
+    const baseMin = g.min * 60;                       // ขั้นต่ำตามช่วงอายุ
+    const targetMin = baseMin + r.extraMin;           // เป้าหมายช่วงพักฟื้น
+    // ต่างจาก planBedtime ตรงที่ "ไม่" ปัดเป็นรอบเต็ม เพราะช่วงป่วยหรือบาดเจ็บ
+    // สิ่งที่มีผลคือชั่วโมงรวมที่ได้พัก ไม่ใช่การตื่นให้พอดีจบรอบ
+    // (ถ้าปัดขึ้นทุกกรณี หวัด +1 ชม. กับไข้ +1.5 ชม. จะได้แผนเท่ากันหมด ซึ่งไม่จริง)
+    const sleepNeed = targetMin;
+    const cycles = Math.round(sleepNeed / cfg.cycleLen);   // บอกไว้เป็นข้อมูลประกอบเท่านั้น
+    const wakeMin = parseHM(cfg.usualWake);
+    const bedMin = ((wakeMin - sleepNeed - cfg.latency) % MIN_PER_DAY + MIN_PER_DAY) % MIN_PER_DAY;
+
+    let bedAt = todayAt(bedMin, now);
+    if (bedAt <= now) bedAt = addDays(bedAt, 1);      // เลยเวลาแล้วให้หมายถึงคืนถัดไป
+
+    return {
+      baseMin, targetMin, sleepNeed, cycles,
+      bedMin, wakeMin, bedAt,
+      extraMin: r.extraMin,
+      // เทียบกับเกณฑ์ปกติเพื่อบอกว่า "เพิ่มขึ้นเท่าไร"
+      extraOverBase: sleepNeed - baseMin,
+    };
+  }
+
+  /** วันที่เท่าไรของการพักฟื้น (วันแรก = 1) — คืน null ถ้าไม่ได้บันทึกวันเริ่ม */
+  function recoveryDay(since, now) {
+    if (!since) return null;
+    const d = daysBetween(keyToDate(since), now || new Date()) + 1;
+    return d >= 1 ? d : null;
+  }
+
+  /** เกินช่วงที่อาการแบบนั้นมักใช้แล้วหรือยัง — ใช้เตือนให้ไปพบแพทย์ */
+  function recoveryOverdue(r, since, now) {
+    if (!r || !r.days || !since) return false;
+    const d = recoveryDay(since, now);
+    return d !== null && d > r.days[1];
+  }
+
   /* บันทึกความล้าที่เก็บไว้ตอนยังมี 5 ระดับ ให้ยุบลงมาเป็น 3 ระดับปัจจุบัน
      (สดชื่น+พอไหว → ปกติ, เริ่มล้า → เริ่มล้า, ล้ามาก+หมดแรง → หมดแรง) */
   const LEGACY_FATIGUE_LVL = { 1: 1, 2: 1, 3: 2, 4: 3, 5: 3 };
@@ -365,6 +485,43 @@
         {
           cite: 'Pascoe MC, Thompson DR, Jenkins ZM, Ski CF. Mindfulness mediates the physiological markers of stress: systematic review and meta-analysis. J Psychiatr Res. 2017;95:156\u2013178.',
           url: 'https://doi.org/10.1016/j.jpsychires.2017.08.004',
+        },
+      ],
+    },
+    {
+      topic: 'การนอนช่วงป่วยและบาดเจ็บ',
+      used: 'แท็บพักฟื้น — ควรนอนเพิ่มเท่าไรและนานแค่ไหน',
+      caveat: 'ตัวเลข “นอนเพิ่ม” เป็นแนวทางที่อิงงานวิจัยการยืดเวลานอน ไม่ใช่ขนาดยาหรือคำสั่งแพทย์ ' +
+              'ส่วนช่วงวันที่แสดงคือระยะที่อาการแบบนั้นมักใช้ ไม่ใช่การทำนายของแต่ละคน ' +
+              'หากอาการไม่ดีขึ้นตามนั้นหรือมีสัญญาณอันตราย ให้พบแพทย์',
+      items: [
+        {
+          cite: 'Besedovsky L, Lange T, Haack M. The sleep-immune crosstalk in health and disease. Physiol Rev. 2019;99(3):1325–1380.',
+          url: 'https://doi.org/10.1152/physrev.00010.2018',
+        },
+        {
+          cite: 'Prather AA, Janicki-Deverts D, Hall MH, Cohen S. Behaviorally assessed sleep and susceptibility to the common cold. Sleep. 2015;38(9):1353–1359.',
+          url: 'https://doi.org/10.5665/sleep.4968',
+        },
+        {
+          cite: 'Cohen S, Doyle WJ, Alper CM, Janicki-Deverts D, Turner RB. Sleep habits and susceptibility to the common cold. Arch Intern Med. 2009;169(1):62–67.',
+          url: 'https://doi.org/10.1001/archinternmed.2008.505',
+        },
+        {
+          cite: 'Milewski MD, et al. Chronic lack of sleep is associated with increased sports injuries in adolescent athletes. J Pediatr Orthop. 2014;34(2):129–133.',
+          url: 'https://doi.org/10.1097/bpo.0000000000000151',
+        },
+        {
+          cite: 'Mah CD, Mah KE, Kezirian EJ, Dement WC. The effects of sleep extension on the athletic performance of collegiate basketball players. Sleep. 2011;34(7):943–950.',
+          url: 'https://doi.org/10.5665/sleep.1132',
+        },
+        {
+          cite: 'Vitale KC, Owens R, Hopkins SR, Malhotra A. Sleep hygiene for optimizing recovery in athletes: review and recommendations. Int J Sports Med. 2019;40(8):535–543.',
+          url: 'https://doi.org/10.1055/a-0905-3103',
+        },
+        {
+          cite: 'Van Cauter E, Plat L. Physiology of growth hormone secretion during sleep. J Pediatr. 1996;128(5 Pt 2):S32–S37.',
+          url: 'https://doi.org/10.1016/s0022-3476(96)70008-2',
         },
       ],
     },
@@ -770,6 +927,7 @@
       debtWindow: 14,
       sleepLogs: {},
       fatigueLogs: {},
+      recovery: { id: 'none', since: '' },
       tasks: [],
       remindTime: '07:00',
       remindOn: false,
@@ -886,6 +1044,13 @@
       s.version = 7;
       return s;
     },
+
+    // v7 → v8 : เพิ่มโหมดพักฟื้น (ค่าเริ่มต้นคือไม่ได้ป่วย ผู้ใช้เดิมจึงไม่รู้สึกว่าอะไรเปลี่ยน)
+    function v7_to_v8(s) {
+      s.recovery = Object.assign({ id: 'none', since: '' }, s.recovery);
+      s.version = 8;
+      return s;
+    },
   ];
 
   function migrate(raw) {
@@ -910,6 +1075,13 @@
     if (!ageGroupOf(s.ageGroup) || !AGE_GROUPS.some(g => g.id === s.ageGroup)) s.ageGroup = base.ageGroup;
     if (!Array.isArray(s.tasks)) s.tasks = [];
     if (!s.sleepLogs || typeof s.sleepLogs !== 'object') s.sleepLogs = {};
+    if (!s.recovery || typeof s.recovery !== 'object') s.recovery = base.recovery;
+    else s.recovery = Object.assign({}, base.recovery, s.recovery);
+    // สถานะที่ไม่มีอยู่จริง (ไฟล์ import ที่แก้เอง) ให้ถอยกลับไปเป็น "ปกติดี"
+    if (!RECOVERY.some(r => r.id === s.recovery.id)) s.recovery = { id: 'none', since: '' };
+    if (s.recovery.id === 'none') s.recovery.since = '';
+    if (typeof s.recovery.since !== 'string') s.recovery.since = '';
+
     if (!s.fatigueLogs || typeof s.fatigueLogs !== 'object') s.fatigueLogs = {};
     // ทิ้งบันทึกที่ระดับไม่มีอยู่จริงแล้ว (ไฟล์ import ที่แก้เอง / ข้อมูลเสียหาย)
     // การแปลงของเก่า 5 ระดับทำใน v6_to_v7 ไปแล้ว ตรงนี้แค่ตรวจว่าใช้ได้
@@ -959,12 +1131,12 @@
   /* ---------- export ---------- */
   return {
     MIN_PER_DAY, STATE_VERSION, SURPLUS_CAP, DEFAULT_CYCLES, REMINDER_GRACE, TH_DAY, TH_MON,
-    AGE_GROUPS, FATIGUE, CYCLE_DESC, EVIDENCE,
+    AGE_GROUPS, FATIGUE, CYCLE_DESC, EVIDENCE, RECOVERY,
     ALARM_SOUNDS, ALARM_GRACE, RAMP_OPTIONS, SNOOZE_OPTIONS,
     alarmSoundOf, alarmStatus, alarmRampGain, snoozeUntil,
     pad, clamp, numOrNull, parseHM, minToHM, dateKey, keyToDate, addDays, todayAt, daysBetween,
     durText, hoursText, hoursBetween,
-    ageGroupOf, fatigueOf,
+    ageGroupOf, fatigueOf, recoveryOf, recoveryPlan, recoveryDay, recoveryOverdue,
     GENDERS, BMI_BANDS, genderOf, ageGroupFromAge, bmi, bmiBand, displayName,
     planBedtime, cycleOptions, computeDebt,
     usualBedtimeMin, nextOccurrence, lastOccurrence,
