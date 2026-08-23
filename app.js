@@ -8,7 +8,7 @@ const C = window.TimeSyncCore;
 const {
   pad, clamp, parseHM, minToHM, dateKey, keyToDate, addDays,
   durText, hoursText, hoursBetween,
-  TH_DAY, TH_MON, AGE_GROUPS, FATIGUE, ageGroupOf,
+  TH_DAY, TH_MON, AGE_GROUPS, FATIGUE, EVIDENCE, ageGroupOf,
   planBedtime, cycleOptions, computeDebt,
   usualBedtimeMin, nextOccurrence, shouldAskToLog, dueReminders, markFired,
   ALARM_SOUNDS, RAMP_OPTIONS, SNOOZE_OPTIONS, alarmSoundOf, alarmStatus, snoozeUntil,
@@ -211,6 +211,29 @@ function renderFatigueHistory() {
     </div>`);
   }
   box.innerHTML = Object.keys(S.fatigueLogs).length ? out.join('') : '<p class="empty">ยังไม่มีบันทึก</p>';
+}
+
+/**
+ * รายการแหล่งอ้างอิง — ข้อมูลนิ่ง เรนเดอร์ครั้งเดียวตอนเปิดแอป
+ * escape ข้อความก่อนยัดลง innerHTML เพราะบางรายการมีอักขระที่ HTML ตีความได้
+ */
+function renderEvidence() {
+  const box = $('#evidenceList');
+  if (!box) return;
+  const esc = s => String(s).replace(/[&<>"]/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
+  ));
+
+  box.innerHTML = EVIDENCE.map(g => `
+    <div class="evi-group">
+      <h4>${esc(g.topic)}</h4>
+      <p class="evi-used">ใช้กับ: ${esc(g.used)}</p>
+      ${g.caveat ? `<p class="evi-caveat">⚠️ ${esc(g.caveat)}</p>` : ''}
+      <ul>
+        ${g.items.map(it => `<li class="evi-item">${esc(it.cite)}
+          <a href="${esc(it.url)}" target="_blank" rel="noopener noreferrer">เปิดต้นทาง ↗</a></li>`).join('')}
+      </ul>
+    </div>`).join('');
 }
 
 $('#fatigueToCalc').addEventListener('click', () => goTab('calc'));
@@ -1561,6 +1584,7 @@ makeStars();
 tickClock();
 setInterval(() => { tickClock(); renderAlarm(); }, 1000 * 20);
 renderEmojiRow();
+renderEvidence();
 renderSounds();
 renderAlarmSounds();
 initProfile();

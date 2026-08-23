@@ -536,3 +536,45 @@ describe('ข้อมูลอ้างอิง', () => {
     assert.deepEqual(s.fatigueLogs, {});
   });
 });
+
+/* ---------------------------------------------------------
+   แหล่งอ้างอิง
+   --------------------------------------------------------- */
+describe('EVIDENCE', () => {
+  test('ทุกกลุ่มมีหัวข้อ ระบุว่าใช้กับอะไร และมีรายการอ้างอิงอย่างน้อยหนึ่งชิ้น', () => {
+    assert.ok(Array.isArray(C.EVIDENCE));
+    assert.ok(C.EVIDENCE.length > 0);
+    C.EVIDENCE.forEach(g => {
+      assert.ok(g.topic && g.topic.trim(), 'ต้องมี topic');
+      assert.ok(g.used && g.used.trim(), `กลุ่ม "${g.topic}" ต้องบอกว่าใช้กับฟีเจอร์ไหน`);
+      assert.ok(Array.isArray(g.items) && g.items.length > 0, `กลุ่ม "${g.topic}" ต้องมี items`);
+    });
+  });
+
+  test('ทุกรายการมีข้อมูลบรรณานุกรมและลิงก์ https', () => {
+    C.EVIDENCE.forEach(g => g.items.forEach(it => {
+      assert.ok(it.cite && it.cite.length > 20, `รายการใน "${g.topic}" ต้องมี cite ที่สมบูรณ์`);
+      assert.match(it.url, /^https:\/\//, `ลิงก์ใน "${g.topic}" ต้องเป็น https`);
+    }));
+  });
+
+  test('ไม่มีลิงก์ซ้ำกัน', () => {
+    const urls = C.EVIDENCE.flatMap(g => g.items.map(it => it.url));
+    assert.equal(new Set(urls).size, urls.length);
+  });
+
+  test('กลุ่มที่อ้างงานวิจัยในกลุ่มผู้ป่วยต้องกำกับข้อจำกัดไว้เสมอ', () => {
+    // กันไม่ให้ใครมาลบคำเตือนออกภายหลัง — สองงานนี้ศึกษาในผู้ป่วย ไม่ใช่คนทั่วไป
+    const g = C.EVIDENCE.find(x => x.topic.includes('ความล้า'));
+    assert.ok(g, 'ต้องมีกลุ่มเรื่องความล้า');
+    assert.ok(g.caveat && g.caveat.includes('ผู้ป่วย'), 'ต้องระบุว่าเป็นการศึกษาในกลุ่มผู้ป่วย');
+  });
+
+  test('ชั่วโมงการนอนตามช่วงอายุต้องอ้าง NSF และ AASM ที่เป็นที่มาของ AGE_GROUPS', () => {
+    const g = C.EVIDENCE.find(x => x.topic.includes('ช่วงอายุ'));
+    assert.ok(g, 'ต้องมีกลุ่มเรื่องชั่วโมงนอนตามช่วงอายุ');
+    const all = g.items.map(i => i.cite).join(' ');
+    assert.match(all, /Hirshkowitz/);
+    assert.match(all, /Watson/);
+  });
+});

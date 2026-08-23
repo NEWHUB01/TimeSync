@@ -278,6 +278,112 @@
     6: 'เต็มอิ่ม เหมาะกับวันที่ล้าหนักหรือต้องการชดเชยหนี้การนอน',
   };
 
+  /* =========================================================
+     แหล่งอ้างอิงทางวิชาการ
+     ทุกตัวเลขและคำแนะนำที่แอปให้ต้องสาวกลับไปหางานต้นทางได้
+     เก็บเป็นข้อมูลเพื่อให้ทั้งหน้าเว็บและเทสต์ใช้ชุดเดียวกัน
+     ========================================================= */
+  const EVIDENCE = [
+    {
+      topic: 'ชั่วโมงการนอนตามช่วงอายุ',
+      used: 'ชาร์ตเวลานอนสากล และเป้าหมายการนอนที่ TimeSync คำนวณให้',
+      items: [
+        {
+          cite: 'Hirshkowitz M, et al. National Sleep Foundation\u2019s sleep time duration recommendations: methodology and results summary. Sleep Health. 2015;1(1):40\u201343.',
+          url: 'https://doi.org/10.1016/j.sleh.2014.12.010',
+        },
+        {
+          cite: 'Watson NF, et al. Recommended amount of sleep for a healthy adult: a joint consensus statement of the American Academy of Sleep Medicine and Sleep Research Society. Sleep. 2015;38(6):843\u2013844.',
+          url: 'https://doi.org/10.5665/sleep.4716',
+        },
+      ],
+    },
+    {
+      topic: 'ความล้ากับคุณภาพการนอน',
+      used: 'แท็บความล้า — เหตุผลที่ยิ่งล้ายิ่งควรเข้านอนเร็วขึ้น',
+      caveat: 'สองงานนี้ศึกษาในกลุ่มผู้ป่วย (บาดเจ็บสมอง และหัวใจล้มเหลวเรื้อรัง) ไม่ใช่คนทั่วไป ' +
+              'จึงใช้เป็นแนวทางได้ แต่ไม่ใช่ข้อสรุปที่เหมารวมกับทุกคน',
+      items: [
+        {
+          cite: 'ซูมัยยะห์ อัซซอมาดีย์, ดวงรัตน์ วัฒนกิจไกรเลิศ, คนึงนิจ พงศ์ถาวรกมล, ฉัตรกนก ทุมวิภาต. ปัจจัยที่ส่งผลต่อคุณภาพการนอนหลับของผู้ป่วยภาวะหัวใจล้มเหลวเรื้อรัง. วารสารพยาบาลศาสตร์. 2562;37(2):43\u201359.',
+          url: 'https://repository.li.mahidol.ac.th/entities/publication/54b000d6-7047-4b69-981e-e71002e9a1f4',
+        },
+        {
+          cite: 'ชลธิมา ปิ่นสกุล, ชนกพร จิตปัญญา. ความสัมพันธ์ระหว่างการปฏิบัติตนด้านสุขวิทยาเกี่ยวกับการนอน ความเหนื่อยล้า ความปวด ภาวะซึมเศร้า และคุณภาพการนอนหลับของผู้ป่วยบาดเจ็บสมอง. วารสารพยาบาลเกื้อการุณย์. 2558;22(2):154\u2013167.',
+          url: 'https://he01.tci-thaijo.org/index.php/kcn/article/view/59791',
+        },
+      ],
+    },
+    {
+      topic: 'แสงและหน้าจอก่อนนอน',
+      used: 'คำแนะนำ “หรี่ไฟและเลี่ยงจอ 30–60 นาทีก่อนเข้านอน”',
+      items: [
+        {
+          cite: 'Chang AM, Aeschbach D, Duffy JF, Czeisler CA. Evening use of light-emitting eReaders negatively affects sleep, circadian timing, and next-morning alertness. PNAS. 2015;112(4):1232\u20131237.',
+          url: 'https://doi.org/10.1073/pnas.1418490112',
+        },
+        {
+          cite: 'Zeitzer JM, Fisicaro RA, Ruby NF, Heller HC. Millisecond flashes of light phase delay the human circadian clock during sleep. J Biol Rhythms. 2014;29(5):370\u2013376.',
+          url: 'https://doi.org/10.1177/0748730414546532',
+        },
+      ],
+    },
+    {
+      topic: 'คาเฟอีน',
+      used: 'คำแนะนำ “งดคาเฟอีนหลังบ่าย 2 โมง”',
+      items: [
+        {
+          cite: 'Drake C, Roehrs T, Shambroom J, Roth T. Caffeine effects on sleep taken 0, 3, or 6 hours before going to bed. J Clin Sleep Med. 2013;9(11):1195\u20131200.',
+          url: 'https://doi.org/10.5664/jcsm.3170',
+        },
+      ],
+    },
+    {
+      topic: 'การงีบกลางวัน',
+      used: 'คำแนะนำงีบสั้น 20 นาที และไม่งีบเกินบ่าย 3',
+      items: [
+        {
+          cite: 'Milner CE, Cote KA. Benefits of napping in healthy adults: impact of nap length, time of day, age, and experience with napping. J Sleep Res. 2009;18(2):272\u2013281.',
+          url: 'https://doi.org/10.1111/j.1365-2869.2008.00718.x',
+        },
+      ],
+    },
+    {
+      topic: 'อุณหภูมิร่างกายและการอาบน้ำอุ่น',
+      used: 'คำแนะนำ “อาบน้ำอุ่นก่อนนอน 1 ชม.”',
+      items: [
+        {
+          cite: 'Lan L, Lian Z. Ten questions concerning thermal environment and sleep quality. Building and Environment. 2016;99:252\u2013259.',
+          url: 'https://doi.org/10.1016/j.buildenv.2016.01.017',
+        },
+      ],
+    },
+    {
+      topic: 'การผ่อนคลายก่อนนอน',
+      used: 'แท็บผ่อนคลาย และคำแนะนำให้ผ่อนคลาย 15 นาทีก่อนนอน',
+      items: [
+        {
+          cite: 'Pascoe MC, Thompson DR, Jenkins ZM, Ski CF. Mindfulness mediates the physiological markers of stress: systematic review and meta-analysis. J Psychiatr Res. 2017;95:156\u2013178.',
+          url: 'https://doi.org/10.1016/j.jpsychires.2017.08.004',
+        },
+      ],
+    },
+    {
+      topic: 'ทำไมการนอนให้พอถึงสำคัญ',
+      used: 'แนวคิดหลักของ TimeSync — หนี้การนอนไม่ใช่แค่ความง่วง',
+      items: [
+        {
+          cite: 'Xie L, et al. Sleep drives metabolite clearance from the adult brain. Science. 2013;342(6156):373\u2013377.',
+          url: 'https://doi.org/10.1126/science.1241224',
+        },
+        {
+          cite: 'Irwin MR, Olmstead R, Carroll JE. Sleep disturbance, sleep duration, and inflammation: a systematic review and meta-analysis of cohort studies and experimental sleep deprivation. Biol Psychiatry. 2016;80(1):40\u201352.',
+          url: 'https://doi.org/10.1016/j.biopsych.2015.05.014',
+        },
+      ],
+    },
+  ];
+
   function cycleOptions(mode, timeMin, cfg) {
     const { cycleLen, latency } = cfg;
     const out = [];
@@ -853,7 +959,7 @@
   /* ---------- export ---------- */
   return {
     MIN_PER_DAY, STATE_VERSION, SURPLUS_CAP, DEFAULT_CYCLES, REMINDER_GRACE, TH_DAY, TH_MON,
-    AGE_GROUPS, FATIGUE, CYCLE_DESC,
+    AGE_GROUPS, FATIGUE, CYCLE_DESC, EVIDENCE,
     ALARM_SOUNDS, ALARM_GRACE, RAMP_OPTIONS, SNOOZE_OPTIONS,
     alarmSoundOf, alarmStatus, alarmRampGain, snoozeUntil,
     pad, clamp, numOrNull, parseHM, minToHM, dateKey, keyToDate, addDays, todayAt, daysBetween,
