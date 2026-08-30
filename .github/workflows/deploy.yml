@@ -62,9 +62,24 @@ jobs:
       - name: อัปโหลดไฟล์เว็บ (ไม่รวม tools/ tests/ และไฟล์ dev)
         run: |
           mkdir -p _site
-          cp -r index.html styles.css core.js alarm.js app.js sw.js \
+          cp -r index.html styles.css core.js alarm.js auth.js app.js sw.js \
                 manifest.webmanifest icons README.md _site/
           touch _site/.nojekyll
+
+      # กันพลาดซ้ำ: เคยเพิ่มไฟล์ js ใหม่แล้วลืมใส่ในรายการ cp ข้างบน
+      # ผลคือ index.html เรียกไฟล์ที่ไม่ได้ deploy แล้วหน้าเว็บตายทั้งหน้า
+      - name: ตรวจว่าไฟล์ที่ index.html เรียกใช้ถูก deploy ครบ
+        run: |
+          missing=0
+          refs=$(grep -oE '(src|href)="[^"]+"' _site/index.html | cut -d'"' -f2)
+          for f in $refs; do
+            case "$f" in http*|//*|\#*|data:*) continue ;; esac
+            if [ ! -e "_site/$f" ]; then
+              echo "::error::index.html เรียก '$f' แต่ไม่มีไฟล์นี้ใน _site/"
+              missing=1
+            fi
+          done
+          [ "$missing" = "0" ] || exit 1
 
       - uses: actions/upload-pages-artifact@v3
         with:
