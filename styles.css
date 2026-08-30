@@ -515,6 +515,9 @@ input[type=number]:focus{border-color:var(--accent);background:rgba(255,255,255,
 
 /* ================= ประตูทางเข้า (ล็อกอิน / กรอกข้อมูล) ================= */
 body.gated{overflow:hidden}
+/* display:grid ด้านล่างจะทับ [hidden]{display:none} ของเบราว์เซอร์
+   ต้องประกาศเองไม่งั้นหน้า gate ค้างทับแอปตลอดเวลา */
+.gate[hidden]{display:none}
 .gate{position:fixed;inset:0;z-index:900;display:grid;place-items:center;padding:20px;
   background:radial-gradient(1200px 700px at 15% -10%,#25306b 0%,transparent 55%),
              radial-gradient(900px 600px at 90% 0%,#3a2360 0%,transparent 50%),
