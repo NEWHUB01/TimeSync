@@ -690,3 +690,74 @@ describe('RECOVERY / recoveryPlan', () => {
     assert.equal(C.migrate({ recovery: { id: 'none', since: '2026-08-01' } }).recovery.since, '');
   });
 });
+
+/* ---------------------------------------------------------
+   sleepPlan — สมการรวมความล้า + พักฟื้น
+   --------------------------------------------------------- */
+describe('sleepPlan (รวมความล้า + พักฟื้น)', () => {
+  const cfg = { ageGroup: 'young', usualWake: '07:00', latency: 15, cycleLen: 90 };
+  const evening = at(2026, 8, 25, 20, 0);
+  const plan = (lvl, rec) => C.sleepPlan({ fatigueLvl: lvl, recoveryId: rec }, cfg, evening);
+
+  test('ปกติ + ไม่ป่วย = 5 รอบ ไม่มีส่วนชดเชย', () => {
+    const p = plan(1, 'none');
+    assert.equal(p.baseMin, 450);
+    assert.equal(p.fatigueExtra, 0);
+    assert.equal(p.recoveryExtra, 0);
+    assert.equal(p.needMin, 450);
+    assert.equal(C.minToHM(p.bedMin), '23:15');   // 07:00 − 7:30 − 15 นาที
+  });
+
+  test('ชดเชยความล้าและการป่วยถูกบวกรวมกัน ไม่ใช่เลือกอย่างใดอย่างหนึ่ง', () => {
+    const p = plan(2, 'cold');                     // เริ่มล้า +30, หวัด +60
+    assert.equal(p.fatigueExtra, 30);
+    assert.equal(p.recoveryExtra, 60);
+    assert.equal(p.needMin, 450 + 30 + 60);        // 9 ชม.
+    assert.equal(C.minToHM(p.bedMin), '21:45');   // 07:00 − 9 ชม. − 15 นาที
+  });
+
+  test('ยิ่งล้า/ยิ่งป่วย ยิ่งต้องเข้านอนเร็วขึ้นเสมอ', () => {
+    const order = [plan(1, 'none'), plan(2, 'none'), plan(2, 'cold'), plan(3, 'fever')];
+    for (let i = 1; i < order.length; i++) {
+      assert.ok(order[i].needMin >= order[i - 1].needMin,
+        `ขั้นที่ ${i + 1} ต้องนอนไม่น้อยกว่าขั้นก่อนหน้า`);
+    }
+  });
+
+  test('มีเพดานกันไม่ให้ล้าหนัก+ป่วยพร้อมกันแล้วสั่งให้นอน 12 ชม.', () => {
+    const p = plan(3, 'fever');                    // 540 + 90 + 90 = 720 นาที
+    assert.equal(p.rawMin, 720);
+    assert.equal(p.capped, true);
+    assert.ok(p.needMin < p.rawMin);
+    assert.equal(p.needMin, 9 * 60 + 90);           // เพดาน = max ของช่วงวัย + 90
+  });
+
+  test('ไม่ต่ำกว่าเกณฑ์ขั้นต่ำของช่วงวัย', () => {
+    const kid = { ...cfg, ageGroup: 'school' };     // 9–11 ชม.
+    const p = C.sleepPlan({ fatigueLvl: 1, recoveryId: 'none' }, kid, evening);
+    assert.ok(p.needMin >= 9 * 60, 'เด็กวัยเรียนต้องได้อย่างน้อย 9 ชม.');
+  });
+
+  test('steps อธิบายที่มาของตัวเลขครบทุกขั้นและบวกกันได้จริง', () => {
+    const p = plan(2, 'cold');
+    const keys = p.steps.map(s => s.key);
+    assert.deepEqual(keys, ['base', 'fatigue', 'recovery', 'need', 'latency', 'bed']);
+    const byKey = k => p.steps.find(s => s.key === k).value;
+    assert.equal(byKey('base') + byKey('fatigue') + byKey('recovery'), byKey('need'));
+    assert.ok(p.steps.every(s => s.label && s.formula && s.why), 'ทุกขั้นต้องมีคำอธิบาย');
+  });
+
+  test('เวลาเข้านอนข้ามเที่ยงคืนได้ถูกต้อง', () => {
+    const late = { ...cfg, usualWake: '04:00' };
+    const p = C.sleepPlan({ fatigueLvl: 1, recoveryId: 'none' }, late, evening);
+    assert.ok(p.bedMin >= 0 && p.bedMin < 1440);
+    assert.equal(C.minToHM(p.bedMin), '20:15');
+  });
+
+  test('รวมคำแนะนำของทั้งความล้าและการพักฟื้น พร้อมสัญญาณอันตราย', () => {
+    const p = plan(2, 'fever');
+    assert.ok(p.tips.length > C.fatigueOf(2).tips.length, 'ต้องมีคำแนะนำจากทั้งสองส่วน');
+    assert.ok(p.redFlags.length > 0, 'ตอนป่วยต้องมีสัญญาณอันตราย');
+    assert.equal(plan(2, 'none').redFlags.length, 0, 'ไม่ป่วยไม่ต้องมีสัญญาณอันตราย');
+  });
+});

@@ -10,7 +10,7 @@ const {
   durText, hoursText, hoursBetween,
   TH_DAY, TH_MON, AGE_GROUPS, FATIGUE, EVIDENCE, ageGroupOf,
   RECOVERY, recoveryOf, recoveryPlan, recoveryDay, recoveryOverdue,
-  planBedtime, cycleOptions, computeDebt,
+  planBedtime, sleepPlan, cycleOptions, computeDebt,
   usualBedtimeMin, nextOccurrence, shouldAskToLog, dueReminders, markFired,
   ALARM_SOUNDS, RAMP_OPTIONS, SNOOZE_OPTIONS, alarmSoundOf, alarmStatus, snoozeUntil,
   WEEKDAYS, scheduleFor, sleepTargetDate, wakeTimeFor, bedtimeMinFor,
@@ -154,133 +154,119 @@ $('#tabs').addEventListener('click', e => {
 });
 
 /* =========================================================
-   1) ฟังก์ชันระบุความเหนื่อยล้า
+   หน้าเวลานอน — รวมความล้า + พักฟื้น ไว้ในสมการเดียว
    ========================================================= */
-function renderEmojiRow() {
-  const row = $('#emojiRow');
-  row.innerHTML = FATIGUE.map(f =>
-    `<button class="emoji-btn" data-lvl="${f.lvl}">
+let planFatigue = 1;
+let planRecovery = 'none';
+
+function renderPickers() {
+  $('#fatiguePick').innerHTML = FATIGUE.map(f =>
+    `<button class="pick" data-f="${f.lvl}" title="${f.label}">
        <span class="e">${f.emoji}</span><span class="n">${f.short}</span>
      </button>`).join('');
-  row.addEventListener('click', e => {
-    const b = e.target.closest('.emoji-btn');
-    if (!b) return;
-    selectFatigue(Number(b.dataset.lvl));
-  });
-}
-
-function selectFatigue(lvl, silent) {
-  $$('.emoji-btn').forEach(b => b.classList.toggle('sel', Number(b.dataset.lvl) === lvl));
-  const f = FATIGUE.find(x => x.lvl === lvl);
-  const now = new Date();
-  // เวลาตื่นอิงตารางของ "คืนที่กำลังจะถึง" ไม่ใช่ค่าคงที่ค่าเดียว
-  const plan = planBedtime(f, { ...S, usualWake: wakeTimeFor(S, now) }, now);
-
-  $('#fatigueResult').classList.remove('hidden');
-  $('#rEmoji').textContent = f.emoji;
-  $('#rLabel').textContent = f.label;
-  $('#rDesc').textContent = f.desc;
-  const meter = $('#rMeter');
-  meter.style.width = (lvl / FATIGUE.length * 100) + '%';
-  meter.style.background = `linear-gradient(90deg, ${f.color}88, ${f.color})`;
-
-  $('#rBedtime').textContent = plan.bedLabel;
-  $('#rBedNote').textContent = plan.bedNote;
-  $('#rWake').textContent = minToHM(plan.wakeMin);
-  $('#rWakeNote').textContent = `นอน ${durText(f.cycles * S.cycleLen)} (${f.cycles} รอบการนอน)`;
-
-  $('#rTips').innerHTML = [...plan.extraTips, ...f.tips].map(t => `<li>${t}</li>`).join('');
-
-  if (!silent) {
-    const now = new Date();
-    S.fatigueLogs[dateKey(now)] = { lvl, at: `${pad(now.getHours())}:${pad(now.getMinutes())}` };
-    save();
-    renderFatigueHistory();
-  }
-}
-
-function renderFatigueHistory() {
-  const box = $('#fatigueHistory');
-  const out = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = addDays(new Date(), -i);
-    const rec = S.fatigueLogs[dateKey(d)];
-    const f = rec ? FATIGUE.find(x => x.lvl === rec.lvl) : null;
-    out.push(`<div class="fh-item">
-      <div class="fh-e">${f ? f.emoji : '·'}</div>
-      <div class="fh-d">${d.getDate()} ${TH_MON[d.getMonth()]}</div>
-    </div>`);
-  }
-  box.innerHTML = Object.keys(S.fatigueLogs).length ? out.join('') : '<p class="empty">ยังไม่มีบันทึก</p>';
-}
-
-/* =========================================================
-   โหมดพักฟื้น (ป่วย / บาดเจ็บ)
-   ========================================================= */
-function renderRecoveryRow() {
-  const row = $('#recoveryRow');
-  if (!row) return;
-  row.innerHTML = RECOVERY.map(r =>
-    `<button class="emoji-btn" data-rec="${r.id}">
+  $('#recoveryPick').innerHTML = RECOVERY.map(r =>
+    `<button class="pick" data-r="${r.id}" title="${r.label}">
        <span class="e">${r.emoji}</span><span class="n">${r.short}</span>
      </button>`).join('');
-  row.addEventListener('click', e => {
-    const b = e.target.closest('.emoji-btn');
-    if (!b) return;
-    selectRecovery(b.dataset.rec);
+
+  $('#fatiguePick').addEventListener('click', e => {
+    const b = e.target.closest('.pick'); if (!b) return;
+    planFatigue = Number(b.dataset.f);
+    S.fatigueLogs[dateKey(new Date())] = { lvl: planFatigue, at: minToHM(new Date().getHours() * 60 + new Date().getMinutes()) };
+    save(); renderPlan();
+  });
+  $('#recoveryPick').addEventListener('click', e => {
+    const b = e.target.closest('.pick'); if (!b) return;
+    planRecovery = b.dataset.r;
+    const prev = S.recovery || { id: 'none', since: '' };
+    S.recovery = {
+      id: planRecovery,
+      since: planRecovery === 'none' ? '' : (prev.id === planRecovery && prev.since ? prev.since : dateKey(new Date())),
+    };
+    save(); renderPlan();
   });
 }
 
-function selectRecovery(id, silent) {
-  const r = recoveryOf(id);
-  $$('#recoveryRow .emoji-btn').forEach(b => b.classList.toggle('sel', b.dataset.rec === r.id));
+/** ปุ่มเวลาตื่นที่ใช้บ่อย ช่วยลดการพิมพ์ */
+function renderPlanQuick() {
+  const times = ['05:30', '06:00', '06:30', '07:00', '08:00'];
+  $('#planQuick').innerHTML = times.map(t => `<button class="chip" data-t="${t}">${t}</button>`).join('');
+  $('#planQuick').addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    $('#planWake').value = b.dataset.t;
+    renderPlan();
+  });
+}
 
-  if (!silent) {
-    // เปลี่ยนสถานะ = เริ่มนับวันพักฟื้นใหม่ แต่ถ้าเลือกอันเดิมซ้ำให้คงวันเริ่มไว้
-    const prev = S.recovery || { id: 'none', since: '' };
-    S.recovery = {
-      id: r.id,
-      since: r.id === 'none' ? '' : (prev.id === r.id && prev.since ? prev.since : dateKey(new Date())),
-    };
-    save();
-  }
-
-  const box = $('#recoveryResult');
-  if (r.id === 'none') { box.classList.add('hidden'); return; }
-  box.classList.remove('hidden');
-
+function renderPlan() {
   const now = new Date();
-  const plan = recoveryPlan(r, { ...S, usualWake: wakeTimeFor(S, now) }, now);
-
-  $('#recEmoji').textContent = r.emoji;
-  $('#recLabel').textContent = r.label;
-  $('#recDesc').textContent = r.desc;
-
-  $('#recBed').textContent = minToHM(plan.bedMin);
-  $('#recBedNote').textContent = `ตื่น ${minToHM(plan.wakeMin)} — เร็วกว่าปกติเพื่อให้ได้เวลานอนที่เพิ่มขึ้น`;
-  $('#recTotal').textContent = durText(plan.sleepNeed);
-  $('#recTotalNote').textContent = plan.extraOverBase > 0
-    ? `มากกว่าเกณฑ์ขั้นต่ำของคุณ ${durText(plan.extraOverBase)} (ราว ${plan.cycles} รอบการนอน)`
-    : `เกณฑ์ขั้นต่ำตามช่วงอายุ (ราว ${plan.cycles} รอบการนอน)`;
-
-  // ช่วงเวลาพักฟื้น + เตือนเมื่อเกินระยะที่อาการแบบนั้นมักใช้
-  const since = (S.recovery && S.recovery.since) || '';
-  const day = recoveryDay(since, now);
-  const win = $('#recWindow');
-  const parts = [];
-  if (day) parts.push(`<b>วันที่ ${day}</b> ของการพักฟื้น`);
-  if (r.days) parts.push(`อาการแบบนี้มักใช้เวลาราว <b>${r.days[0]}–${r.days[1]} วัน</b>`);
-  else parts.push('ระยะพักฟื้นให้ยึดตามที่<b>แพทย์กำหนด</b>');
-  win.innerHTML = `<p>${parts.join(' · ')}</p>` + (
-    recoveryOverdue(r, since, now)
-      ? '<p class="rec-overdue">⚠️ เกินระยะที่มักใช้แล้ว — ควรไปพบแพทย์ ไม่ใช่นอนเพิ่มไปเรื่อย ๆ</p>'
-      : ''
+  const wakeStr = $('#planWake').value || wakeTimeFor(S, now);
+  const plan = sleepPlan(
+    { fatigueLvl: planFatigue, recoveryId: planRecovery, wakeMin: parseHM(wakeStr) },
+    { ...S, usualWake: wakeStr },
+    now
   );
 
-  $('#recTips').innerHTML = r.tips.map(t => `<li>${t}</li>`).join('');
-  $('#recFlags').innerHTML = r.redFlags.length
-    ? '<b>ไปพบแพทย์ถ้ามีอาการเหล่านี้</b>' + r.redFlags.map(f => `<p>• ${f}</p>`).join('')
-    : '';
+  $$('#fatiguePick .pick').forEach(b => b.classList.toggle('sel', Number(b.dataset.f) === planFatigue));
+  $$('#recoveryPick .pick').forEach(b => b.classList.toggle('sel', b.dataset.r === planRecovery));
+
+  // เวลาเข้านอนสรุปสุดท้าย — ถ้าล้าหนักจนไม่ควรรอ ให้ใช้เวลาที่ถูกบีบแทน
+  const finalMin = plan.cappedByWait ? plan.finalBedMin : plan.bedMin;
+  $('#planBed').textContent = plan.urgent && !plan.cappedByWait ? 'ตอนนี้เลย' : minToHM(finalMin);
+
+  const card = $('#planCard');
+  card.classList.toggle('urgent', plan.urgent);
+
+  let note;
+  if (plan.urgent && !plan.cappedByWait) {
+    note = `เลยเวลาที่ควรเข้านอน (${minToHM(plan.bedMin)}) มาแล้ว ${durText(-plan.minutesUntilBed)}`;
+  } else if (plan.cappedByWait) {
+    note = `ล้าระดับนี้ไม่ควรรอถึง ${minToHM(plan.bedMin)} — เข้านอนภายใน ${durText(plan.fatigue.maxWait)}`;
+  } else {
+    note = `อีก ${durText(plan.minutesUntilBed)} จากนี้`;
+  }
+  $('#planNote').textContent = note;
+
+  $('#planTotal').textContent = durText(plan.needMin);
+  $('#planCycles').textContent = plan.cycles;
+  $('#planWakeOut').textContent = minToHM(plan.wakeMin);
+
+  // วิธีคำนวณ — โชว์ทีละขั้นว่าตัวเลขมาจากไหน
+  $('#planSteps').innerHTML = plan.steps.map(st => `
+    <div class="cstep">
+      <div class="cs-head"><span class="cs-label">${st.label}</span>
+        <span class="cs-val">${st.isTime ? minToHM(st.value) : durText(st.value)}</span></div>
+      <div class="cs-formula">${st.formula}</div>
+      <div class="cs-why">${st.why}</div>
+    </div>`).join('');
+
+  $('#planTips').innerHTML = plan.tips.map(t => `<li>${t}</li>`).join('');
+
+  const flagCard = $('#planFlagsCard');
+  if (plan.redFlags.length) {
+    flagCard.classList.remove('hidden');
+    $('#planFlags').innerHTML = '<b>ไปพบแพทย์ถ้ามีอาการเหล่านี้</b>' +
+      plan.redFlags.map(f => `<p>• ${f}</p>`).join('');
+  } else {
+    flagCard.classList.add('hidden');
+  }
+
+  renderCycleList(plan);
+  return plan;
+}
+
+/** ตัวเลือกเวลาเข้านอนอื่น ๆ ที่ยังจบรอบพอดี */
+function renderCycleList(plan) {
+  // โหมด 'wake' = รู้เวลาตื่น แล้วย้อนกลับไปหาเวลาเข้านอนที่จบรอบพอดี
+  $('#cycleList').innerHTML = cycleOptions('wake', plan.wakeMin, S)
+    .map(o => `
+      <div class="cycle-row ${o.cycles === plan.cycles ? 'best' : ''}">
+        <div class="cycle-time">${o.time}</div>
+        <div class="cycle-meta">
+          <div class="cycle-main">เข้านอน · ${o.cycles} รอบ · ${o.totalText}</div>
+          <div class="cycle-sub">${o.desc}</div>
+        </div>
+      </div>`).join('');
 }
 
 
@@ -305,103 +291,6 @@ function renderEvidence() {
           <a href="${esc(it.url)}" target="_blank" rel="noopener noreferrer">เปิดต้นทาง ↗</a></li>`).join('')}
       </ul>
     </div>`).join('');
-}
-
-$('#fatigueToCalc').addEventListener('click', () => goTab('calc'));
-$('#fatigueToRelax').addEventListener('click', () => goTab('relax'));
-
-/* =========================================================
-   2) ฟังก์ชันคำนวณเวลานอนที่เหมาะสม
-   ========================================================= */
-let calcMode = 'now';
-const QUICK_BED  = ['21:00', '21:30', '22:00', '22:30', '23:00', '23:30', '00:00', '01:00'];
-const QUICK_WAKE = ['05:00', '05:30', '06:00', '06:30', '07:00', '07:30', '08:00', '09:00'];
-
-$('#calcMode').addEventListener('click', e => {
-  const b = e.target.closest('.seg-btn');
-  if (!b) return;
-  calcMode = b.dataset.mode;
-  $$('#calcMode .seg-btn').forEach(x => x.classList.toggle('active', x === b));
-  syncCalcInput();
-  renderCycles();
-});
-$('#calcTime').addEventListener('input', renderCycles);
-$('#quickTimes').addEventListener('click', e => {
-  const c = e.target.closest('.chip');
-  if (!c) return;
-  $('#calcTime').value = c.dataset.t;
-  renderCycles();
-});
-
-function syncCalcInput() {
-  const wrap = $('#calcInputWrap');
-  if (calcMode === 'now') { wrap.classList.add('hidden'); return; }
-  wrap.classList.remove('hidden');
-  const isBed = calcMode === 'bed';
-  $('#calcInputLabel').textContent = isBed ? 'เวลาที่คุณจะเข้านอน' : 'เวลาที่คุณต้องตื่น';
-  // ค่าเริ่มต้นดึงจากตารางของคืนนี้ ผู้ใช้จึงมักไม่ต้องแก้อะไรเลย
-  $('#calcTime').value = isBed
-    ? minToHM(bedtimeMinFor(S, new Date()))
-    : wakeTimeFor(S, new Date());
-  $('#quickTimes').innerHTML = (isBed ? QUICK_BED : QUICK_WAKE)
-    .map(t => `<button class="chip" data-t="${t}">${t}</button>`).join('');
-}
-
-function renderCycles() {
-  const note = $('#calcNote');
-  let timeMin, verb;
-
-  if (calcMode === 'wake') {
-    timeMin = parseHM($('#calcTime').value);
-    verb = 'เข้านอน';
-    note.innerHTML = `ถ้าต้องตื่นเวลา <b>${minToHM(timeMin)}</b> คุณควรเข้านอนตามเวลาใดเวลาหนึ่งด้านล่างนี้ ` +
-      `(เผื่อเวลาหลับ ${S.latency} นาที)`;
-  } else {
-    verb = 'ตื่น';
-    let head;
-    if (calcMode === 'now') {
-      const now = new Date();
-      timeMin = now.getHours() * 60 + now.getMinutes();
-      head = `ถ้าคุณเข้านอน <b>ตอนนี้ (${minToHM(timeMin)})</b>`;
-    } else {
-      timeMin = parseHM($('#calcTime').value);
-      head = `ถ้าคุณเข้านอนเวลา <b>${minToHM(timeMin)}</b>`;
-    }
-    note.innerHTML = `${head} และใช้เวลาราว ${S.latency} นาทีกว่าจะหลับ ควรตั้งนาฬิกาปลุกไว้ที่:`;
-  }
-
-  const wakeRow = calcMode !== 'wake';    // โหมดนี้เท่านั้นที่แถวคือ "เวลาตื่น" → ตั้งปลุกได้
-  $('#cycleList').innerHTML = cycleOptions(calcMode, timeMin, S)
-    .map(o => cycleRow(o, verb, wakeRow)).join('');
-}
-
-// ตั้งปลุกจากเวลาตื่นที่แนะนำ — คลิกเดียวจากหน้าที่ผู้ใช้ดูอยู่แล้ว ไม่ต้องเปิดหน้าใหม่
-$('#cycleList').addEventListener('click', e => {
-  const b = e.target.closest('.cycle-alarm');
-  if (!b) return;
-  setAlarm(b.dataset.time, true);
-  toast(`ตั้งปลุกไว้ที่ ${b.dataset.time} ⏰`);
-});
-
-const RANK_TAG = {
-  best: '<span class="cycle-tag tag-best">แนะนำ</span>',
-  ok:   '<span class="cycle-tag tag-ok">พอได้</span>',
-  min:  '<span class="cycle-tag tag-min">ขั้นต่ำ</span>',
-};
-
-function cycleRow(o, verb, canSetAlarm) {
-  const isSet = S.alarm.on && S.alarm.time === o.time;
-  const alarmBtn = canSetAlarm
-    ? `<button class="cycle-alarm ${isSet ? 'set' : ''}" data-time="${o.time}"
-         title="${isSet ? 'ตั้งปลุกเวลานี้ไว้แล้ว' : 'ตั้งปลุกเวลานี้'}">⏰</button>`
-    : '';
-  return `<div class="cycle-row ${o.rank === 'best' ? 'best' : ''}">
-    <div class="cycle-time">${o.time}</div>
-    <div class="cycle-meta">
-      <div class="cycle-main">${verb} หลังนอน ${o.cycles} รอบ · ${o.totalText}</div>
-      <div class="cycle-sub">${o.desc}</div>
-    </div>${RANK_TAG[o.rank]}${alarmBtn}
-  </div>`;
 }
 
 /* =========================================================
@@ -985,7 +874,7 @@ function setAlarm(time, on) {
   syncAlarmEngine();
   renderAlarm();
   tickClock();
-  renderCycles();                  // อัปเดตปุ่ม ⏰ บนแถวรอบการนอน
+  renderPlan();                    // อัปเดตแผนและรายการรอบการนอน
 }
 
 function renderAlarm() {
@@ -1034,7 +923,7 @@ $('#alarmOn').addEventListener('change', e => {
   Alarm.unlock();                  // เป็น user gesture — ใช้ปลดล็อกเสียงไปด้วยเลย
   S.alarm.on = e.target.checked;
   if (!e.target.checked) { S.alarm.snoozedUntil = null; S.alarm.snoozeCount = 0; }
-  save(); syncAlarmEngine(); renderAlarm(); tickClock(); renderCycles();
+  save(); syncAlarmEngine(); renderAlarm(); tickClock(); renderPlan();
   toast(e.target.checked ? `ตั้งปลุกไว้ที่ ${S.alarm.time} ⏰` : 'ปิดนาฬิกาปลุกแล้ว');
 });
 $('#alarmTime').addEventListener('change', e => setAlarm(e.target.value, true));
@@ -1496,8 +1385,7 @@ $('#alarmFollow').addEventListener('change', e => {
 
 /** อัปเดตทุกส่วนที่พึ่งตาราง หลังแก้ตาราง/override */
 function refreshScheduleDependents() {
-  renderCycles();
-  refreshFatigueIfShown();
+  renderPlan();
   renderAlarm();
   tickClock();
   $('#remBedAt').textContent = `เวลานอนของคุณคืนนี้คือ ${minToHM(bedtimeMinFor(S, new Date()))}`;
@@ -1539,10 +1427,10 @@ $('#debtWindow').addEventListener('input', e => {
   save(); renderDebt();
 });
 
-function refreshFatigueIfShown() {
-  const sel = $('.emoji-btn.sel');
-  if (sel) selectFatigue(Number(sel.dataset.lvl), true);
-}
+$('#signOutBtn').addEventListener('click', () => {
+  Auth.signOut();
+  renderAuthGate();
+});
 
 $('#exportData').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
@@ -1608,9 +1496,7 @@ function boot(isReset) {
   renderSchedule();
   $('#ovDate').value = dateKey(addDays(new Date(), 1));   // ค่าเริ่มต้น = พรุ่งนี้
   $('#ovWake').value = S.schedule.simple.wake;
-  renderFatigueHistory();
-  syncCalcInput();
-  renderCycles();
+  renderPlan();
   renderAlarm();
   // ค่า default ของฟอร์มบันทึก = ครั้งล่าสุดที่ผู้ใช้กรอก (ตั้งครั้งเดียว ใช้ตลอด)
   $('#logDate').value = dateKey(new Date());
@@ -1627,8 +1513,9 @@ function boot(isReset) {
   refreshNotifStatus();
 
   if (isReset) {
-    $$('.emoji-btn').forEach(b => b.classList.remove('sel'));
-    $('#fatigueResult').classList.add('hidden');
+    planFatigue = 1;
+    planRecovery = 'none';
+    renderPlan();
     $('#volume').value = S.volume;
     $('#volLabel').textContent = S.volume + '%';
     Sound.stop();
@@ -1651,11 +1538,129 @@ function installAudioUnlock() {
     document.addEventListener(ev, once, true));
 }
 
+/* =========================================================
+   ประตูทางเข้า — ล็อกอิน แล้วต่อด้วยกรอกข้อมูลครั้งแรก
+   หมายเหตุ: เป็นการล็อกในเครื่อง ไม่ใช่บัญชีออนไลน์ (ดู auth.js)
+   ========================================================= */
+const Auth = window.TimeSyncAuth;
+
+function showGate(el) { el.hidden = false; document.body.classList.add('gated'); }
+function hideGates() {
+  $('#authGate').hidden = true;
+  $('#setupGate').hidden = true;
+  document.body.classList.remove('gated');
+}
+
+/** ข้อมูลครบพอจะคำนวณได้หรือยัง — ต้องมีอย่างน้อยอายุ */
+function profileReady() {
+  return !!(S.profile && S.profile.age !== null && S.profile.age !== undefined && S.profile.age !== '');
+}
+
+function renderAuthGate() {
+  const isNew = !Auth.hasAccount();
+  $('#authTitle').textContent = isNew ? 'ยินดีต้อนรับ' : `สวัสดี ${Auth.username()}`;
+  $('#authSub').textContent = isNew
+    ? 'ตั้งรหัสเพื่อล็อกแอปในเครื่องนี้'
+    : 'ใส่รหัสผ่านเพื่อเข้าใช้งาน';
+  $('#authUser').hidden = !isNew;
+  if (!isNew) $('#authUser').value = Auth.username();
+  $('#authPass2').hidden = !isNew;
+  $('#authPass').autocomplete = isNew ? 'new-password' : 'current-password';
+  $('#authSubmit').textContent = isNew ? 'สร้างรหัสและเริ่มใช้งาน' : 'เข้าใช้งาน';
+  $('#authForgot').classList.toggle('hidden', isNew);
+  $('#authErr').classList.add('hidden');
+  showGate($('#authGate'));
+  setTimeout(() => (isNew ? $('#authUser') : $('#authPass')).focus(), 60);
+}
+
+function authError(msg) {
+  const e = $('#authErr');
+  e.textContent = msg;
+  e.classList.remove('hidden');
+}
+
+$('#authForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const isNew = !Auth.hasAccount();
+  const pass = $('#authPass').value;
+  const btn = $('#authSubmit');
+  btn.disabled = true;
+  try {
+    if (isNew) {
+      if (pass !== $('#authPass2').value) throw new Error('รหัสผ่านสองช่องไม่ตรงกัน');
+      await Auth.signUp($('#authUser').value, pass);
+    } else if (!(await Auth.verify(pass))) {
+      throw new Error('รหัสผ่านไม่ถูกต้อง');
+    }
+    Auth.signIn($('#authRemember').checked);
+    $('#authPass').value = ''; $('#authPass2').value = '';
+    afterSignIn();
+  } catch (err) {
+    authError(err.message || 'เข้าใช้งานไม่สำเร็จ');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('#authForgot').addEventListener('click', () => {
+  if (!confirm('ตั้งรหัสใหม่? ข้อมูลการนอนของคุณจะไม่ถูกลบ')) return;
+  Auth.reset();
+  renderAuthGate();
+});
+
+/** หลังผ่านล็อกอิน: ถ้ายังไม่มีข้อมูลตัวเอง ให้กรอกก่อน */
+function afterSignIn() {
+  if (!profileReady()) { renderSetupGate(); return; }
+  hideGates();
+  renderPlan();
+}
+
+function renderSetupGate() {
+  $('#authGate').hidden = true;          // ซ่อนหน้าล็อกอินก่อน ไม่ให้ซ้อนกันสองชั้น
+  $('#suGender').innerHTML = GENDERS.map(g =>
+    `<button class="seg-btn" type="button" data-g="${g.id}">${g.label}</button>`).join('');
+  $('#suGender').addEventListener('click', e => {
+    const b = e.target.closest('.seg-btn'); if (!b) return;
+    $$('#suGender .seg-btn').forEach(x => x.classList.toggle('active', x === b));
+  });
+  $('#suWake').value = wakeTimeFor(S, new Date());
+  showGate($('#setupGate'));
+  setTimeout(() => $('#suAge').focus(), 60);
+}
+
+$('#setupSubmit').addEventListener('click', () => {
+  const age = numOrNull($('#suAge').value, 0, 120);
+  const wake = $('#suWake').value;
+  const err = $('#setupErr');
+  if (age === null || !wake) {
+    err.textContent = 'กรุณากรอกอายุและเวลาตื่น';
+    err.classList.remove('hidden');
+    return;
+  }
+  S.profile.age = age;
+  S.profile.height = numOrNull($('#suHeight').value, 30, 260);
+  S.profile.weight = numOrNull($('#suWeight').value, 2, 400);
+  const g = $('#suGender .seg-btn.active');
+  S.profile.gender = g ? g.dataset.g : '';
+  S.profile.name = Auth.username();
+  // อายุกำหนดช่วงวัยในชาร์ตเวลานอนสากลให้เอง ไม่ต้องตั้งซ้ำ
+  const band = ageGroupFromAge(age);
+  if (band) S.ageGroup = band;
+  S.schedule.simple.wake = wake;
+  S.usualWake = wake;
+  save();
+  hideGates();
+  initProfile();
+  $('#planWake').value = wake;
+  renderPlan();
+  toast(`ยินดีต้อนรับ ${Auth.username()} 🌙`);
+});
+
 makeStars();
 tickClock();
 setInterval(() => { tickClock(); renderAlarm(); }, 1000 * 20);
-renderEmojiRow();
-renderRecoveryRow();
+renderPickers();
+renderPlanQuick();
 renderEvidence();
 renderSounds();
 renderAlarmSounds();
@@ -1666,17 +1671,22 @@ installAudioUnlock();
 Notify.register();
 Alarm.onStateChange = () => renderAlarm();
 
-// แสดงผลความล้าของวันนี้ถ้าเคยกดไว้แล้ว
+// เรียกคืนสิ่งที่ผู้ใช้เลือกไว้ก่อนหน้า แล้ววาดแผนของคืนนี้
 const todayFatigue = S.fatigueLogs[dateKey(new Date())];
-if (todayFatigue) selectFatigue(todayFatigue.lvl, true);
+if (todayFatigue) planFatigue = todayFatigue.lvl;
+if (S.recovery && S.recovery.id) planRecovery = S.recovery.id;
+$('#planWake').value = wakeTimeFor(S, new Date());
+renderPlan();
 
-// สถานะพักฟื้นค้างไว้ข้ามวันได้ จึงเรียกคืนทุกครั้งที่เปิดแอป
-if (S.recovery && S.recovery.id && S.recovery.id !== 'none') selectRecovery(S.recovery.id, true);
+$('#planWake').addEventListener('input', renderPlan);
 
-$('#recDone').addEventListener('click', () => {
-  selectRecovery('none');
-  $$('#recoveryRow .emoji-btn').forEach(b => b.classList.toggle('sel', b.dataset.rec === 'none'));
-  toast('กลับสู่เกณฑ์การนอนปกติแล้ว');
+// ต้องล็อกอินก่อนทุกครั้ง เว้นแต่เคยติ๊ก "จำฉันไว้"
+if (Auth.isSignedIn() && Auth.hasAccount()) afterSignIn();
+else renderAuthGate();
+$('#planSetAlarm').addEventListener('click', () => {
+  const t = $('#planWakeOut').textContent;
+  setAlarm(t, true);
+  toast(`ตั้งปลุกไว้ที่ ${t} ⏰`);
 });
 
 // เปิดแท็บตามที่ระบุมาจาก URL (คลิก notification / shortcut ของ PWA)
@@ -1692,7 +1702,7 @@ const restoredCount = restoreDrafts();
 save();                      // เก็บผลการล้าง draft ที่ไม่ใช่ของค้างจริง
 if (restoredCount) {
   toast('กู้ข้อมูลที่กรอกค้างไว้กลับมาให้แล้ว');
-  renderCycles();
+  renderPlan();
 }
 refreshInstallStatus();
 

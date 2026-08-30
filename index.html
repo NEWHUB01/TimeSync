@@ -19,6 +19,74 @@
 
 <div class="stars" id="stars"></div>
 
+<!-- ============ ล็อกอิน ============ -->
+<div class="gate" id="authGate" hidden>
+  <div class="gate-box">
+    <div class="gate-logo">🌙</div>
+    <h1 id="authTitle">TimeSync</h1>
+    <p class="gate-sub" id="authSub">ตั้งรหัสเพื่อล็อกแอปในเครื่องนี้</p>
+
+    <form id="authForm" autocomplete="on">
+      <input type="text" id="authUser" name="username" placeholder="ชื่อผู้ใช้"
+             autocomplete="username" maxlength="40">
+      <input type="password" id="authPass" name="password" placeholder="รหัสผ่าน"
+             autocomplete="current-password">
+      <input type="password" id="authPass2" placeholder="ยืนยันรหัสผ่าน"
+             autocomplete="new-password" hidden>
+
+      <label class="check gate-check">
+        <input type="checkbox" id="authRemember"> ไม่ต้องถามอีกในเครื่องนี้
+      </label>
+
+      <div class="gate-err hidden" id="authErr"></div>
+      <button class="btn gate-btn" id="authSubmit" type="submit">เข้าใช้งาน</button>
+    </form>
+
+    <button class="gate-link hidden" id="authForgot" type="button">ลืมรหัสผ่าน?</button>
+    <p class="gate-note">🔒 รหัสถูกเก็บเป็นค่าแฮชในเครื่องนี้เท่านั้น ไม่ถูกส่งออกไปไหน
+      และไม่ใช่บัญชีออนไลน์ — เป็นการล็อกไม่ให้คนอื่นที่หยิบเครื่องไปเปิดดูข้อมูลของคุณ</p>
+  </div>
+</div>
+
+<!-- ============ กรอกข้อมูลส่วนตัว (ครั้งแรก) ============ -->
+<div class="gate" id="setupGate" hidden>
+  <div class="gate-box wide">
+    <div class="gate-logo">📋</div>
+    <h1>ข้อมูลของคุณ</h1>
+    <p class="gate-sub">ใช้คำนวณเวลานอนให้ตรงกับร่างกายคุณ</p>
+
+    <div class="setup-grid">
+      <div class="field">
+        <label for="suAge">อายุ</label>
+        <input type="number" id="suAge" min="1" max="120" inputmode="numeric" placeholder="ปี">
+      </div>
+      <div class="field">
+        <label for="suWake">ตื่นประจำ</label>
+        <input type="time" id="suWake" value="07:00">
+      </div>
+      <div class="field">
+        <label for="suHeight">ส่วนสูง</label>
+        <input type="number" id="suHeight" min="30" max="260" inputmode="numeric" placeholder="ซม.">
+      </div>
+      <div class="field">
+        <label for="suWeight">น้ำหนัก</label>
+        <input type="number" id="suWeight" min="2" max="400" inputmode="decimal" placeholder="กก.">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>เพศ</label>
+      <div class="seg" id="suGender"></div>
+    </div>
+
+    <div class="gate-err hidden" id="setupErr"></div>
+    <button class="btn gate-btn" id="setupSubmit">เริ่มใช้งาน</button>
+    <p class="gate-note">กรอกอายุกับเวลาตื่นก็พอเริ่มได้ ส่วนที่เหลือข้ามไปก่อนได้
+      แก้ทีหลังได้ที่ ⚙️ ตั้งค่า</p>
+  </div>
+</div>
+
+
 <div class="confirm-bar hidden" id="confirmBar">
   <div class="cb-icon">🌙</div>
   <div class="cb-text">
@@ -46,9 +114,7 @@
 </header>
 
 <nav class="tabs" id="tabs">
-  <button class="tab active" data-tab="fatigue"><span>😴</span>ความล้า</button>
-  <button class="tab" data-tab="recovery"><span>🩹</span>พักฟื้น</button>
-  <button class="tab" data-tab="calc"><span>⏰</span>คำนวณเวลานอน</button>
+  <button class="tab active" data-tab="calc"><span>🌙</span>เวลานอน</button>
   <button class="tab" data-tab="debt"><span>📊</span>หนี้การนอน</button>
   <button class="tab" data-tab="relax"><span>🎵</span>ผ่อนคลาย</button>
   <button class="tab" data-tab="alarm"><span>⏰</span>ปลุก</button>
@@ -58,136 +124,65 @@
 
 <main>
 
-  <!-- ============ 1. ความล้า ============ -->
-  <section class="panel active" id="panel-fatigue">
-    <div class="card">
-      <h2>ตอนนี้คุณเหนื่อยแค่ไหน?</h2>
-      <p class="sub">แตะอิโมจิที่ตรงกับความรู้สึกของคุณมากที่สุด TimeSync จะประเมินว่าคุณควรเข้านอนตอนไหนเพื่อขจัดความล้า</p>
+  <!-- ============ เวลานอน (รวมความล้า + พักฟื้น) ============ -->
+  <section class="panel active" id="panel-calc">
 
-      <div class="emoji-row" id="emojiRow"></div>
+    <div class="card step-card">
+      <div class="step-no">1</div>
+      <h2>วันนี้ล้าแค่ไหน</h2>
+      <div class="pick-row" id="fatiguePick"></div>
+    </div>
 
-      <div class="fatigue-result hidden" id="fatigueResult">
-        <div class="result-head">
-          <div class="result-emoji" id="rEmoji">😐</div>
-          <div>
-            <div class="result-label" id="rLabel"></div>
-            <div class="result-desc" id="rDesc"></div>
-          </div>
-        </div>
+    <div class="card step-card">
+      <div class="step-no">2</div>
+      <h2>ป่วยหรือบาดเจ็บอยู่ไหม</h2>
+      <div class="pick-row rec" id="recoveryPick"></div>
+    </div>
 
-        <div class="meter"><div class="meter-fill" id="rMeter"></div></div>
-
-        <div class="big-grid">
-          <div class="big-stat">
-            <span class="big-key">ควรเข้านอนภายใน</span>
-            <span class="big-val" id="rBedtime">--:--</span>
-            <span class="big-note" id="rBedNote"></span>
-          </div>
-          <div class="big-stat accent">
-            <span class="big-key">แล้วตื่นเวลา</span>
-            <span class="big-val" id="rWake">--:--</span>
-            <span class="big-note" id="rWakeNote"></span>
-          </div>
-        </div>
-
-        <ul class="tips" id="rTips"></ul>
-
-        <div class="row-actions">
-          <button class="btn ghost" id="fatigueToCalc">ดูตัวเลือกเวลาตื่นทั้งหมด →</button>
-          <button class="btn ghost" id="fatigueToRelax">เปิดเสียงผ่อนคลาย 🎵</button>
-        </div>
+    <div class="card step-card">
+      <div class="step-no">3</div>
+      <h2>พรุ่งนี้ตื่นกี่โมง</h2>
+      <div class="wake-row">
+        <input type="time" id="planWake" value="07:00">
+        <div class="quick-times" id="planQuick"></div>
       </div>
     </div>
 
-    <div class="card slim" id="fatigueHistoryCard">
-      <h3>บันทึกความล้า 7 วันล่าสุด</h3>
-      <div class="fatigue-history" id="fatigueHistory"><p class="empty">ยังไม่มีบันทึก</p></div>
-    </div>
+    <div class="card hero-card" id="planCard">
+      <div class="hero-label">ควรเข้านอน</div>
+      <div class="hero-time" id="planBed">--:--</div>
+      <div class="hero-note" id="planNote"></div>
 
-    <div class="card slim">
-      <h3>ทำไมความล้าถึงเปลี่ยนเวลานอนที่แนะนำ</h3>
-      <p class="sub">TimeSync ไม่ได้เลื่อนเวลานอนให้เร็วขึ้นแบบมั่ว ๆ — งานวิจัยพบว่า
-        <b>ความเหนื่อยล้าคือตัวทำนายคุณภาพการนอนที่แรงที่สุด</b> ในบรรดาปัจจัยที่ศึกษา</p>
-      <ul class="tips">
-        <li>ความล้า อาการหายใจลำบาก ภาวะซึมเศร้า และโรคร่วม อธิบายความแปรปรวนของคุณภาพการนอนได้
-          <b>31.4%</b> โดยความล้ามีน้ำหนักมากที่สุด (อัซซอมาดีย์ และคณะ, 2562)</li>
-        <li>ยิ่งล้ามาก คุณภาพการนอนยิ่งแย่ลง (r = -.50) ส่วนคนที่ปฏิบัติตนตาม
-          สุขวิทยาการนอนได้ดี คุณภาพการนอนดีขึ้น (r = .20) — ซึ่งเป็นที่มาของคำแนะนำที่แอปให้
-          (ปิ่นสกุล และ จิตปัญญา, 2558)</li>
-      </ul>
-      <p class="fineprint">ทั้งสองงานศึกษาในกลุ่มผู้ป่วย (บาดเจ็บสมอง และหัวใจล้มเหลวเรื้อรัง)
-        ไม่ใช่คนทั่วไป จึงใช้เป็นแนวทางได้ แต่ไม่ใช่ข้อสรุปที่เหมารวมกับทุกคน
-        — ดูรายการอ้างอิงเต็มที่ ⚙️ ตั้งค่า › แหล่งอ้างอิง</p>
-    </div>
-  </section>
-
-  <!-- ============ พักฟื้น (ป่วย / บาดเจ็บ) ============ -->
-  <section class="panel" id="panel-recovery">
-    <div class="card">
-      <h2>กำลังป่วยหรือบาดเจ็บอยู่ไหม?</h2>
-      <p class="sub">ตอนป่วยหรือบาดเจ็บ ร่างกายต้องการการนอนมากกว่าปกติ เพราะการนอนคือช่วงที่
-        ระบบภูมิคุ้มกันและการซ่อมแซมเนื้อเยื่อทำงานหนักที่สุด เลือกสถานะแล้ว TimeSync
-        จะคำนวณให้ว่าควรนอนเพิ่มเท่าไรและควรเข้านอนกี่โมง</p>
-
-      <div class="emoji-row rec-row" id="recoveryRow"></div>
-
-      <div class="fatigue-result hidden" id="recoveryResult">
-        <div class="result-head">
-          <div class="result-emoji" id="recEmoji">🤧</div>
-          <div>
-            <div class="result-label" id="recLabel"></div>
-            <div class="result-desc" id="recDesc"></div>
-          </div>
-        </div>
-
-        <div class="big-grid">
-          <div class="big-stat accent">
-            <span class="big-key">ควรเข้านอน</span>
-            <span class="big-val" id="recBed">--:--</span>
-            <span class="big-note" id="recBedNote"></span>
-          </div>
-          <div class="big-stat">
-            <span class="big-key">รวมเวลานอน</span>
-            <span class="big-val" id="recTotal">--</span>
-            <span class="big-note" id="recTotalNote"></span>
-          </div>
-        </div>
-
-        <div class="rec-window" id="recWindow"></div>
-
-        <ul class="tips" id="recTips"></ul>
-
-        <div class="limit-box rec-flags" id="recFlags"></div>
-
-        <div class="row-actions">
-          <button class="btn ghost" id="recDone">หายแล้ว / กลับสู่ปกติ</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 2. คำนวณเวลานอน ============ -->
-  <section class="panel" id="panel-calc">
-    <div class="card">
-      <h2>คำนวณเวลานอนที่เหมาะสม</h2>
-      <p class="sub">ร่างกายนอนเป็นรอบ ๆ รอบละประมาณ 90 นาที การตื่นตอนจบรอบจะสดชื่นกว่าการตื่นกลางรอบ</p>
-
-      <div class="seg" id="calcMode">
-        <button class="seg-btn active" data-mode="now">นอนตอนนี้</button>
-        <button class="seg-btn" data-mode="bed">ระบุเวลาเข้านอน</button>
-        <button class="seg-btn" data-mode="wake">ระบุเวลาตื่น</button>
+      <div class="hero-stats">
+        <div><span class="hs-v" id="planTotal">--</span><span class="hs-k">เวลานอน</span></div>
+        <div><span class="hs-v" id="planCycles">--</span><span class="hs-k">รอบ</span></div>
+        <div><span class="hs-v" id="planWakeOut">--:--</span><span class="hs-k">ตื่น</span></div>
       </div>
 
-      <div class="calc-input hidden" id="calcInputWrap">
-        <label id="calcInputLabel">เวลาเข้านอน</label>
-        <div class="time-row">
-          <input type="time" id="calcTime" value="23:00">
-          <div class="quick-times" id="quickTimes"></div>
-        </div>
+      <div class="row-actions">
+        <button class="btn" id="planSetAlarm">⏰ ตั้งปลุกเวลานี้</button>
       </div>
+    </div>
 
-      <div class="note-line" id="calcNote"></div>
+    <details class="card calc-detail">
+      <summary><span>🧮 วิธีคำนวณ</span></summary>
+      <div class="calc-steps" id="planSteps"></div>
+      <p class="fineprint">อ้างอิงเกณฑ์ชั่วโมงนอนจาก National Sleep Foundation และรอบการนอน ~90 นาที
+        ดูรายการอ้างอิงเต็มได้ที่ ⚙️ ตั้งค่า › แหล่งอ้างอิง</p>
+    </details>
 
+    <div class="card slim" id="planTipsCard">
+      <h3>สิ่งที่ช่วยได้คืนนี้</h3>
+      <ul class="tips" id="planTips"></ul>
+    </div>
+
+    <div class="card slim hidden" id="planFlagsCard">
+      <div class="limit-box rec-flags" id="planFlags"></div>
+    </div>
+
+    <div class="card slim" id="cycleAltCard">
+      <h3>ตัวเลือกอื่น</h3>
+      <p class="sub">ถ้าเข้านอนเวลาอื่น จะตื่นตอนไหนถึงไม่ตื่นกลางรอบ</p>
       <div class="cycle-list" id="cycleList"></div>
     </div>
 
@@ -534,6 +529,7 @@
 
       <div class="row-actions">
         <button class="btn ghost" id="exportData">ส่งออกข้อมูล (JSON)</button>
+        <button class="btn ghost" id="signOutBtn">ออกจากระบบ</button>
         <button class="btn danger" id="resetData">ล้างข้อมูลทั้งหมด</button>
       </div>
       <p class="fineprint">ข้อมูลทั้งหมดถูกเก็บไว้ในเครื่องของคุณเท่านั้น (localStorage + IndexedDB) ไม่มีการส่งออกไปที่ไหน</p>
@@ -598,6 +594,7 @@
 
 <script src="core.js"></script>
 <script src="alarm.js"></script>
+<script src="auth.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

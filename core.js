@@ -388,6 +388,121 @@
   }
 
   /* =========================================================
+     แผนการนอนรวม — รวมความล้า + พักฟื้น เป็นสมการเดียว
+
+     สมการ:  เวลานอนที่ต้องการ = (รอบตามความล้า × ความยาวรอบ)
+                                + ชดเชยความล้า
+                                + ชดเชยการป่วย/บาดเจ็บ
+             เวลาเข้านอน       = เวลาตื่น − เวลานอนที่ต้องการ − เวลากว่าจะหลับ
+
+     คืนค่า steps[] ไว้ให้หน้าเว็บกางให้ผู้ใช้เห็นว่าตัวเลขมาจากไหนทีละขั้น
+     ========================================================= */
+  function sleepPlan(opts, cfg, now) {
+    now = now || new Date();
+    const f = fatigueOf(opts.fatigueLvl || 1);
+    const r = recoveryOf(opts.recoveryId || 'none');
+    const g = ageGroupOf(cfg.ageGroup);
+    const cycleLen = cfg.cycleLen;
+    const latency = cfg.latency;
+    const wakeMin = parseHM(opts.wakeMin != null ? minToHM(opts.wakeMin) : cfg.usualWake);
+
+    // 1) ฐานจากรอบการนอนตามระดับความล้า
+    const baseCycles = f.cycles;
+    const baseMin = baseCycles * cycleLen;
+    // 2) ชดเชยความล้า และ 3) ชดเชยการป่วย/บาดเจ็บ
+    const fatigueExtra = f.earlier;
+    const recoveryExtra = r.extraMin;
+
+    // 4) เพดาน: ไม่ให้ผลรวมพุ่งเกินเกณฑ์สูงสุดตามช่วงอายุมากเกินไป
+    //    (ล้าหนัก + ป่วยพร้อมกัน ถ้าไม่คุมจะได้ 12 ชม. ซึ่งไม่ใช่คำแนะนำที่ดี)
+    const rawMin = baseMin + fatigueExtra + recoveryExtra;
+    const capMin = g.max * 60 + 90;
+    const floorMin = g.min * 60;
+    const needMin = clamp(rawMin, floorMin, capMin);
+    const capped = rawMin > capMin;
+
+    // 5) ถอยกลับจากเวลาตื่น
+    const bedMin = ((wakeMin - needMin - latency) % MIN_PER_DAY + MIN_PER_DAY) % MIN_PER_DAY;
+
+    // เวลาเข้านอนจริงของคืนที่กำลังจะถึง
+    let bedAt = todayAt(bedMin, now);
+    let diff = (bedAt - now) / 60000;
+    if (diff > 720) { bedAt = addDays(bedAt, -1); diff -= MIN_PER_DAY; }
+    else if (diff < -720) { bedAt = addDays(bedAt, 1); diff += MIN_PER_DAY; }
+
+    // ล้าหนักแล้วยังต้องรออีกนาน = ไม่ควรรอ ให้บีบตาม maxWait ของระดับความล้า
+    let urgent = false, cappedByWait = false;
+    let finalBedMin = bedMin;
+    if (diff <= 0) {
+      urgent = true;                                   // เลยเวลาแล้ว
+    } else if (f.maxWait !== null && diff > f.maxWait) {
+      finalBedMin = (now.getHours() * 60 + now.getMinutes() + f.maxWait) % MIN_PER_DAY;
+      urgent = true;
+      cappedByWait = true;
+    }
+
+    const steps = [
+      {
+        key: 'base',
+        label: 'รอบการนอนพื้นฐาน',
+        formula: `${baseCycles} รอบ × ${cycleLen} นาที`,
+        value: baseMin,
+        why: `ระดับความล้า “${f.short}” ใช้ ${baseCycles} รอบ`,
+      },
+      {
+        key: 'fatigue',
+        label: 'ชดเชยความล้า',
+        formula: fatigueExtra ? `+ ${fatigueExtra} นาที` : 'ไม่ต้องชดเชย',
+        value: fatigueExtra,
+        why: fatigueExtra ? `“${f.short}” ต้องเข้านอนเร็วขึ้นเพื่อคืนหนี้การนอน` : 'ความล้าอยู่ในระดับปกติ',
+      },
+      {
+        key: 'recovery',
+        label: 'ชดเชยการป่วย/บาดเจ็บ',
+        formula: recoveryExtra ? `+ ${recoveryExtra} นาที` : 'ไม่ต้องชดเชย',
+        value: recoveryExtra,
+        why: recoveryExtra ? `“${r.short}” ร่างกายต้องใช้การนอนซ่อมแซมมากขึ้น` : 'ไม่ได้ป่วยหรือบาดเจ็บ',
+      },
+      {
+        key: 'need',
+        label: 'รวมเวลาที่ต้องนอน',
+        formula: capped ? `${durText(rawMin)} → จำกัดที่ ${durText(needMin)}` : durText(needMin),
+        value: needMin,
+        why: capped
+          ? `เกินเพดานของช่วงวัย ${g.label} จึงจำกัดไว้ที่ ${durText(capMin)}`
+          : `อยู่ในเกณฑ์ของช่วงวัย ${g.label} (${g.min}–${g.max} ชม.)`,
+      },
+      {
+        key: 'latency',
+        label: 'เวลากว่าจะหลับ',
+        formula: `+ ${latency} นาที`,
+        value: latency,
+        why: 'เผื่อเวลาตั้งแต่ล้มตัวลงนอนจนหลับจริง',
+      },
+      {
+        key: 'bed',
+        label: 'เวลาเข้านอน',
+        formula: `${minToHM(wakeMin)} − ${durText(needMin)} − ${latency} นาที`,
+        value: bedMin,
+        why: 'ถอยหลังจากเวลาตื่นที่ตั้งไว้',
+        isTime: true,
+      },
+    ];
+
+    return {
+      fatigue: f, recovery: r, ageGroup: g,
+      baseCycles, baseMin, fatigueExtra, recoveryExtra,
+      rawMin, needMin, capMin, capped, latency,
+      wakeMin, bedMin, finalBedMin, bedAt, minutesUntilBed: Math.round(diff),
+      urgent, cappedByWait,
+      cycles: Math.round(needMin / cycleLen),
+      steps,
+      tips: [...f.tips, ...(r.id === 'none' ? [] : r.tips)],
+      redFlags: r.redFlags || [],
+    };
+  }
+
+  /* =========================================================
      ตัวเลือกรอบการนอน
      mode: 'now' | 'bed' → คืนเวลาตื่น | 'wake' → คืนเวลาเข้านอน
      ========================================================= */
@@ -1138,7 +1253,7 @@
     durText, hoursText, hoursBetween,
     ageGroupOf, fatigueOf, recoveryOf, recoveryPlan, recoveryDay, recoveryOverdue,
     GENDERS, BMI_BANDS, genderOf, ageGroupFromAge, bmi, bmiBand, displayName,
-    planBedtime, cycleOptions, computeDebt,
+    planBedtime, sleepPlan, cycleOptions, computeDebt,
     usualBedtimeMin, nextOccurrence, lastOccurrence,
     WEEKDAYS, scheduleFor, sleepTargetDate, wakeTimeFor, bedtimeMinFor,
     setOverride, pruneOverrides, effectiveAlarmTime,

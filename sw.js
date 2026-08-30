@@ -9,13 +9,14 @@
    การปลุกจึงต้องเปิดหน้า TimeSync ค้างไว้ หรือติดตั้งเป็นแอปแล้วย่อหน้าต่างทิ้งไว้
    ========================================================= */
 
-const CACHE = 'timesync-v1';
+const CACHE = 'timesync-v2';
 const SHELL = [
   './',
   './index.html',
   './styles.css',
   './core.js',
   './alarm.js',
+  './auth.js',
   './app.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
