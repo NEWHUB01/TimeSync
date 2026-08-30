@@ -761,3 +761,43 @@ describe('sleepPlan (รวมความล้า + พักฟื้น)', (
     assert.equal(plan(2, 'none').redFlags.length, 0, 'ไม่ป่วยไม่ต้องมีสัญญาณอันตราย');
   });
 });
+
+/* ---------------------------------------------------------
+   คำถามที่พบบ่อย
+   --------------------------------------------------------- */
+describe('FAQ', () => {
+  test('ทุกข้อมีคำถามและคำตอบที่มีเนื้อหาจริง', () => {
+    assert.ok(Array.isArray(C.FAQ) && C.FAQ.length >= 5);
+    C.FAQ.forEach(f => {
+      assert.ok(f.q && f.q.trim().endsWith('?'), `"${f.q}" ต้องเป็นคำถาม`);
+      assert.ok(f.a && f.a.length > 40, `คำตอบของ "${f.q}" สั้นเกินไป`);
+    });
+  });
+
+  test('ไม่มีคำถามซ้ำ', () => {
+    const qs = C.FAQ.map(f => f.q);
+    assert.equal(new Set(qs).size, qs.length);
+  });
+
+  test('ตัวเลขในคำตอบต้องตรงกับค่าจริงของแอป', () => {
+    const d = C.defaults();
+    const all = C.FAQ.map(f => f.a).join(' ');
+    // เวลากว่าจะหลับ และความยาวรอบ ต้องตรงกับค่าเริ่มต้นที่ใช้จริง
+    assert.ok(all.includes(`${d.latency} นาที`), 'ต้องอ้างค่าเวลากว่าจะหลับตามจริง');
+    assert.ok(all.includes(`${d.cycleLen} นาที`), 'ต้องอ้างความยาวรอบตามจริง');
+    // เพดานการชดเชยเมื่อนอนเกิน
+    assert.ok(all.includes(`วันละ ${C.SURPLUS_CAP} ชม.`), 'ต้องอ้างเพดานการชดเชยตามจริง');
+  });
+
+  test('ยอมรับข้อจำกัดของรอบ 90 นาที ไม่ขายว่าแม่นยำ', () => {
+    const cycleQ = C.FAQ.find(f => f.q.includes('90'));
+    assert.ok(cycleQ, 'ต้องมีคำถามเรื่องรอบ 90 นาที');
+    assert.match(cycleQ.a, /ไม่แม่น|ค่าเฉลี่ย/);
+  });
+
+  test('ต้องมีข้อที่บอกว่าใช้แทนแพทย์ไม่ได้', () => {
+    const med = C.FAQ.find(f => /หมอ|แพทย์/.test(f.q));
+    assert.ok(med, 'ต้องมีคำถามเรื่องการไปพบแพทย์');
+    assert.match(med.a, /ไม่ใช่อุปกรณ์ทางการแพทย์/);
+  });
+});

@@ -9,7 +9,7 @@ const {
   pad, clamp, parseHM, minToHM, dateKey, keyToDate, addDays,
   durText, hoursText, hoursBetween,
   TH_DAY, TH_MON, AGE_GROUPS, FATIGUE, EVIDENCE, ageGroupOf,
-  RECOVERY, recoveryOf, recoveryPlan, recoveryDay, recoveryOverdue,
+  RECOVERY, recoveryOf, recoveryPlan, recoveryDay, recoveryOverdue, FAQ,
   planBedtime, sleepPlan, cycleOptions, computeDebt,
   usualBedtimeMin, nextOccurrence, shouldAskToLog, dueReminders, markFired,
   ALARM_SOUNDS, RAMP_OPTIONS, SNOOZE_OPTIONS, alarmSoundOf, alarmStatus, snoozeUntil,
@@ -269,6 +269,20 @@ function renderCycleList(plan) {
       </div>`).join('');
 }
 
+
+/** คำถามที่พบบ่อย — เปิดทีละข้อ ไม่ต้องอ่านทั้งกำแพง */
+function renderFaq() {
+  const box = $('#faqList');
+  if (!box) return;
+  const esc = t => String(t).replace(/[&<>"]/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
+  ));
+  box.innerHTML = FAQ.map(f => `
+    <details class="faq-item">
+      <summary>${esc(f.q)}${f.tag ? `<span class="faq-tag">${esc(f.tag)}</span>` : ''}</summary>
+      <p>${esc(f.a)}</p>
+    </details>`).join('');
+}
 
 /**
  * รายการแหล่งอ้างอิง — ข้อมูลนิ่ง เรนเดอร์ครั้งเดียวตอนเปิดแอป
@@ -1665,6 +1679,7 @@ setInterval(() => { tickClock(); renderAlarm(); }, 1000 * 20);
 renderPickers();
 renderPlanQuick();
 renderEvidence();
+renderFaq();
 renderSounds();
 renderAlarmSounds();
 initProfile();
