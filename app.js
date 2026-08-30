@@ -1650,7 +1650,10 @@ $('#setupSubmit').addEventListener('click', () => {
   S.usualWake = wake;
   save();
   hideGates();
-  initProfile();
+  // ต้องเป็นคู่นี้เหมือนที่ boot() ใช้ — initProfile() แค่ผูก listener กับสร้าง dropdown
+  // ถ้าเรียกซ้ำจะได้ listener ซ้อนอีกชุด และฟอร์มก็ยังว่างอยู่ดี
+  fillProfileForm();
+  renderProfile();
   $('#planWake').value = wake;
   renderPlan();
   toast(`ยินดีต้อนรับ ${Auth.username()} 🌙`);
