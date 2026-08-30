@@ -215,7 +215,7 @@
 
     <div class="card">
       <h3>เสียงปลุก</h3>
-      <p class="sub">เสียงชุดนี้ออกแบบมาให้ปลุกให้ตื่นโดยเฉพาะ — เสียงธรรมชาติผ่อนคลายย้ายไปอยู่แท็บ 🎵 ผ่อนคลาย สำหรับใช้ก่อนนอนแล้ว</p>
+      <p class="sub">ออกแบบให้ปลุกให้ตื่นโดยเฉพาะ</p>
 
       <div class="sound-grid" id="alarmSoundGrid"></div>
 
@@ -232,31 +232,36 @@
       <div class="field">
         <label>ค่อย ๆ ดังขึ้นภายใน</label>
         <div class="chip-row" id="rampRow"></div>
-        <p class="fineprint">เริ่มจากเสียงเบาแล้วไต่ขึ้นจนดังเต็ม ช่วยให้ตื่นแบบไม่ตกใจ แต่ยังการันตีว่าตื่นแน่</p>
+        <p class="fineprint">เริ่มเบาแล้วไต่ขึ้นจนดังเต็ม ตื่นแบบไม่ตกใจ</p>
       </div>
     </div>
 
-    <div class="card">
-      <h3>เสียงของคุณเอง</h3>
-      <p class="sub">อัปโหลดเพลงหรือเสียงที่ปลุกคุณได้จริง ไฟล์จะถูกเก็บไว้ในเครื่องของคุณเท่านั้น (IndexedDB) ไม่ถูกอัปโหลดไปที่ไหน</p>
+    <details class="card fold">
+      <summary><span>🎵 เสียงของคุณเอง</span></summary>
+      <div class="fold-body">
+        <p class="sub">ไฟล์เก็บในเครื่องคุณเท่านั้น ไม่ถูกอัปโหลดไปไหน</p>
 
-      <div class="upload-row">
-        <input type="file" id="soundFile" accept="audio/*" hidden>
-        <button class="btn ghost" id="soundPick">📁 เลือกไฟล์เสียง</button>
-        <span class="upload-note" id="uploadNote">รองรับ mp3, wav, ogg, m4a — ไม่เกิน 50 MB</span>
+        <div class="upload-row">
+          <input type="file" id="soundFile" accept="audio/*" hidden>
+          <button class="btn ghost" id="soundPick">📁 เลือกไฟล์เสียง</button>
+          <span class="upload-note" id="uploadNote">รองรับ mp3, wav, ogg, m4a — ไม่เกิน 50 MB</span>
+        </div>
+
+        <div class="upload-list" id="uploadList"></div>
       </div>
+    </details>
 
-      <div class="upload-list" id="uploadList"></div>
-    </div>
-
-    <div class="card">
-      <h3>การเลื่อนปลุก (Snooze)</h3>
-      <div class="field">
-        <label>เลื่อนครั้งละ</label>
-        <div class="chip-row" id="snoozeRow"></div>
+    <details class="card fold">
+      <summary><span>💤 การเลื่อนปลุก (Snooze)</span></summary>
+      <div class="fold-body">
+        <div class="field">
+          <label>เลื่อนครั้งละ</label>
+          <div class="chip-row" id="snoozeRow"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="alarmVibrate"> สั่นด้วย (ถ้าอุปกรณ์รองรับ)</label>
       </div>
-      <label class="check"><input type="checkbox" id="alarmVibrate"> สั่นด้วย (ถ้าอุปกรณ์รองรับ)</label>
-    </div>
+    </details>
+
   </section>
 
   <!-- ============ 3. หนี้การนอน ============ -->
@@ -264,7 +269,7 @@
     <div class="card debt-hero">
       <div>
         <h2>หนี้การนอนสะสม</h2>
-        <p class="sub">รวมชั่วโมงนอนที่ขาดไปเทียบกับชาร์ตเวลานอนสากล (National Sleep Foundation) ในช่วง <span id="debtWindowLabel">14</span> วันล่าสุด</p>
+        <p class="sub">ย้อนหลัง <span id="debtWindowLabel">14</span> วัน เทียบเกณฑ์ NSF</p>
       </div>
       <div class="debt-badge" id="debtBadge">
         <span class="debt-num" id="debtNum">0.0</span>
@@ -297,21 +302,23 @@
       <div class="log-list" id="logList"></div>
     </div>
 
-    <div class="card slim">
-      <h3>ชาร์ตเวลานอนสากล</h3>
-      <table class="chart-table" id="sleepChartTable"></table>
-      <p class="fineprint">ที่มา: National Sleep Foundation (Hirshkowitz et al., 2015)
-        และคำแนะนำร่วมของ AASM &amp; Sleep Research Society (Watson et al., 2015)
-        — ดูรายการเต็มได้ที่ ⚙️ ตั้งค่า › แหล่งอ้างอิง</p>
-    </div>
+    <details class="card fold">
+      <summary><span>📋 เกณฑ์มาตรฐานตามช่วงวัย</span></summary>
+      <div class="fold-body">
+        <table class="chart-table" id="sleepChartTable"></table>
+        <p class="fineprint">ที่มา: National Sleep Foundation (Hirshkowitz et al., 2015)
+          และคำแนะนำร่วมของ AASM &amp; Sleep Research Society (Watson et al., 2015)
+          — ดูรายการเต็มได้ที่ ⚙️ ตั้งค่า › แหล่งอ้างอิง</p>
+      </div>
+    </details>
+
   </section>
 
   <!-- ============ 4. ผ่อนคลาย ============ -->
   <section class="panel" id="panel-relax">
     <div class="card">
-      <h2>เสียงผ่อนคลายก่อนนอน</h2>
-      <p class="sub">เสียงชุดนี้สำหรับ<b>ก่อนนอน</b>เท่านั้น ไม่ใช่เสียงปลุก — ถ้าต้องการเสียงปลุกไปที่แท็บ ⏰ ปลุก<br>
-        ทั้งหมดสังเคราะห์ขึ้นสด ๆ ในเครื่องของคุณ ไม่ต้องต่ออินเทอร์เน็ต ไม่มีโฆษณาคั่น</p>
+      <h2>เสียงผ่อนคลายก่อนนอน <span class="tag-note">ไม่ใช่เสียงปลุก</span></h2>
+      <p class="sub">สังเคราะห์สดในเครื่อง ใช้ได้แม้ออฟไลน์</p>
 
       <div class="sound-grid" id="soundGrid"></div>
 
@@ -341,7 +348,7 @@
   <section class="panel" id="panel-tasks">
     <div class="card">
       <h2>สิ่งสำคัญที่ต้องทำพรุ่งนี้</h2>
-      <p class="sub">จดไว้ก่อนนอน สมองจะได้ไม่ต้องคิดวนตอนหลับ แล้ว TimeSync จะเตือนคุณตอนเช้า</p>
+      <p class="sub">จดไว้ก่อนนอน แล้วเตือนให้ตอนเช้า</p>
 
       <div class="task-add">
         <input type="text" id="taskInput" placeholder="เช่น ส่งรายงานให้หัวหน้าก่อน 10 โมง" maxlength="120">
@@ -356,212 +363,230 @@
       <ul class="task-list" id="taskList"></ul>
     </div>
 
-    <div class="card">
-      <h3>การเตือนอัตโนมัติ</h3>
-      <p class="sub">TimeSync จะเตือนให้เอง คุณไม่ต้องจำ — ปิดเป็นรายตัวได้ทุกอัน</p>
+    <details class="card fold">
+      <summary><span>🔔 การเตือนอัตโนมัติ</span></summary>
+      <div class="fold-body">
 
-      <div class="remind-item">
-        <label class="check"><input type="checkbox" id="remLogOn"> เตือนให้บันทึกการนอนเมื่อคืน</label>
-        <input type="time" id="remLogTime" value="10:00">
-      </div>
-
-      <div class="remind-item">
-        <label class="check"><input type="checkbox" id="remBedOn"> เตือนก่อนถึงเวลาเข้านอน</label>
-        <select id="remBedLead">
-          <option value="0">ตรงเวลา</option>
-          <option value="15">ล่วงหน้า 15 นาที</option>
-          <option value="30">ล่วงหน้า 30 นาที</option>
-          <option value="60">ล่วงหน้า 1 ชม.</option>
-        </select>
-      </div>
-
-      <div class="remind-item">
-        <label class="check"><input type="checkbox" id="remAlarmOn"> เตือนถ้าถึงเวลานอนแล้วยังไม่ได้ตั้งปลุก</label>
-        <span class="remind-at" id="remBedAt"></span>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>การเตือนตอนเช้า</h3>
-      <div class="remind-row">
-        <div class="field">
-          <label>เตือนเวลา</label>
-          <input type="time" id="remindTime" value="07:00">
+        <div class="remind-item">
+          <label class="check"><input type="checkbox" id="remLogOn"> เตือนให้บันทึกการนอนเมื่อคืน</label>
+          <input type="time" id="remLogTime" value="10:00">
         </div>
-        <div class="field grow">
-          <label>สถานะการแจ้งเตือน</label>
-          <div class="notif-status" id="notifStatus">กำลังตรวจสอบ…</div>
+
+        <div class="remind-item">
+          <label class="check"><input type="checkbox" id="remBedOn"> เตือนก่อนถึงเวลาเข้านอน</label>
+          <select id="remBedLead">
+            <option value="0">ตรงเวลา</option>
+            <option value="15">ล่วงหน้า 15 นาที</option>
+            <option value="30">ล่วงหน้า 30 นาที</option>
+            <option value="60">ล่วงหน้า 1 ชม.</option>
+          </select>
         </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button class="btn ghost" id="notifEnable">เปิดการแจ้งเตือน</button>
+
+        <div class="remind-item">
+          <label class="check"><input type="checkbox" id="remAlarmOn"> เตือนถ้าถึงเวลานอนแล้วยังไม่ได้ตั้งปลุก</label>
+          <span class="remind-at" id="remBedAt"></span>
         </div>
       </div>
-      <label class="check"><input type="checkbox" id="remindOn"> เปิดการเตือนตอนเช้า</label>
-      <p class="fineprint">ℹ️ การแจ้งเตือนจะทำงานเมื่อเปิดหน้า TimeSync ค้างไว้ (แนะนำให้เปิดแท็บนี้ทิ้งไว้ตอนนอน) ถ้าปิดแท็บ ระบบจะแสดงสรุปงานให้ทันทีที่คุณกลับมาเปิดในตอนเช้าแทน</p>
-    </div>
+    </details>
+
+    <details class="card fold">
+      <summary><span>☀️ การเตือนตอนเช้า</span></summary>
+      <div class="fold-body">
+        <div class="remind-row">
+          <div class="field">
+            <label>เตือนเวลา</label>
+            <input type="time" id="remindTime" value="07:00">
+          </div>
+          <div class="field grow">
+            <label>สถานะการแจ้งเตือน</label>
+            <div class="notif-status" id="notifStatus">กำลังตรวจสอบ…</div>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button class="btn ghost" id="notifEnable">เปิดการแจ้งเตือน</button>
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" id="remindOn"> เปิดการเตือนตอนเช้า</label>
+        <p class="fineprint">ℹ️ การแจ้งเตือนจะทำงานเมื่อเปิดหน้า TimeSync ค้างไว้ (แนะนำให้เปิดแท็บนี้ทิ้งไว้ตอนนอน) ถ้าปิดแท็บ ระบบจะแสดงสรุปงานให้ทันทีที่คุณกลับมาเปิดในตอนเช้าแทน</p>
+      </div>
+    </details>
+
   </section>
 
   <!-- ============ ตั้งค่า ============ -->
   <section class="panel" id="panel-settings">
 
-    <div class="card">
-      <h2>ข้อมูลผู้ใช้</h2>
-      <p class="sub">กรอกเท่าที่อยากกรอก ไม่มีช่องไหนบังคับ — ข้อมูลอยู่ในเครื่องคุณเท่านั้น ไม่ถูกส่งออกไปที่ไหน</p>
+    <details class="card fold">
+      <summary><span>👤 ข้อมูลผู้ใช้</span></summary>
+      <div class="fold-body">
+        <p class="sub">กรอกเท่าที่อยากกรอก ไม่มีช่องไหนบังคับ</p>
 
-      <div class="profile-head">
-        <div class="avatar" id="profileAvatar">👤</div>
-        <div class="profile-hi">
-          <div class="profile-name" id="profileGreeting">ยังไม่ได้กรอกชื่อ</div>
-          <div class="profile-meta" id="profileMeta">กรอกอายุแล้ว TimeSync จะเลือกเกณฑ์ชั่วโมงนอนที่เหมาะกับคุณให้เอง</div>
+        <div class="profile-head">
+          <div class="avatar" id="profileAvatar">👤</div>
+          <div class="profile-hi">
+            <div class="profile-name" id="profileGreeting">ยังไม่ได้กรอกชื่อ</div>
+            <div class="profile-meta" id="profileMeta">กรอกอายุแล้ว TimeSync จะเลือกเกณฑ์ชั่วโมงนอนที่เหมาะกับคุณให้เอง</div>
+          </div>
+        </div>
+
+        <div class="profile-form">
+          <div class="field grow">
+            <label for="pfName">ชื่อ / ชื่อเล่น</label>
+            <input type="text" id="pfName" placeholder="เช่น มายด์" maxlength="40" autocomplete="nickname">
+          </div>
+          <div class="field">
+            <label for="pfAge">อายุ (ปี)</label>
+            <input type="number" id="pfAge" min="0" max="120" step="1" inputmode="numeric" placeholder="—">
+          </div>
+          <div class="field">
+            <label for="pfGender">เพศ</label>
+            <select id="pfGender"></select>
+          </div>
+          <div class="field">
+            <label for="pfHeight">ส่วนสูง (ซม.)</label>
+            <input type="number" id="pfHeight" min="30" max="260" step="0.5" inputmode="decimal" placeholder="—">
+          </div>
+          <div class="field">
+            <label for="pfWeight">น้ำหนัก (กก.)</label>
+            <input type="number" id="pfWeight" min="2" max="400" step="0.1" inputmode="decimal" placeholder="—">
+          </div>
+        </div>
+
+        <div class="profile-saved" id="profileSaved">บันทึกอัตโนมัติทุกครั้งที่แก้</div>
+      </div>
+    </details>
+
+    <details class="card fold" id="profileDerivedCard">
+      <summary><span>📐 สิ่งที่คำนวณให้จากข้อมูลนี้</span></summary>
+      <div class="fold-body">
+        <div class="derived-grid">
+          <div class="derived" id="dvAgeBox">
+            <span class="derived-key">ช่วงวัยตามชาร์ตสากล</span>
+            <span class="derived-val" id="dvAgeGroup">—</span>
+            <span class="derived-note" id="dvAgeNote">กรอกอายุเพื่อให้ระบบเลือกให้</span>
+          </div>
+          <div class="derived" id="dvBmiBox">
+            <span class="derived-key">ดัชนีมวลกาย (BMI)</span>
+            <span class="derived-val" id="dvBmi">—</span>
+            <span class="derived-note" id="dvBmiNote">กรอกส่วนสูงและน้ำหนักเพื่อคำนวณ</span>
+          </div>
+        </div>
+        <p class="fineprint" id="bmiFine"></p>
+      </div>
+    </details>
+
+    <details class="card fold">
+      <summary><span>🔒 ความเป็นส่วนตัว</span></summary>
+      <div class="fold-body">
+        <p class="sub">TimeSync ไม่มีเซิร์ฟเวอร์ ไม่มีบัญชีผู้ใช้ และไม่ส่งข้อมูลออกจากเครื่อง
+          ข้อมูลโปรไฟล์เก็บใน localStorage ของเบราว์เซอร์เท่านั้น ลบได้ทุกเมื่อ</p>
+        <button class="btn danger" id="pfClear">ล้างข้อมูลโปรไฟล์</button>
+      </div>
+    </details>
+
+    <details class="card fold">
+      <summary><span>📅 ตารางเวลานอน–ตื่น</span></summary>
+      <div class="fold-body">
+        <p class="sub">เวลาแต่ละวันไม่เหมือนกัน ตั้งแยกรายวันได้</p>
+
+        <div class="seg" id="schedMode">
+          <button class="seg-btn active" data-mode="simple">ง่าย — เหมือนกันทุกวัน</button>
+          <button class="seg-btn" data-mode="weekly">แยกรายวัน (จ–อา)</button>
+        </div>
+
+        <div id="schedSimple">
+          <div class="field">
+            <label>เวลาตื่นประจำ</label>
+            <input type="time" id="usualWake" value="07:00">
+          </div>
+          <div class="note-line" id="simpleBedNote"></div>
+        </div>
+
+        <div id="schedWeekly" class="hidden">
+          <div class="week-grid" id="weekGrid"></div>
+          <div class="row-actions">
+            <button class="btn ghost" id="weekFill">เติมทุกวันด้วยเวลาเดียวกัน</button>
+          </div>
+        </div>
+
+        <div class="override-box">
+          <h3>เฉพาะวันเดียว</h3>
+          <p class="sub">ตั้งเฉพาะวัน โดยไม่กระทบตารางประจำ</p>
+          <div class="override-form">
+            <div class="field"><label>วันที่</label><input type="date" id="ovDate"></div>
+            <div class="field"><label>ตื่น</label><input type="time" id="ovWake" value="06:00"></div>
+            <div class="field grow"><label>เหตุผล (ไม่บังคับ)</label><input type="text" id="ovNote" placeholder="เช่น เข้ากะเช้า" maxlength="40"></div>
+            <div class="field"><label>&nbsp;</label><button class="btn" id="ovSave">ตั้ง</button></div>
+          </div>
+          <div class="override-list" id="overrideList"></div>
         </div>
       </div>
+    </details>
 
-      <div class="profile-form">
-        <div class="field grow">
-          <label for="pfName">ชื่อ / ชื่อเล่น</label>
-          <input type="text" id="pfName" placeholder="เช่น มายด์" maxlength="40" autocomplete="nickname">
-        </div>
+    <details class="card fold">
+      <summary><span>🎚️ ค่าการคำนวณและข้อมูล</span></summary>
+      <div class="fold-body">
+
         <div class="field">
-          <label for="pfAge">อายุ (ปี)</label>
-          <input type="number" id="pfAge" min="0" max="120" step="1" inputmode="numeric" placeholder="—">
+          <label>ช่วงอายุ (ใช้กับชาร์ตเวลานอนสากล)</label>
+          <select id="ageGroup"></select>
         </div>
+
         <div class="field">
-          <label for="pfGender">เพศ</label>
-          <select id="pfGender"></select>
+          <label>ใช้เวลากว่าจะหลับ (นาที): <span id="latencyLabel">15</span></label>
+          <input type="range" id="latency" min="0" max="45" step="5" value="15">
         </div>
+
         <div class="field">
-          <label for="pfHeight">ส่วนสูง (ซม.)</label>
-          <input type="number" id="pfHeight" min="30" max="260" step="0.5" inputmode="decimal" placeholder="—">
+          <label>ความยาว 1 รอบการนอน (นาที): <span id="cycleLabel">90</span></label>
+          <input type="range" id="cycleLen" min="80" max="110" step="5" value="90">
         </div>
+
         <div class="field">
-          <label for="pfWeight">น้ำหนัก (กก.)</label>
-          <input type="number" id="pfWeight" min="2" max="400" step="0.1" inputmode="decimal" placeholder="—">
+          <label>ช่วงคำนวณหนี้การนอน (วัน): <span id="windowLabel">14</span></label>
+          <input type="range" id="debtWindow" min="7" max="30" step="1" value="14">
         </div>
-      </div>
 
-      <div class="profile-saved" id="profileSaved">บันทึกอัตโนมัติทุกครั้งที่แก้</div>
-    </div>
-
-    <div class="card" id="profileDerivedCard">
-      <h3>สิ่งที่ TimeSync คำนวณให้จากข้อมูลนี้</h3>
-      <div class="derived-grid">
-        <div class="derived" id="dvAgeBox">
-          <span class="derived-key">ช่วงวัยตามชาร์ตสากล</span>
-          <span class="derived-val" id="dvAgeGroup">—</span>
-          <span class="derived-note" id="dvAgeNote">กรอกอายุเพื่อให้ระบบเลือกให้</span>
-        </div>
-        <div class="derived" id="dvBmiBox">
-          <span class="derived-key">ดัชนีมวลกาย (BMI)</span>
-          <span class="derived-val" id="dvBmi">—</span>
-          <span class="derived-note" id="dvBmiNote">กรอกส่วนสูงและน้ำหนักเพื่อคำนวณ</span>
-        </div>
-      </div>
-      <p class="fineprint" id="bmiFine"></p>
-    </div>
-
-    <div class="card slim">
-      <h3>ความเป็นส่วนตัวของข้อมูลผู้ใช้</h3>
-      <p class="sub">TimeSync ไม่มีเซิร์ฟเวอร์ ไม่มีบัญชีผู้ใช้ และไม่ส่งข้อมูลออกจากเครื่อง
-        ข้อมูลโปรไฟล์เก็บใน localStorage ของเบราว์เซอร์เท่านั้น ลบได้ทุกเมื่อ</p>
-      <button class="btn danger" id="pfClear">ล้างข้อมูลโปรไฟล์</button>
-    </div>
-
-    <div class="card">
-      <h2>ตารางเวลานอน–ตื่น</h2>
-      <p class="sub">ถ้าเวลาทำงานแต่ละวันไม่เหมือนกัน ตั้งแยกรายวันได้ — หรือใช้โหมดง่ายเหมือนเดิมก็ได้</p>
-
-      <div class="seg" id="schedMode">
-        <button class="seg-btn active" data-mode="simple">ง่าย — เหมือนกันทุกวัน</button>
-        <button class="seg-btn" data-mode="weekly">แยกรายวัน (จ–อา)</button>
-      </div>
-
-      <div id="schedSimple">
-        <div class="field">
-          <label>เวลาตื่นประจำ</label>
-          <input type="time" id="usualWake" value="07:00">
-        </div>
-        <div class="note-line" id="simpleBedNote"></div>
-      </div>
-
-      <div id="schedWeekly" class="hidden">
-        <div class="week-grid" id="weekGrid"></div>
         <div class="row-actions">
-          <button class="btn ghost" id="weekFill">เติมทุกวันด้วยเวลาเดียวกัน</button>
+          <button class="btn ghost" id="exportData">ส่งออกข้อมูล (JSON)</button>
+          <button class="btn ghost" id="signOutBtn">ออกจากระบบ</button>
+          <button class="btn danger" id="resetData">ล้างข้อมูลทั้งหมด</button>
+        </div>
+        <p class="fineprint">ข้อมูลทั้งหมดถูกเก็บไว้ในเครื่องของคุณเท่านั้น (localStorage + IndexedDB) ไม่มีการส่งออกไปที่ไหน</p>
+      </div>
+    </details>
+
+    <details class="card fold">
+      <summary><span>📱 ติดตั้งเป็นแอป</span></summary>
+      <div class="fold-body">
+        <p class="sub">เปิดเป็นหน้าต่างของตัวเอง ใช้ออฟไลน์ได้ และย่อทิ้งไว้ตอนนอนให้ปลุกได้</p>
+        <div class="install-row">
+          <button class="btn" id="installBtn" disabled>ติดตั้ง TimeSync</button>
+          <span class="install-note" id="installNote">กำลังตรวจสอบ…</span>
+        </div>
+
+        <div class="limit-box">
+          <b>ข้อจำกัดที่ควรรู้เรื่องการปลุก</b>
+          <p>เว็บแอปไม่สามารถปลุกตรงเวลาได้ถ้าปิดหน้าต่างไปแล้ว — ไม่ใช่ข้อจำกัดของ TimeSync
+          แต่เป็นข้อจำกัดของทุกเบราว์เซอร์ (API ที่ทำได้ถูกทดลองแล้วไม่ปล่อยใช้จริง)</p>
+          <p>วิธีที่ได้ผลจริง: <b>ติดตั้งเป็นแอปแล้วย่อหน้าต่างทิ้งไว้ตอนนอน</b> หรือเปิดแท็บ TimeSync ค้างไว้
+          TimeSync ตั้งเสียงปลุกไว้บนนาฬิกาของระบบเสียงซึ่งไม่ถูกเบราว์เซอร์หน่วง จึงปลุกตรงเวลาแม้อยู่เบื้องหลัง</p>
+          <p>ถ้าเผลอปิดไป เมื่อเปิดกลับมาภายใน 30 นาที TimeSync จะยังปลุกให้</p>
         </div>
       </div>
+    </details>
 
-      <div class="override-box">
-        <h3>เฉพาะวันเดียว</h3>
-        <p class="sub">ตั้งเวลาพิเศษให้วันใดวันหนึ่ง โดยไม่กระทบตารางประจำ เช่น วันที่ต้องเข้ากะเช้าหรือเข้ากะดึก</p>
-        <div class="override-form">
-          <div class="field"><label>วันที่</label><input type="date" id="ovDate"></div>
-          <div class="field"><label>ตื่น</label><input type="time" id="ovWake" value="06:00"></div>
-          <div class="field grow"><label>เหตุผล (ไม่บังคับ)</label><input type="text" id="ovNote" placeholder="เช่น เข้ากะเช้า" maxlength="40"></div>
-          <div class="field"><label>&nbsp;</label><button class="btn" id="ovSave">ตั้ง</button></div>
-        </div>
-        <div class="override-list" id="overrideList"></div>
+    <details class="card fold">
+      <summary><span>📚 แหล่งอ้างอิง</span></summary>
+      <div class="fold-body">
+        <p class="sub">ทุกตัวเลขมาจากงานวิจัยที่ตรวจสอบได้ กดลิงก์เพื่ออ่านต้นทาง</p>
+        <div class="evidence-list" id="evidenceList"></div>
+        <p class="fineprint">TimeSync เป็นเครื่องมือช่วยจัดตารางการนอน <b>ไม่ใช่อุปกรณ์ทางการแพทย์</b>
+          และไม่ใช้แทนคำวินิจฉัยของแพทย์ หากมีปัญหาการนอนเรื้อรัง นอนครบแล้วยังไม่สดชื่น
+          หรือง่วงผิดปกติในเวลากลางวัน ควรปรึกษาแพทย์</p>
       </div>
-    </div>
+    </details>
 
-    <div class="card">
-      <h2>ตั้งค่า</h2>
-
-      <div class="field">
-        <label>ช่วงอายุ (ใช้กับชาร์ตเวลานอนสากล)</label>
-        <select id="ageGroup"></select>
-      </div>
-
-      <div class="field">
-        <label>ใช้เวลากว่าจะหลับ (นาที): <span id="latencyLabel">15</span></label>
-        <input type="range" id="latency" min="0" max="45" step="5" value="15">
-      </div>
-
-      <div class="field">
-        <label>ความยาว 1 รอบการนอน (นาที): <span id="cycleLabel">90</span></label>
-        <input type="range" id="cycleLen" min="80" max="110" step="5" value="90">
-      </div>
-
-      <div class="field">
-        <label>ช่วงคำนวณหนี้การนอน (วัน): <span id="windowLabel">14</span></label>
-        <input type="range" id="debtWindow" min="7" max="30" step="1" value="14">
-      </div>
-
-      <div class="row-actions">
-        <button class="btn ghost" id="exportData">ส่งออกข้อมูล (JSON)</button>
-        <button class="btn ghost" id="signOutBtn">ออกจากระบบ</button>
-        <button class="btn danger" id="resetData">ล้างข้อมูลทั้งหมด</button>
-      </div>
-      <p class="fineprint">ข้อมูลทั้งหมดถูกเก็บไว้ในเครื่องของคุณเท่านั้น (localStorage + IndexedDB) ไม่มีการส่งออกไปที่ไหน</p>
-    </div>
-
-    <div class="card">
-      <h3>ติดตั้งเป็นแอป</h3>
-      <p class="sub">ติดตั้ง TimeSync เป็นแอปบนเครื่อง จะเปิดเป็นหน้าต่างของตัวเอง ใช้งานได้แม้ออฟไลน์ และย่อทิ้งไว้ตอนนอนเพื่อให้ปลุกได้</p>
-      <div class="install-row">
-        <button class="btn" id="installBtn" disabled>ติดตั้ง TimeSync</button>
-        <span class="install-note" id="installNote">กำลังตรวจสอบ…</span>
-      </div>
-
-      <div class="limit-box">
-        <b>ข้อจำกัดที่ควรรู้เรื่องการปลุก</b>
-        <p>เว็บแอปไม่สามารถปลุกตรงเวลาได้ถ้าปิดหน้าต่างไปแล้ว — ไม่ใช่ข้อจำกัดของ TimeSync
-        แต่เป็นข้อจำกัดของทุกเบราว์เซอร์ (API ที่ทำได้ถูกทดลองแล้วไม่ปล่อยใช้จริง)</p>
-        <p>วิธีที่ได้ผลจริง: <b>ติดตั้งเป็นแอปแล้วย่อหน้าต่างทิ้งไว้ตอนนอน</b> หรือเปิดแท็บ TimeSync ค้างไว้
-        TimeSync ตั้งเสียงปลุกไว้บนนาฬิกาของระบบเสียงซึ่งไม่ถูกเบราว์เซอร์หน่วง จึงปลุกตรงเวลาแม้อยู่เบื้องหลัง</p>
-        <p>ถ้าเผลอปิดไป เมื่อเปิดกลับมาภายใน 30 นาที TimeSync จะยังปลุกให้</p>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>แหล่งอ้างอิง</h3>
-      <p class="sub">ตัวเลขและคำแนะนำทุกข้อใน TimeSync มาจากงานวิจัยที่ตรวจสอบได้
-        ไม่ได้คิดขึ้นเอง — กดที่ลิงก์เพื่อไปอ่านต้นทาง</p>
-      <div class="evidence-list" id="evidenceList"></div>
-      <p class="fineprint">TimeSync เป็นเครื่องมือช่วยจัดตารางการนอน <b>ไม่ใช่อุปกรณ์ทางการแพทย์</b>
-        และไม่ใช้แทนคำวินิจฉัยของแพทย์ หากมีปัญหาการนอนเรื้อรัง นอนครบแล้วยังไม่สดชื่น
-        หรือง่วงผิดปกติในเวลากลางวัน ควรปรึกษาแพทย์</p>
-    </div>
   </section>
 
 </main>

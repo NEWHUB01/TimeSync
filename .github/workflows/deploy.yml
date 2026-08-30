@@ -27,6 +27,9 @@ jobs:
         with:
           node-version: 'lts/*'
 
+      - name: ตรวจว่า id ที่ JS เรียกใช้มีครบใน index.html
+        run: npm run check:ids
+
       - name: รันเทสต์ทั้งหมด
         run: npm test
 
