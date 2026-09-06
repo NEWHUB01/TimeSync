@@ -13,7 +13,7 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-const scripts = ['app.js', 'alarm.js', 'auth.js'];
+const scripts = ['app.js', 'alarm.js'];
 
 /** id ที่มีอยู่จริงใน markup */
 const declared = new Set(

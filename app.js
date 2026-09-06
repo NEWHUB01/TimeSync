@@ -41,6 +41,12 @@ const LEGACY_KEYS = ['timesync.v1'];
 
 let S = load();
 
+/* ระบบล็อกอินถูกถอดออกแล้ว — ลบค่าที่ค้างไว้จากเวอร์ชันก่อนทิ้ง
+   ไม่มีโค้ดไหนอ่านมันอีก และไม่ควรทิ้งค่าแฮชรหัสผ่านคาไว้ในเครื่องผู้ใช้ */
+for (const k of ['timesync.auth', 'timesync.session']) {
+  try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch { /* โหมดส่วนตัว */ }
+}
+
 function load() {
   for (const k of [KEY, ...LEGACY_KEYS]) {
     try {
@@ -1441,11 +1447,6 @@ $('#debtWindow').addEventListener('input', e => {
   save(); renderDebt();
 });
 
-$('#signOutBtn').addEventListener('click', () => {
-  Auth.signOut();
-  renderAuthGate();
-});
-
 $('#exportData').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -1553,14 +1554,11 @@ function installAudioUnlock() {
 }
 
 /* =========================================================
-   ประตูทางเข้า — ล็อกอิน แล้วต่อด้วยกรอกข้อมูลครั้งแรก
-   หมายเหตุ: เป็นการล็อกในเครื่อง ไม่ใช่บัญชีออนไลน์ (ดู auth.js)
+   ประตูทางเข้า — กรอกข้อมูลส่วนตัวครั้งแรกก่อนเริ่มใช้งาน
+   ไม่มีระบบล็อกอิน ข้อมูลทั้งหมดอยู่ในเครื่องของผู้ใช้เอง
    ========================================================= */
-const Auth = window.TimeSyncAuth;
-
 function showGate(el) { el.hidden = false; document.body.classList.add('gated'); }
 function hideGates() {
-  $('#authGate').hidden = true;
   $('#setupGate').hidden = true;
   document.body.classList.remove('gated');
 }
@@ -1570,67 +1568,14 @@ function profileReady() {
   return !!(S.profile && S.profile.age !== null && S.profile.age !== undefined && S.profile.age !== '');
 }
 
-function renderAuthGate() {
-  const isNew = !Auth.hasAccount();
-  $('#authTitle').textContent = isNew ? 'ยินดีต้อนรับ' : `สวัสดี ${Auth.username()}`;
-  $('#authSub').textContent = isNew
-    ? 'ตั้งรหัสเพื่อล็อกแอปในเครื่องนี้'
-    : 'ใส่รหัสผ่านเพื่อเข้าใช้งาน';
-  $('#authUser').hidden = !isNew;
-  if (!isNew) $('#authUser').value = Auth.username();
-  $('#authPass2').hidden = !isNew;
-  $('#authPass').autocomplete = isNew ? 'new-password' : 'current-password';
-  $('#authSubmit').textContent = isNew ? 'สร้างรหัสและเริ่มใช้งาน' : 'เข้าใช้งาน';
-  $('#authForgot').classList.toggle('hidden', isNew);
-  $('#authErr').classList.add('hidden');
-  showGate($('#authGate'));
-  setTimeout(() => (isNew ? $('#authUser') : $('#authPass')).focus(), 60);
-}
-
-function authError(msg) {
-  const e = $('#authErr');
-  e.textContent = msg;
-  e.classList.remove('hidden');
-}
-
-$('#authForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const isNew = !Auth.hasAccount();
-  const pass = $('#authPass').value;
-  const btn = $('#authSubmit');
-  btn.disabled = true;
-  try {
-    if (isNew) {
-      if (pass !== $('#authPass2').value) throw new Error('รหัสผ่านสองช่องไม่ตรงกัน');
-      await Auth.signUp($('#authUser').value, pass);
-    } else if (!(await Auth.verify(pass))) {
-      throw new Error('รหัสผ่านไม่ถูกต้อง');
-    }
-    Auth.signIn($('#authRemember').checked);
-    $('#authPass').value = ''; $('#authPass2').value = '';
-    afterSignIn();
-  } catch (err) {
-    authError(err.message || 'เข้าใช้งานไม่สำเร็จ');
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-$('#authForgot').addEventListener('click', () => {
-  if (!confirm('ตั้งรหัสใหม่? ข้อมูลการนอนของคุณจะไม่ถูกลบ')) return;
-  Auth.reset();
-  renderAuthGate();
-});
-
-/** หลังผ่านล็อกอิน: ถ้ายังไม่มีข้อมูลตัวเอง ให้กรอกก่อน */
-function afterSignIn() {
+/** เปิดแอป: ถ้ายังไม่มีข้อมูลตัวเอง ให้กรอกก่อน */
+function openApp() {
   if (!profileReady()) { renderSetupGate(); return; }
   hideGates();
   renderPlan();
 }
 
 function renderSetupGate() {
-  $('#authGate').hidden = true;          // ซ่อนหน้าล็อกอินก่อน ไม่ให้ซ้อนกันสองชั้น
   $('#suGender').innerHTML = GENDERS.map(g =>
     `<button class="seg-btn" type="button" data-g="${g.id}">${g.label}</button>`).join('');
   $('#suGender').addEventListener('click', e => {
@@ -1638,8 +1583,9 @@ function renderSetupGate() {
     $$('#suGender .seg-btn').forEach(x => x.classList.toggle('active', x === b));
   });
   $('#suWake').value = wakeTimeFor(S, new Date());
+  $('#suName').value = S.profile.name || '';
   showGate($('#setupGate'));
-  setTimeout(() => $('#suAge').focus(), 60);
+  setTimeout(() => $('#suName').focus(), 60);
 }
 
 $('#setupSubmit').addEventListener('click', () => {
@@ -1656,7 +1602,7 @@ $('#setupSubmit').addEventListener('click', () => {
   S.profile.weight = numOrNull($('#suWeight').value, 2, 400);
   const g = $('#suGender .seg-btn.active');
   S.profile.gender = g ? g.dataset.g : '';
-  S.profile.name = Auth.username();
+  S.profile.name = $('#suName').value.trim().slice(0, 40);
   // อายุกำหนดช่วงวัยในชาร์ตเวลานอนสากลให้เอง ไม่ต้องตั้งซ้ำ
   const band = ageGroupFromAge(age);
   if (band) S.ageGroup = band;
@@ -1670,7 +1616,8 @@ $('#setupSubmit').addEventListener('click', () => {
   renderProfile();
   $('#planWake').value = wake;
   renderPlan();
-  toast(`ยินดีต้อนรับ ${Auth.username()} 🌙`);
+  const who = displayName(S);
+  toast(who ? `ยินดีต้อนรับ ${who} 🌙` : 'เริ่มใช้งานได้เลย 🌙');
 });
 
 makeStars();
@@ -1698,9 +1645,7 @@ renderPlan();
 
 $('#planWake').addEventListener('input', renderPlan);
 
-// ต้องล็อกอินก่อนทุกครั้ง เว้นแต่เคยติ๊ก "จำฉันไว้"
-if (Auth.isSignedIn() && Auth.hasAccount()) afterSignIn();
-else renderAuthGate();
+openApp();
 $('#planSetAlarm').addEventListener('click', () => {
   const t = $('#planWakeOut').textContent;
   setAlarm(t, true);

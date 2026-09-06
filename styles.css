@@ -513,7 +513,7 @@ input[type=number]:focus{border-color:var(--accent);background:rgba(255,255,255,
 .rec-flags p{margin-top:6px}
 @media(max-width:520px){.rec-row{grid-template-columns:repeat(2,1fr)}}
 
-/* ================= ประตูทางเข้า (ล็อกอิน / กรอกข้อมูล) ================= */
+/* ================= ประตูทางเข้า (กรอกข้อมูลครั้งแรก) ================= */
 body.gated{overflow:hidden}
 /* display:grid ด้านล่างจะทับ [hidden]{display:none} ของเบราว์เซอร์
    ต้องประกาศเองไม่งั้นหน้า gate ค้างทับแอปตลอดเวลา */
@@ -530,22 +530,19 @@ body.gated{overflow:hidden}
 .gate-logo{font-size:46px;filter:drop-shadow(0 0 18px rgba(142,166,255,.6));margin-bottom:8px}
 .gate-box h1{font-size:24px;margin-bottom:4px}
 .gate-sub{color:var(--muted);font-size:13.5px;margin-bottom:22px}
-.gate form{display:flex;flex-direction:column;gap:11px}
-.gate input[type=text],.gate input[type=password]{
+.gate input[type=text]{
   font-family:inherit;font-size:16px;padding:13px 15px;border-radius:13px;
   background:rgba(255,255,255,.06);border:1px solid var(--card-line);color:var(--text);
   outline:none;transition:.18s;width:100%}
 .gate input:focus{border-color:var(--accent);background:rgba(255,255,255,.09)}
-.gate-check{justify-content:center;font-size:13px;margin:2px 0 4px}
 .gate-btn{width:100%;padding:14px;font-size:15px;margin-top:4px}
 .gate-err{background:rgba(255,125,138,.12);border:1px solid rgba(255,125,138,.4);
   color:var(--bad);border-radius:11px;padding:10px 12px;font-size:13px}
-.gate-link{background:none;border:none;color:var(--accent);font-size:13px;font-family:inherit;
-  cursor:pointer;margin-top:14px;text-decoration:underline}
 .gate-note{color:var(--muted);font-size:11.5px;line-height:1.65;margin-top:18px;text-align:left}
 .setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:left;margin-bottom:4px}
 .setup-grid .field{margin-bottom:0}
 .gate .field{text-align:left}
+.gate .field .opt{color:var(--muted);font-weight:400}
 .gate .seg{margin-top:4px}
 
 /* ================= หน้าเวลานอน (รวมความล้า+พักฟื้น) ================= */

@@ -19,41 +19,17 @@
 
 <div class="stars" id="stars"></div>
 
-<!-- ============ ล็อกอิน ============ -->
-<div class="gate" id="authGate" hidden>
-  <div class="gate-box">
-    <div class="gate-logo">🌙</div>
-    <h1 id="authTitle">TimeSync</h1>
-    <p class="gate-sub" id="authSub">ตั้งรหัสเพื่อล็อกแอปในเครื่องนี้</p>
-
-    <form id="authForm" autocomplete="on">
-      <input type="text" id="authUser" name="username" placeholder="ชื่อผู้ใช้"
-             autocomplete="username" maxlength="40">
-      <input type="password" id="authPass" name="password" placeholder="รหัสผ่าน"
-             autocomplete="current-password">
-      <input type="password" id="authPass2" placeholder="ยืนยันรหัสผ่าน"
-             autocomplete="new-password" hidden>
-
-      <label class="check gate-check">
-        <input type="checkbox" id="authRemember"> ไม่ต้องถามอีกในเครื่องนี้
-      </label>
-
-      <div class="gate-err hidden" id="authErr"></div>
-      <button class="btn gate-btn" id="authSubmit" type="submit">เข้าใช้งาน</button>
-    </form>
-
-    <button class="gate-link hidden" id="authForgot" type="button">ลืมรหัสผ่าน?</button>
-    <p class="gate-note">🔒 รหัสถูกเก็บเป็นค่าแฮชในเครื่องนี้เท่านั้น ไม่ถูกส่งออกไปไหน
-      และไม่ใช่บัญชีออนไลน์ — เป็นการล็อกไม่ให้คนอื่นที่หยิบเครื่องไปเปิดดูข้อมูลของคุณ</p>
-  </div>
-</div>
-
 <!-- ============ กรอกข้อมูลส่วนตัว (ครั้งแรก) ============ -->
 <div class="gate" id="setupGate" hidden>
   <div class="gate-box wide">
     <div class="gate-logo">📋</div>
     <h1>ข้อมูลของคุณ</h1>
     <p class="gate-sub">ใช้คำนวณเวลานอนให้ตรงกับร่างกายคุณ</p>
+
+    <div class="field">
+      <label for="suName">ชื่อ / ชื่อเล่น <span class="opt">(ไม่ใส่ก็ได้)</span></label>
+      <input type="text" id="suName" placeholder="เช่น มายด์" maxlength="40" autocomplete="nickname">
+    </div>
 
     <div class="setup-grid">
       <div class="field">
@@ -549,7 +525,6 @@
 
         <div class="row-actions">
           <button class="btn ghost" id="exportData">ส่งออกข้อมูล (JSON)</button>
-          <button class="btn ghost" id="signOutBtn">ออกจากระบบ</button>
           <button class="btn danger" id="resetData">ล้างข้อมูลทั้งหมด</button>
         </div>
         <p class="fineprint">ข้อมูลทั้งหมดถูกเก็บไว้ในเครื่องของคุณเท่านั้น (localStorage + IndexedDB) ไม่มีการส่งออกไปที่ไหน</p>
@@ -626,7 +601,6 @@
 
 <script src="core.js"></script>
 <script src="alarm.js"></script>
-<script src="auth.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
